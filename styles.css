@@ -1,0 +1,102 @@
+:root {
+  --h4pgreen: #04dc3b;
+  --h4pblue: #363cb8;
+  --white: #ffffff;
+  --black: #000000;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--h4pblue);
+  font-family: Arial, sans-serif;
+}
+
+#pageTitle {
+  text-align: center; /* Centers the title text */
+  font-size: 4vw; /* Example of making the font size responsive to the viewport width */
+  max-font-size: 24px; /* Optional: Prevents the font size from getting too large on wide screens */
+  min-font-size: 16px; /* Optional: Ensures readability on smaller screens */
+  white-space: nowrap; /* Prevents the title from wrapping into multiple lines */
+  overflow: hidden; /* Hides overflow text if it gets too long for the container */
+  text-overflow: ellipsis; /* Adds an ellipsis to indicate text overflow (optional) */
+}
+
+#subtitle {
+  background-color: var(--h4pgreen); /* Using the CSS variable for green color */
+  color: var(--white); /* Using the CSS variable for white color */
+  border-radius: 50px; /* High value to create a pill shape */
+  text-align: center; /* Center the text */
+  font-size: 1em; /* Adjust size as needed */
+  font-weight: bold; /* Make the font bold */
+  padding: 10px 20px; /* Vertical and horizontal padding */
+  display: inline-block; /* Allows the div to be as wide as its content */
+  font-family: 'Bangers'; /* Apply the "Bangers" font */
+  white-space: nowrap; /* Prevents the text from wrapping */
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--white);
+  margin: 10vh auto;
+  padding: 20px;
+  width: 80vw;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  border-radius: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.form-group, button, input, select, textarea {
+  max-width: 80%;
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+input[type="text"], input[type="date"], input[type="time"], select, textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  background-color: var(--h4pgreen);
+  color: var(--white);
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive styles for mobile screens */
+.mobile .container {
+  width: 75vw; /* Adjust width to account for 5% margin on each side */
+  margin: 5% auto; /* 5% top margin, auto horizontal margin for centering, and 5% bottom margin */
+  padding: 25px; /* Adjust padding if necessary for mobile */
+}
+
+.mobile button, .mobile input, .mobile select, .mobile textarea, .mobile label {
+  /* Increase sizes for mobile */
+  font-size: calc(100% + 25%);
+}
