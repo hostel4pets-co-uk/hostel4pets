@@ -72,7 +72,7 @@ class BookingCalculator {
     const neuteredStatus = Array.from({length: numOfPets}, (_, i) => document.getElementById('neutered' + (i + 1)).value);
     const cubStatus = Array.from({length: numOfPets}, (_, i) => document.getElementById('cub' + (i + 1)).value);
   
-    const calculator = new BookingCalculator(2, 24, 6, 7, 20, 22, 0.17, 0.17); // Modify these values as needed
+    const calculator = new BookingCalculator(2.25, 27, 8, 7, 20, 22, 0.2, 0.2); // Modify these values as needed
     const { totalCharge, breakdown } = calculator.calculatePrice(checkInDate, checkOutDate, numOfPets, neuteredStatus, cubStatus);
   
     document.getElementById('totalPrice').value = '£' + totalCharge.toFixed(2);
