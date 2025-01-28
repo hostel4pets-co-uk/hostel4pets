@@ -45,6 +45,28 @@
             background: #45a049;
         }
     </style>
+    <script>
+        // Add a version parameter to avoid caching
+        const addCacheBuster = (url) => {
+            const cacheBuster = `v=${Date.now()}`; // Unique timestamp
+            return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+        };
+
+        // Update all <script> and <link> tags
+        document.querySelectorAll('script[src], link[rel="stylesheet"]').forEach(tag => {
+            const srcAttr = tag.tagName === 'SCRIPT' ? 'src' : 'href';
+            tag.setAttribute(srcAttr, addCacheBuster(tag.getAttribute(srcAttr)));
+        });
+
+        // Update other resources (like JSON) in fetch calls
+        const originalFetch = window.fetch;
+        window.fetch = async (resource, config) => {
+            if (typeof resource === 'string') {
+                resource = addCacheBuster(resource);
+            }
+            return originalFetch(resource, config);
+        };
+    </script>
 </head>
 
 <body>
