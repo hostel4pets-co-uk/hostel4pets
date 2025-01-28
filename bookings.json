@@ -1,0 +1,25 @@
+{
+    "2025-01-30": [
+        "busy",
+        "busy",
+        "busy",
+        "busy"
+    ],
+    "2025-02-01": [
+        "booked",
+        "booked",
+        "booked",
+        "booked",
+        "booked",
+        "booked"
+    ],
+    "2025-02-03": [
+        "overbooked",
+        "overbooked",
+        "overbooked",
+        "overbooked",
+        "overbooked",
+        "overbooked",
+        "overbooked"
+    ]
+}
