@@ -443,17 +443,22 @@ class Calendar {
         actions.forEach(actionData => {
           const id = Object.keys(actionData)[0];
           const { action, timestamp } = actionData[id];
-          if (action === 'checkIn') {
-            const startDate = new Date(timestamp.split('T')[0]);
-            const endDate = Object.entries(bookings)
-              .flatMap(([_, acts]) =>
-                acts.filter(a => Object.keys(a)[0] === id && a[id].action === 'checkOut')
-              )
-              .map(a => new Date(a[id].timestamp.split('T')[0]))[0];
+          if (action !== 'checkIn') return;
 
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-              this.addDot(new Date(d));
-            }
+          const startDate = new Date(timestamp.split('T')[0]);
+          const endDate = Object.entries(bookings)
+            .flatMap(([_, acts]) =>
+              acts.filter(a => Object.keys(a)[0] === id && a[id].action === 'checkOut')
+            )
+            .map(a => new Date(a[id].timestamp.split('T')[0]))[0];
+
+          if (!endDate) {
+            console.warn(`No checkOut found for booking ID ${id}. Skipping.`);
+            return;
+          }
+
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            this.addDot(new Date(d));
           }
         })
       );
@@ -461,8 +466,6 @@ class Calendar {
       console.error('Error loading bookings:', error);
     }
   }
-
-
 
   // Change the current month
   changeMonth(offset) {
