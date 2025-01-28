@@ -1,25 +1,32 @@
 {
     "2025-01-30": [
-        "busy",
-        "busy",
-        "busy",
-        "busy"
+        {
+            "1315": {
+                "action": "checkIn",
+                "timestamp": "2025-01-28T10:45:00.00Z"
+            }
+        },
+        {
+            "1316": {
+                "action": "checkIn",
+                "timestamp": "2025-01-28T12:00:00.00Z"
+            }
+        }
     ],
     "2025-02-01": [
-        "booked",
-        "booked",
-        "booked",
-        "booked",
-        "booked",
-        "booked"
+        {
+            "1315": {
+                "action": "checkOut",
+                "timestamp": "2025-02-01T11:30:00.00Z"
+            }
+        }
     ],
-    "2025-02-03": [
-        "overbooked",
-        "overbooked",
-        "overbooked",
-        "overbooked",
-        "overbooked",
-        "overbooked",
-        "overbooked"
+    "2025-02-05": [
+        {
+            "1316": {
+                "action": "checkOut",
+                "timestamp": "2025-02-06T12:45:00.00Z"
+            }
+        }
     ]
 }

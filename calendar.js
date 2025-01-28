@@ -439,16 +439,29 @@ class Calendar {
       if (!response.ok) throw new Error('Failed to fetch bookings.json');
 
       const bookings = await response.json();
+      Object.entries(bookings).forEach(([dateString, actions]) =>
+        actions.forEach(actionData => {
+          const id = Object.keys(actionData)[0];
+          const { action, timestamp } = actionData[id];
+          if (action === 'checkIn') {
+            const startDate = new Date(timestamp.split('T')[0]);
+            const endDate = Object.entries(bookings)
+              .flatMap(([_, acts]) =>
+                acts.filter(a => Object.keys(a)[0] === id && a[id].action === 'checkOut')
+              )
+              .map(a => new Date(a[id].timestamp.split('T')[0]))[0];
 
-      Object.entries(bookings).forEach(([dateString, bookingsArray]) =>
-        Array(bookingsArray.length).fill().forEach(() =>
-          this.addDot(new Date(dateString))
-        )
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+              this.addDot(new Date(d));
+            }
+          }
+        })
       );
     } catch (error) {
       console.error('Error loading bookings:', error);
     }
   }
+
 
 
   // Change the current month
