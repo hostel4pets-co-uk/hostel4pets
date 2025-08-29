@@ -44,10 +44,10 @@ class BookingCalculator {
     const checkoutHour = checkOut.getHours();
     const latePickupFee = checkoutHour > this.closingTime && checkoutHour <= this.lateClosingTime ? this.latePickupCharge : 0;
 
-    const subtotal = baseAllPetsAtFull - extraPetDiscount + cubSurcharge + nonNeuteredSurcharge + latePickupFee;
+    // Final total: base - discount + surcharges
+    const totalCharge = baseAllPetsAtFull - extraPetDiscount + cubSurcharge + nonNeuteredSurcharge + latePickupFee;
 
-    // Solve T = subtotal + depositRate*T  => T = subtotal / (1 - depositRate)
-    const totalCharge = subtotal / (1 - this.depositRateOfTotal);
+    // Deposit = 25% of total (not added to total)
     const depositAmount = totalCharge * this.depositRateOfTotal;
 
     const lines = [];
@@ -71,16 +71,12 @@ class BookingCalculator {
     if (nonNeuteredSurcharge === 0 && cubSurcharge === 0 && latePickupFee === 0) lines.push('• None');
 
     lines.push('');
-    lines.push('SUBTOTAL');
-    lines.push(`• After discounts & extras: £${subtotal.toFixed(2)}`);
+    lines.push('TOTAL');
+    lines.push(`• Amount due in total: £${totalCharge.toFixed(2)}`);
 
     lines.push('');
     lines.push('DEPOSIT');
-    lines.push(`• Deposit (25% of total): £${depositAmount.toFixed(2)}`);
-
-    lines.push('');
-    lines.push('TOTAL');
-    lines.push(`• Amount due in total: £${totalCharge.toFixed(2)}`);
+    lines.push(`• Pay now (25% of total): £${depositAmount.toFixed(2)}`);
 
     return {
       totalCharge,
