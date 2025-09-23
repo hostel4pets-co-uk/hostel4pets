@@ -565,28 +565,26 @@ class Calendar {
         modal.style.position = 'relative';
         modal.style.background = '#fff';
         modal.style.borderRadius = '10px';
-        modal.style.overflow = 'auto';            // scroll only if needed
+        modal.style.overflow = 'hidden';
         modal.style.width = '80%';
         modal.style.maxWidth = '600px';
-        modal.style.maxHeight = '80vh';           // cap height relative to viewport
+        modal.style.height = '800px';
         modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
 
         const closeBtn = document.createElement('span');
         closeBtn.textContent = '❌';
         closeBtn.style.position = 'absolute';
         closeBtn.style.top = '10px';
-        closeBtn.style.right = '15px';            // a tad more to the left
+        closeBtn.style.right = '15px';
         closeBtn.style.cursor = 'pointer';
         closeBtn.style.fontSize = '20px';
+        closeBtn.style.zIndex = '10';
 
         const iframe = document.createElement('iframe');
         iframe.src = `./dayView.html?d=${dateStr}`;
         iframe.style.width = '100%';
-        // IMPORTANT: don't use 100% when parent height is auto — let it size naturally
-        iframe.style.height = 'auto';
-        iframe.style.minHeight = '220px';         // sensible minimum so content shows
-        iframe.style.maxHeight = '80vh';          // never exceed the modal's cap
-        iframe.style.display = 'block';           // remove inline baseline gap
+        iframe.style.height = '100%';
+        iframe.style.display = 'block';
         iframe.style.border = 'none';
 
         modal.appendChild(closeBtn);
