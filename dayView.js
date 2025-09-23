@@ -4,28 +4,42 @@ function normalise(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+async function isAnimalBreed(pageId) {
+    try {
+        const url = `https://en.wikipedia.org/w/api.php?action=query&prop=categories&pageids=${pageId}&cllimit=50&format=json&origin=*`;
+        const res = await fetch(url);
+        if (!res.ok) return false;
+        const data = await res.json();
+        const categories = data?.query?.pages?.[pageId]?.categories || [];
+        return categories.some(c =>
+            /dog breeds|cat breeds|domestic dogs|domestic cats/i.test(c.title)
+        );
+    } catch {
+        return false;
+    }
+}
+
 async function getWikiLink(breed) {
-    const attempts = [
-        breed,
-        `${breed} dog`,
-        `${breed} cat`,
-        `${breed} breed`
-    ];
+    const attempts = [breed, `${breed} dog`, `${breed} cat`, `${breed} breed`];
 
     for (const term of attempts) {
         try {
-            const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(term)}&limit=1&namespace=0&format=json&origin=*`;
+            const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json&origin=*`;
             const res = await fetch(url);
             if (!res.ok) continue;
             const data = await res.json();
-            const link = data[3]?.[0];
-            if (link) return link;
+            const hit = data?.query?.search?.[0];
+            if (!hit) continue;
+
+            if (await isAnimalBreed(hit.pageid)) {
+                return `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`;
+            }
         } catch {
-            // ignore and try next term
+            // try next attempt
         }
     }
 
-    return null; // nothing worked
+    return null; // nothing suitable found
 }
 
 function getQueryDate() {
