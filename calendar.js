@@ -37,6 +37,8 @@ class Calendar {
     // Render the entire calendar UI
     async render() {
         this.container.innerHTML = '';
+        this.texts = {};
+        this.dots = [];
         this.createHeader();
         this.createTable();
         this.updateTable();
@@ -466,27 +468,27 @@ class Calendar {
 
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
 
-                if (types.includes("Not available")) {
-                    const start = new Date(ev.start);
-                    const end = new Date(ev.end);
+                if (!types.includes("Not available")) continue;
 
-                    // Fill entire range with grey background
-                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                        const table = document.getElementById('Calendar');
-                        const tbody = table.querySelector('tbody');
+                const start = new Date(ev.start);
+                const end = new Date(ev.end);
+                const table = document.getElementById('Calendar');
+                const tbody = table.querySelector('tbody');
+                const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
 
-                        const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
-                        if (d.getMonth() === this.date.getMonth() && d.getFullYear() === this.date.getFullYear()) {
-                            const cellIndex = firstDay + d.getDate() - 1;
-                            const row = Math.floor(cellIndex / 7);
-                            const column = cellIndex % 7;
-                            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-                            if (cell) {
-                                cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
-                            }
-                        }
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    if (d.getMonth() !== this.date.getMonth() || d.getFullYear() !== this.date.getFullYear()) {
+                        continue;
                     }
-                    continue;
+
+                    const cellIndex = firstDay + d.getDate() - 1;
+                    const row = Math.floor(cellIndex / 7);
+                    const column = cellIndex % 7;
+                    const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+
+                    if (!cell) continue;
+
+                    cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
                 }
 
                 // Normal events
