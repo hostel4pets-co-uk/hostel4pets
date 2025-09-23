@@ -1,3 +1,7 @@
+function normalise(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 function getQueryDate() {
     const params = new URLSearchParams(window.location.search);
     const d = params.get("d");
@@ -9,11 +13,13 @@ function getQueryDate() {
 }
 
 async function loadDayView() {
-    const targetDate = getQueryDate();
-    if (!targetDate) return;
+    const targetDateRaw = getQueryDate();
+    if (!targetDateRaw) return;
 
-    const dateKey = targetDate.toDateString();
-    document.getElementById("day-title").textContent = `Bookings for ${targetDate.toLocaleDateString()}`;
+    const targetDate = normalise(targetDateRaw);
+
+    document.getElementById("day-title").textContent =
+        `Bookings for ${targetDate.toLocaleDateString()}`;
 
     try {
         const res = await fetch("https://kittycrypto.ddns.net:5493/calendar.json");
@@ -25,12 +31,12 @@ async function loadDayView() {
         for (const ev of events) {
             if (ev.type.includes("Check-in")) {
                 if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkIn = new Date(ev.start);
+                stays[ev.petId].checkIn = normalise(new Date(ev.start));
                 stays[ev.petId].pet = ev;
             }
             if (ev.type.includes("Check-out")) {
                 if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkOut = new Date(ev.end);
+                stays[ev.petId].checkOut = normalise(new Date(ev.end));
                 stays[ev.petId].pet = ev;
             }
         }
@@ -38,6 +44,7 @@ async function loadDayView() {
         const list = document.getElementById("pet-list");
         list.innerHTML = "";
 
+        let guestCounter = 1;
         for (const petId in stays) {
             const stay = stays[petId];
             if (!stay.checkIn || !stay.checkOut) continue;
@@ -52,11 +59,30 @@ async function loadDayView() {
                 dot.className = "pet-dot";
                 dot.style.backgroundColor = colour || "grey";
 
-                const text = document.createElement("span");
-                text.textContent = `Name: ${name}, Species: ${species}, Breed: ${breed}`;
+                // Guest number
+                const guestNum = document.createElement("div");
+                guestNum.className = "guest-num";
+                guestNum.textContent = `Guest ${guestCounter++}:`;
+
+                // Details (with CSS indentation instead of spaces)
+                const nameLine = document.createElement("div");
+                nameLine.className = "detail name";
+                nameLine.textContent = `Name: ${name}`;
+
+                const speciesLine = document.createElement("div");
+                speciesLine.className = "detail species";
+                speciesLine.textContent = `Species: ${species}`;
+
+                const breedLine = document.createElement("div");
+                breedLine.className = "detail breed";
+                breedLine.textContent = `Breed: ${breed}`;
 
                 li.appendChild(dot);
-                li.appendChild(text);
+                li.appendChild(guestNum);
+                li.appendChild(nameLine);
+                li.appendChild(speciesLine);
+                li.appendChild(breedLine);
+
                 list.appendChild(li);
             }
         }
