@@ -371,7 +371,20 @@ class Calendar {
         const isToday = dotDate.toDateString() === new Date().toDateString();
         const isPast = dotDate < new Date() && !isToday;
         const totalDots = this.dots.filter(d => d.date.toDateString() === dotDate.toDateString()).length;
-        this.updateCellBackground(cell, isToday, isPast, totalDots);
+
+        const currentBg = cell.style.backgroundColor;
+        const isLocked = [
+            this.backgroundColours.NOT_AVAILABLE,
+            this.backgroundColours.BANKHOLIDAY
+        ].includes(currentBg);
+
+        // Busy/Booked always override
+        if (totalDots >= 4) {
+            this.updateCellBackground(cell, isToday, isPast, totalDots);
+        } else if (!isLocked) {
+            // Otherwise only update if not locked
+            this.updateCellBackground(cell, isToday, isPast, totalDots);
+        }
     }
 
     // Add a legend to the calendar
