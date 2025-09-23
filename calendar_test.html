@@ -5,60 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar Test</title>
-    <style>
-        #calendar-container {
-            margin: 20px auto;
-            padding: 10px;
-            max-width: 600px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+    <link rel="stylesheet" href="styles.css">
 
-        table {
-            width: 100%;
-        }
-
-        th,
-        td {
-            width: 14%;
-            height: 50px;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .today {
-            font-weight: bold;
-            border: 2px solid #4caf50;
-        }
-
-        button {
-            padding: 5px 10px;
-            background: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #45a049;
-        }
-    </style>
     <script>
         // Add a version parameter to avoid caching
         const addCacheBuster = (url) => {
-            const cacheBuster = `v=${Date.now()}`; // Unique timestamp
+            const cacheBuster = `v=${Date.now()}`;
             return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
         };
 
-        // Update all <script> and <link> tags
         document.querySelectorAll('script[src], link[rel="stylesheet"]').forEach(tag => {
             const srcAttr = tag.tagName === 'SCRIPT' ? 'src' : 'href';
             tag.setAttribute(srcAttr, addCacheBuster(tag.getAttribute(srcAttr)));
         });
 
-        // Update other resources (like JSON) in fetch calls
         const originalFetch = window.fetch;
         window.fetch = async (resource, config) => {
             if (typeof resource === 'string') {
@@ -70,8 +30,8 @@
 </head>
 
 <body>
-    <h1 style="text-align: center;">Calendar Test</h1>
-    <div id="calendar-container"></div>
+    <h1 class="calendar-title">Calendar Test</h1>
+    <div class="calendar-container" id="calendar-container"></div>
     <script src="calendar.js"></script>
 </body>
 
