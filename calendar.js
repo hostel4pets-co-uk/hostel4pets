@@ -637,6 +637,7 @@ class Calendar {
             runLoader();
         } else {
             const script = document.createElement("script");
+            script.type = "module";
             script.src = "./dayView.js";
             script.onload = runLoader;
             script.onerror = () => console.error("Failed to load dayView.js");

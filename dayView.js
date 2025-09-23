@@ -96,5 +96,3 @@ export async function loadDayView() {
         console.error("Error loading day view:", err);
     }
 }
-
-document.addEventListener("DOMContentLoaded", loadDayView);
