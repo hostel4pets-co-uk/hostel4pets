@@ -150,11 +150,12 @@ class Calendar {
         const cells = tbody.querySelectorAll('td');
 
         cells.forEach(cell => {
+            const preservedBg = cell.style.backgroundColor;
             cell.innerText = '';
-            cell.className = ''; // Reset cell styles
-            cell.style.backgroundColor = ''; // Reset background colour
-            cell.style.fontWeight = ''; // Reset font weight
-            cell.style.position = ''; // Reset position
+            cell.className = '';
+            cell.style.backgroundColor = preservedBg;
+            cell.style.fontWeight = '';
+            cell.style.position = '';
         });
 
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
@@ -178,8 +179,9 @@ class Calendar {
             const isPast = cellDate < today && !isToday;
             const dotsCount = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString()).length;
 
-            // Update the cell's background based on its state
-            this.updateCellBackground(cell, isToday, isPast, dotsCount);
+            if (!preservedBg) {
+                this.updateCellBackground(cell, isToday, isPast, dotsCount);
+            }
 
             // Re-add dots for this date
             const dotsForDate = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString());
