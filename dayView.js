@@ -5,15 +5,27 @@ function normalise(date) {
 }
 
 async function getWikiLink(breed) {
-    try {
-        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(breed + " breed")}&limit=1&namespace=0&format=json&origin=*`;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data[3]?.[0] || null; // first URL if available
-    } catch {
-        return null;
+    const attempts = [
+        breed,
+        `${breed} dog`,
+        `${breed} cat`,
+        `${breed} breed`
+    ];
+
+    for (const term of attempts) {
+        try {
+            const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(term)}&limit=1&namespace=0&format=json&origin=*`;
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const data = await res.json();
+            const link = data[3]?.[0];
+            if (link) return link;
+        } catch {
+            // ignore and try next term
+        }
     }
+
+    return null; // nothing worked
 }
 
 function getQueryDate() {
