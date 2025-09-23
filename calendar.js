@@ -12,7 +12,7 @@ class Calendar {
         });
 
         this.backgroundColours = Object.freeze({
-            PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb', BANKHOLIDAY: '#e6ccff'
+            PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb', BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
         });
 
         // Each dot is an object: { date: Date, colour: string }
@@ -376,6 +376,10 @@ class Calendar {
                 <span style="display: inline-block; width: 20px; height: 20px;
                 background-color: ${this.backgroundColours.BANKHOLIDAY}; margin-right: 5px;"></span>Bank Holiday
             </div>
+            <div>
+                <span style="display: inline-block; width: 20px; height: 20px;
+                background-color: ${this.backgroundColours.NOT_AVAILABLE}; margin-right: 5px;"></span>Not Available
+            </div>
         </div>
     `;
         this.container.appendChild(legend);
@@ -439,15 +443,43 @@ class Calendar {
             /** @type {Array<{ type: string[], petId: string, start: string, end: string }>} */
             const events = await response.json();
 
-            // Map to hold each pet's check-in and check-out
             const petStays = {};
 
             for (const ev of events) {
                 if (!ev.petId || ev.petId === "Unknown") continue;
 
-                // Normalise to array of types
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
 
+                if (types.includes("Not available")) {
+                    const start = new Date(ev.start);
+                    const end = new Date(ev.end);
+
+                    // Fill entire range with grey background
+                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        const dateKey = this.getDateKey(d);
+                        if (!this.texts[dateKey]) this.texts[dateKey] = [];
+                        if (!this.texts[dateKey].includes("Not Available")) {
+                            this.texts[dateKey].push("Not Available");
+                        }
+
+                        const table = document.getElementById('Calendar');
+                        const tbody = table.querySelector('tbody');
+
+                        const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+                        if (d.getMonth() === this.date.getMonth() && d.getFullYear() === this.date.getFullYear()) {
+                            const cellIndex = firstDay + d.getDate() - 1;
+                            const row = Math.floor(cellIndex / 7);
+                            const column = cellIndex % 7;
+                            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+                            if (cell) {
+                                cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                // Normal events
                 if (types.includes("Check-in")) {
                     if (!petStays[ev.petId]) petStays[ev.petId] = {};
                     petStays[ev.petId].checkIn = new Date(ev.start);
@@ -459,6 +491,7 @@ class Calendar {
                 }
             }
 
+            // Render check-in / check-out events as before
             for (const petId in petStays) {
                 const stay = petStays[petId];
                 if (!stay.checkIn || !stay.checkOut) continue;
