@@ -215,6 +215,23 @@ button:hover {
   font-size: 20px;
 }
 
+#day-modal.modal {
+  display: block;         /* ensure the content shows inside the iframe */
+  position: static;       /* no fullscreen overlay behavior inside iframe */
+  width: 100%;
+  height: auto;
+  background: transparent;
+  justify-content: initial;
+  align-items: initial;
+}
+
+#day-modal .modal-content {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  /* Keep the styled white card inside the iframe */
+}
+
 /* Animation */
 @keyframes fadeIn {
   from {

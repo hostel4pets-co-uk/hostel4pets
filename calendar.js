@@ -545,29 +545,49 @@ class Calendar {
 
     openDayModal(dateStr) {
         // Remove existing modal if present
-        const existing = document.getElementById("day-modal-overlay");
+        const existing = document.getElementById('day-modal-overlay');
         if (existing) existing.remove();
 
-        // Overlay
-        const overlay = document.createElement("div");
-        overlay.id = "day-modal-overlay";
-        overlay.className = "modal"; // use your CSS modal class
+        const overlay = document.createElement('div');
+        overlay.id = 'day-modal-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '1000';
 
-        // Modal content
-        const modal = document.createElement("div");
-        modal.className = "modal-content";
+        const modal = document.createElement('div');
+        modal.style.position = 'relative';
+        modal.style.background = '#fff';
+        modal.style.borderRadius = '10px';
+        modal.style.overflow = 'auto';            // scroll only if needed
+        modal.style.width = '80%';
+        modal.style.maxWidth = '600px';
+        modal.style.maxHeight = '80vh';           // cap height relative to viewport
+        modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
 
-        // Close button
-        const closeBtn = document.createElement("span");
-        closeBtn.className = "close";
-        closeBtn.textContent = "❌";
+        const closeBtn = document.createElement('span');
+        closeBtn.textContent = '❌';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '10px';
+        closeBtn.style.right = '15px';            // a tad more to the left
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontSize = '20px';
 
-        // Iframe
-        const iframe = document.createElement("iframe");
+        const iframe = document.createElement('iframe');
         iframe.src = `./dayView.html?d=${dateStr}`;
-        iframe.style.width = "100%";
-        iframe.style.height = "70vh";
-        iframe.style.border = "none";
+        iframe.style.width = '100%';
+        // IMPORTANT: don't use 100% when parent height is auto — let it size naturally
+        iframe.style.height = 'auto';
+        iframe.style.minHeight = '220px';         // sensible minimum so content shows
+        iframe.style.maxHeight = '80vh';          // never exceed the modal's cap
+        iframe.style.display = 'block';           // remove inline baseline gap
+        iframe.style.border = 'none';
 
         modal.appendChild(closeBtn);
         modal.appendChild(iframe);
@@ -575,15 +595,11 @@ class Calendar {
         document.body.appendChild(overlay);
 
         const closeModal = () => overlay.remove();
-        closeBtn.addEventListener("click", closeModal);
-        overlay.addEventListener("click", e => {
+        closeBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', e => {
             if (e.target === overlay) closeModal();
         });
-
-        // show the modal (CSS default is display:none)
-        overlay.style.display = "flex";
     }
-
 }
 
 // Usage
