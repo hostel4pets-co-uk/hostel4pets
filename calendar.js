@@ -296,6 +296,7 @@ class Calendar {
 
                 // Call the updated updateCellBackground method
                 await this.updateCellBackground(cell, isToday, isPast, dots, true);
+                cell.dataset.locked = 'bank';
             }
         }
     }
@@ -330,7 +331,6 @@ class Calendar {
         // Render dot in the current month's table
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
         const daysInMonth = new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
-
         if (dotDate.getDate() < 1 || dotDate.getDate() > daysInMonth) return;
 
         const cellIndex = firstDay + dotDate.getDate() - 1;
@@ -338,7 +338,6 @@ class Calendar {
         const column = cellIndex % 7;
         const table = document.getElementById('Calendar');
         const cell = table.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-
         if (!cell) return;
 
         const dotSize = 8;
@@ -372,17 +371,14 @@ class Calendar {
         const isPast = dotDate < new Date() && !isToday;
         const totalDots = this.dots.filter(d => d.date.toDateString() === dotDate.toDateString()).length;
 
-        const currentBg = cell.style.backgroundColor;
-        const isLocked = [
-            this.backgroundColours.NOT_AVAILABLE,
-            this.backgroundColours.BANKHOLIDAY
-        ].includes(currentBg);
+        const isLocked = cell.dataset.locked === 'na' || cell.dataset.locked === 'bank';
 
-        // Busy/Booked always override
         if (totalDots >= 4) {
+            // Busy/Booked override: clear lock and apply
+            delete cell.dataset.locked;
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         } else if (!isLocked) {
-            // Otherwise only update if not locked
+            // Only update normal backgrounds when not locked
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         }
     }
@@ -491,21 +487,21 @@ class Calendar {
                     const start = new Date(ev.start);
                     const end = new Date(ev.end);
 
-                    // Fill entire range with grey background
+                    const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+
                     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        if (d.getMonth() !== this.date.getMonth() || d.getFullYear() !== this.date.getFullYear()) continue;
+
+                        const cellIndex = firstDay + d.getDate() - 1;
+                        const row = Math.floor(cellIndex / 7);
+                        const column = cellIndex % 7;
                         const table = document.getElementById('Calendar');
                         const tbody = table.querySelector('tbody');
+                        const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+                        if (!cell) continue;
 
-                        const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
-                        if (d.getMonth() === this.date.getMonth() && d.getFullYear() === this.date.getFullYear()) {
-                            const cellIndex = firstDay + d.getDate() - 1;
-                            const row = Math.floor(cellIndex / 7);
-                            const column = cellIndex % 7;
-                            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-                            if (cell) {
-                                cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
-                            }
-                        }
+                        cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
+                        cell.dataset.locked = 'na';
                     }
                     continue;
                 }
