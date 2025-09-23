@@ -14,7 +14,7 @@ function getQueryDate() {
     return new Date(year, month, day);
 }
 
-export async function loadDayView() {
+async function loadDayView() {
     const targetDateRaw = getQueryDate();
     if (!targetDateRaw) return;
     const targetDate = normalise(targetDateRaw);
@@ -96,3 +96,5 @@ export async function loadDayView() {
         console.error("Error loading day view:", err);
     }
 }
+
+window.loadDayView = loadDayView;
