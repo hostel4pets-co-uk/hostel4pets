@@ -565,11 +565,12 @@ class Calendar {
         modal.style.position = 'relative';
         modal.style.background = '#fff';
         modal.style.borderRadius = '10px';
-        modal.style.overflow = 'hidden';
-        modal.style.width = '80%';
-        modal.style.maxWidth = '600px';
-        modal.style.height = '800px';
+        modal.style.overflowY = 'auto';            // scroll only if taller than viewport
+        modal.style.maxHeight = '90vh';            // cap at 90% viewport height
+        modal.style.maxWidth = '800px';            // prevent overly wide lines
         modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+        modal.style.padding = '20px';
+        modal.style.margin = '0 auto';             // centre horizontally
 
         const closeBtn = document.createElement('span');
         closeBtn.textContent = '❌';
@@ -580,15 +581,12 @@ class Calendar {
         closeBtn.style.fontSize = '20px';
         closeBtn.style.zIndex = '10';
 
-        const iframe = document.createElement('iframe');
-        iframe.src = `./dayView.html?d=${dateStr}`;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.display = 'block';
-        iframe.style.border = 'none';
+        const content = document.createElement('div');
+        content.id = 'day-modal-content';
+        content.innerHTML = '<p>Loading…</p>';
 
         modal.appendChild(closeBtn);
-        modal.appendChild(iframe);
+        modal.appendChild(content);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
@@ -597,6 +595,16 @@ class Calendar {
         overlay.addEventListener('click', e => {
             if (e.target === overlay) closeModal();
         });
+
+        // Fetch the dayView.html content and inject it
+        fetch(`./dayView.html?d=${dateStr}`)
+            .then(res => res.text())
+            .then(html => {
+                content.innerHTML = html;
+            })
+            .catch(err => {
+                content.innerHTML = `<p style="color:red;">Error loading content: ${err.message}</p>`;
+            });
     }
 }
 
