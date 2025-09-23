@@ -6,7 +6,7 @@ function normalise(date) {
 
 async function getWikiLink(breed) {
     try {
-        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(breed)}&limit=1&namespace=0&format=json&origin=*`;
+        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(breed + " breed")}&limit=1&namespace=0&format=json&origin=*`;
         const res = await fetch(url);
         if (!res.ok) return null;
         const data = await res.json();
