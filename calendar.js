@@ -565,17 +565,17 @@ class Calendar {
         modal.style.position = 'relative';
         modal.style.background = '#fff';
         modal.style.borderRadius = '10px';
-        modal.style.overflow = 'hidden';
+        modal.style.overflow = 'auto';            // scroll only if needed
         modal.style.width = '80%';
         modal.style.maxWidth = '600px';
-        modal.style.height = '70%';
+        modal.style.maxHeight = '80vh';           // limit height relative to viewport
         modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
 
         const closeBtn = document.createElement('span');
         closeBtn.textContent = '❌';
         closeBtn.style.position = 'absolute';
         closeBtn.style.top = '10px';
-        closeBtn.style.right = '10px';
+        closeBtn.style.right = '15px';            // moved a bit further left
         closeBtn.style.cursor = 'pointer';
         closeBtn.style.fontSize = '20px';
 
