@@ -4,6 +4,18 @@ function normalise(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+async function getWikiLink(breed) {
+    try {
+        const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(breed)}&limit=1&namespace=0&format=json&origin=*`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data[3]?.[0] || null; // first URL if available
+    } catch {
+        return null;
+    }
+}
+
 function getQueryDate() {
     const params = new URLSearchParams(window.location.search);
     const d = params.get("d");
@@ -88,6 +100,19 @@ async function loadDayView() {
             const breedLine = document.createElement("div");
             breedLine.className = "detail breed";
             breedLine.textContent = `Breed: ${breed}`;
+
+            // Fetch Wikipedia link asynchronously
+            getWikiLink(breed).then(link => {
+                if (link) {
+                    const a = document.createElement("a");
+                    a.href = link;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer";
+                    a.textContent = breed;
+                    breedLine.textContent = "Breed: ";
+                    breedLine.appendChild(a);
+                }
+            });
 
             li.append(dot, guestNum, nameLine, speciesLine, breedLine);
             list.appendChild(li);
