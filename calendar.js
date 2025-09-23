@@ -1,3 +1,10 @@
+export const dotColours = Object.freeze({
+            RED: 'red', GREEN: 'green', DARK_BLUE: '#00008b', YELLOW: '#d4a017',
+            PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
+            GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
+            BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
+            BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'});
+
 class Calendar {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
@@ -14,13 +21,7 @@ class Calendar {
             }
         }
 
-        this.dotColours = Object.freeze({
-            RED: 'red', GREEN: 'green', DARK_BLUE: '#00008b', YELLOW: '#d4a017',
-            PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
-            GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
-            BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
-            BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey',
-        });
+        this.dotColours = dotColours;
 
         this.backgroundColours = Object.freeze({
             PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
@@ -556,7 +557,7 @@ class Calendar {
         overlay.style.justifyContent = "center";
         overlay.style.alignItems = "center";
         overlay.style.zIndex = "1000";
-        
+
         const modal = document.createElement("div");
         modal.id = "day-modal-shell"; // simple container; inner HTML will provide the actual structure
 

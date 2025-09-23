@@ -1,3 +1,5 @@
+import { dotColours } from "./calendar.js";
+
 function normalise(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
@@ -12,22 +14,24 @@ function getQueryDate() {
     return new Date(year, month, day);
 }
 
-async function loadDayView() {
+export async function loadDayView() {
     const targetDateRaw = getQueryDate();
     if (!targetDateRaw) return;
-
     const targetDate = normalise(targetDateRaw);
 
-    document.getElementById("day-title").textContent =
-        `Bookings for ${targetDate.toLocaleDateString()}`;
+    const titleEl = document.getElementById("day-title");
+    if (titleEl) {
+        titleEl.textContent = `Bookings for ${targetDate.toLocaleDateString()}`;
+    }
 
     try {
         const res = await fetch("https://kittycrypto.ddns.net:5493/calendar.json");
         if (!res.ok) throw new Error("Failed to fetch calendar.json");
         const events = await res.json();
 
-        // Build map of stays by pet
+        // Build stays map
         const stays = {};
+
         for (const ev of events) {
             if (ev.type.includes("Check-in")) {
                 if (!stays[ev.petId]) stays[ev.petId] = {};
@@ -41,50 +45,52 @@ async function loadDayView() {
             }
         }
 
+        // Gather only pets checked in on targetDate
+        const activePets = Object.values(stays)
+            .filter(s => s.checkIn && s.checkOut &&
+                targetDate >= s.checkIn && targetDate <= s.checkOut)
+            .sort((a, b) => (a.checkIn.getTime() - b.checkIn.getTime()));
+
+        // Assign colours in order
+        const colours = Object.values(dotColours);
+        activePets.forEach((stay, i) => {
+            stay.pet.colour = colours[i % colours.length];
+        });
+
+        // Render list
         const list = document.getElementById("pet-list");
+        if (!list) return;
         list.innerHTML = "";
 
         let guestCounter = 1;
-        for (const petId in stays) {
-            const stay = stays[petId];
-            if (!stay.checkIn || !stay.checkOut) continue;
+        for (const stay of activePets) {
+            const { name, species, breed, colour } = stay.pet;
 
-            if (targetDate >= stay.checkIn && targetDate <= stay.checkOut) {
-                const { name, species, breed, colour } = stay.pet;
+            const li = document.createElement("li");
+            li.className = "pet-item";
 
-                const li = document.createElement("li");
-                li.className = "pet-item";
+            const dot = document.createElement("span");
+            dot.className = "pet-dot";
+            dot.style.backgroundColor = colour;
 
-                const dot = document.createElement("span");
-                dot.className = "pet-dot";
-                dot.style.backgroundColor = colour || "grey";
+            const guestNum = document.createElement("div");
+            guestNum.className = "guest-num";
+            guestNum.textContent = `Guest ${guestCounter++}:`;
 
-                // Guest number
-                const guestNum = document.createElement("div");
-                guestNum.className = "guest-num";
-                guestNum.textContent = `Guest ${guestCounter++}:`;
+            const nameLine = document.createElement("div");
+            nameLine.className = "detail name";
+            nameLine.textContent = `Name: ${name}`;
 
-                // Details (with CSS indentation instead of spaces)
-                const nameLine = document.createElement("div");
-                nameLine.className = "detail name";
-                nameLine.textContent = `Name: ${name}`;
+            const speciesLine = document.createElement("div");
+            speciesLine.className = "detail species";
+            speciesLine.textContent = `Species: ${species}`;
 
-                const speciesLine = document.createElement("div");
-                speciesLine.className = "detail species";
-                speciesLine.textContent = `Species: ${species}`;
+            const breedLine = document.createElement("div");
+            breedLine.className = "detail breed";
+            breedLine.textContent = `Breed: ${breed}`;
 
-                const breedLine = document.createElement("div");
-                breedLine.className = "detail breed";
-                breedLine.textContent = `Breed: ${breed}`;
-
-                li.appendChild(dot);
-                li.appendChild(guestNum);
-                li.appendChild(nameLine);
-                li.appendChild(speciesLine);
-                li.appendChild(breedLine);
-
-                list.appendChild(li);
-            }
+            li.append(dot, guestNum, nameLine, speciesLine, breedLine);
+            list.appendChild(li);
         }
     } catch (err) {
         console.error("Error loading day view:", err);
