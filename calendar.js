@@ -545,45 +545,29 @@ class Calendar {
 
     openDayModal(dateStr) {
         // Remove existing modal if present
-        const existing = document.getElementById('day-modal-overlay');
+        const existing = document.getElementById("day-modal-overlay");
         if (existing) existing.remove();
 
-        const overlay = document.createElement('div');
-        overlay.id = 'day-modal-overlay';
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.background = 'rgba(0,0,0,0.5)';
-        overlay.style.display = 'flex';
-        overlay.style.justifyContent = 'center';
-        overlay.style.alignItems = 'center';
-        overlay.style.zIndex = '1000';
+        // Overlay
+        const overlay = document.createElement("div");
+        overlay.id = "day-modal-overlay";
+        overlay.className = "modal"; // use your CSS modal class
 
-        const modal = document.createElement('div');
-        modal.style.position = 'relative';
-        modal.style.background = '#fff';
-        modal.style.borderRadius = '10px';
-        modal.style.overflow = 'auto';            // scroll only if needed
-        modal.style.width = '80%';
-        modal.style.maxWidth = '600px';
-        modal.style.maxHeight = '80vh';           // limit height relative to viewport
-        modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+        // Modal content
+        const modal = document.createElement("div");
+        modal.className = "modal-content";
 
-        const closeBtn = document.createElement('span');
-        closeBtn.textContent = '❌';
-        closeBtn.style.position = 'absolute';
-        closeBtn.style.top = '10px';
-        closeBtn.style.right = '15px';            // moved a bit further left
-        closeBtn.style.cursor = 'pointer';
-        closeBtn.style.fontSize = '20px';
+        // Close button
+        const closeBtn = document.createElement("span");
+        closeBtn.className = "close";
+        closeBtn.textContent = "❌";
 
-        const iframe = document.createElement('iframe');
+        // Iframe
+        const iframe = document.createElement("iframe");
         iframe.src = `./dayView.html?d=${dateStr}`;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
+        iframe.style.width = "100%";
+        iframe.style.height = "70vh";
+        iframe.style.border = "none";
 
         modal.appendChild(closeBtn);
         modal.appendChild(iframe);
@@ -591,10 +575,13 @@ class Calendar {
         document.body.appendChild(overlay);
 
         const closeModal = () => overlay.remove();
-        closeBtn.addEventListener('click', closeModal);
-        overlay.addEventListener('click', e => {
+        closeBtn.addEventListener("click", closeModal);
+        overlay.addEventListener("click", e => {
             if (e.target === overlay) closeModal();
         });
+
+        // show the modal (CSS default is display:none)
+        overlay.style.display = "flex";
     }
 
 }

@@ -207,6 +207,14 @@ button:hover {
   font-weight: 500;
 }
 
+.modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 20px; /* tweak left/right as you like */
+  cursor: pointer;
+  font-size: 20px;
+}
+
 /* Animation */
 @keyframes fadeIn {
   from {
