@@ -184,6 +184,11 @@ class Calendar {
             const isPast = cellDate < today && !isToday;
             const dotsCount = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString()).length;
 
+            cell.addEventListener('click', () => {
+                const dateStr = `${cellDate.getFullYear()}${String(cellDate.getMonth() + 1).padStart(2, '0')}${String(cellDate.getDate()).padStart(2, '0')}`;
+                this.openDayModal(dateStr);
+            });
+
             if (!preservedBg) {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
@@ -537,6 +542,61 @@ class Calendar {
         this.date.setMonth(this.date.getMonth() + offset);
         this.render();
     }
+
+    openDayModal(dateStr) {
+        // Remove existing modal if present
+        const existing = document.getElementById('day-modal-overlay');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'day-modal-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '1000';
+
+        const modal = document.createElement('div');
+        modal.style.position = 'relative';
+        modal.style.background = '#fff';
+        modal.style.borderRadius = '10px';
+        modal.style.overflow = 'hidden';
+        modal.style.width = '80%';
+        modal.style.maxWidth = '600px';
+        modal.style.height = '70%';
+        modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+
+        const closeBtn = document.createElement('span');
+        closeBtn.textContent = '❌';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '10px';
+        closeBtn.style.right = '10px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontSize = '20px';
+
+        const iframe = document.createElement('iframe');
+        iframe.src = `./dayView.html?d=${dateStr}`;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+
+        modal.appendChild(closeBtn);
+        modal.appendChild(iframe);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const closeModal = () => overlay.remove();
+        closeBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) closeModal();
+        });
+    }
+
 }
 
 // Usage
