@@ -543,68 +543,104 @@ class Calendar {
         this.render();
     }
 
-    openDayModal(dateStr) {
-        // Remove existing modal if present
-        const existing = document.getElementById('day-modal-overlay');
-        if (existing) existing.remove();
+    async openDayModal(dateStr) {
+        // If already open, bail
+        if (document.getElementById("day-modal-overlay")) return;
 
-        const overlay = document.createElement('div');
-        overlay.id = 'day-modal-overlay';
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.background = 'rgba(0,0,0,0.5)';
-        overlay.style.display = 'flex';
-        overlay.style.justifyContent = 'center';
-        overlay.style.alignItems = 'center';
-        overlay.style.zIndex = '1000';
+        const overlay = document.createElement("div");
+        overlay.id = "day-modal-overlay";
+        overlay.style.position = "fixed";
+        overlay.style.inset = "0";
+        overlay.style.background = "rgba(0,0,0,0.5)";
+        overlay.style.display = "flex";
+        overlay.style.justifyContent = "center";
+        overlay.style.alignItems = "center";
+        overlay.style.zIndex = "1000";
+        
+        const modal = document.createElement("div");
+        modal.id = "day-modal-shell"; // simple container; inner HTML will provide the actual structure
 
-        const modal = document.createElement('div');
-        modal.style.position = 'relative';
-        modal.style.background = '#fff';
-        modal.style.borderRadius = '10px';
-        modal.style.overflowY = 'auto';            // scroll only if taller than viewport
-        modal.style.maxHeight = '90vh';            // cap at 90% viewport height
-        modal.style.maxWidth = '800px';            // prevent overly wide lines
-        modal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-        modal.style.padding = '20px';
-        modal.style.margin = '0 auto';             // centre horizontally
+        // prevent page scroll while open (matches your other project)
+        document.body.classList.add("no-scroll");
 
-        const closeBtn = document.createElement('span');
-        closeBtn.textContent = '❌';
-        closeBtn.style.position = 'absolute';
-        closeBtn.style.top = '10px';
-        closeBtn.style.right = '15px';
-        closeBtn.style.cursor = 'pointer';
-        closeBtn.style.fontSize = '20px';
-        closeBtn.style.zIndex = '10';
+        // Fetch backbone HTML
+        let html = "";
+        try {
+            const resp = await fetch("./dayView.html");
+            if (!resp.ok) throw new Error("Failed to load dayView.html");
+            html = await resp.text();
+        } catch (err) {
+            console.error("❌ Error loading modal content:", err);
+            html = `<div id="day-modal" class="modal"><div class="modal-content"><h2 id="day-title">Bookings</h2><ul id="pet-list"></ul></div></div>`;
+        }
 
-        const content = document.createElement('div');
-        content.id = 'day-modal-content';
-        content.innerHTML = '<p>Loading…</p>';
+        // Inject only the modal body from the fetched HTML (avoid full <html>/<head> injection)
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const backbone = tmp.querySelector("#day-modal") || tmp.firstElementChild;
+        if (backbone) {
+            // Ensure it's visible (your CSS sets .modal { display:none } by default)
+            backbone.style.display = "block";
+            modal.appendChild(backbone);
+        } else {
+            modal.innerHTML = html;
+        }
 
-        modal.appendChild(closeBtn);
-        modal.appendChild(content);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        const closeModal = () => overlay.remove();
-        closeBtn.addEventListener('click', closeModal);
-        overlay.addEventListener('click', e => {
-            if (e.target === overlay) closeModal();
-        });
+        // Add a real close button inside if the backbone didn't include one
+        const content = modal.querySelector(".modal-content") || modal;
+        let closeEl = content.querySelector(".close");
+        if (!closeEl) {
+            closeEl = document.createElement("span");
+            closeEl.className = "close";
+            closeEl.textContent = "❌";
+            // rely on your existing CSS `.modal-content .close { position:absolute; ... }`
+            content.style.position = content.style.position || "relative";
+            content.appendChild(closeEl);
+        }
 
-        // Fetch the dayView.html content and inject it
-        fetch(`./dayView.html?d=${dateStr}`)
-            .then(res => res.text())
-            .then(html => {
-                content.innerHTML = html;
-            })
-            .catch(err => {
-                content.innerHTML = `<p style="color:red;">Error loading content: ${err.message}</p>`;
-            });
+        // Close helpers
+        const prevUrl = window.location.href;
+        const prevState = history.state;
+        const closeModal = () => {
+            overlay.remove();
+            document.body.classList.remove("no-scroll");
+            try { history.replaceState(prevState, "", prevUrl); } catch { }
+            document.removeEventListener("keydown", onEsc);
+        };
+        const onEsc = (e) => { if (e.key === "Escape") closeModal(); };
+
+        closeEl.addEventListener("click", closeModal);
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+        document.addEventListener("keydown", onEsc);
+
+        // Make dayView.js see ?d=YYYYMMDD
+        try {
+            const u = new URL(window.location.href);
+            u.searchParams.set("d", dateStr);
+            history.replaceState(prevState, "", u);
+        } catch { }
+
+        // Ensure dayView.js is present, then run loadDayView()
+        const runLoader = () => {
+            if (typeof window.loadDayView === "function") {
+                try { window.loadDayView(); } catch (e) { console.error("loadDayView() error:", e); }
+            } else {
+                console.error("dayView.js loaded but loadDayView() not found.");
+            }
+        };
+
+        if (typeof window.loadDayView === "function") {
+            runLoader();
+        } else {
+            const script = document.createElement("script");
+            script.src = "./dayView.js";
+            script.onload = runLoader;
+            script.onerror = () => console.error("Failed to load dayView.js");
+            document.body.appendChild(script);
+        }
     }
 }
 
