@@ -13,7 +13,7 @@ async function loadDayView() {
     if (!targetDate) return;
 
     const dateKey = targetDate.toDateString();
-    document.getElementById("day-title").textContent = `Bookings for ${targetDate.trighjtoLocaleDateString()}`;
+    document.getElementById("day-title").textContent = `Bookings for ${targetDate.toLocaleDateString()}`;
 
     try {
         const res = await fetch("https://kittycrypto.ddns.net:5493/calendar.json");
