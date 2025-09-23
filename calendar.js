@@ -1,7 +1,18 @@
 class Calendar {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.date = new Date(); // Current date
+        this.date = new Date(); // default current date
+
+        // Check for ?m=YYYYMM in query string
+        const params = new URLSearchParams(window.location.search);
+        const m = params.get("m");
+        if (m && /^\d{6}$/.test(m)) {
+            const year = parseInt(m.slice(0, 4), 10);
+            const month = parseInt(m.slice(4, 6), 10);
+            if (!isNaN(year) && !isNaN(month) && month >= 1 && month <= 12) {
+                this.date = new Date(year, month - 1, 1);
+            }
+        }
 
         this.dotColours = Object.freeze({
             RED: 'red', GREEN: 'green', DARK_BLUE: '#00008b', YELLOW: '#d4a017',
@@ -12,16 +23,12 @@ class Calendar {
         });
 
         this.backgroundColours = Object.freeze({
-            PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb', BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
+            PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
+            BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
         });
 
-        // Each dot is an object: { date: Date, colour: string }
         this.dots = [];
-
-        // Texts stored in an object keyed by date.toISOString()
         this.texts = {};
-
-        // Bank holidays for multiple regions
         this.bankHolidays = {};
 
         this.render();
@@ -64,8 +71,16 @@ class Calendar {
             const [year, month] = monthPicker.value.split('-').map(Number);
             this.date.setFullYear(year);
             this.date.setMonth(month - 1);
+
+            // Update query string with ?m=YYYYMM
+            const newM = `${year}${String(month).padStart(2, '0')}`;
+            const url = new URL(window.location.href);
+            url.searchParams.set("m", newM);
+            window.history.replaceState({}, "", url); // Update URL without reload
+
             this.render(); // Re-render the calendar
         });
+
 
         header.appendChild(backButton);
         header.appendChild(monthPicker);
