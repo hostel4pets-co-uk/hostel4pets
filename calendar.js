@@ -149,11 +149,14 @@ class Calendar {
         const tbody = table.querySelector('tbody');
         const cells = tbody.querySelectorAll('td');
 
+        // map to preserve backgrounds per cell
+        const preserved = new Map();
+
         cells.forEach(cell => {
-            const preservedBg = cell.style.backgroundColor;
+            preserved.set(cell, cell.style.backgroundColor);
             cell.innerText = '';
             cell.className = '';
-            cell.style.backgroundColor = preservedBg;
+            cell.style.backgroundColor = preserved.get(cell);
             cell.style.fontWeight = '';
             cell.style.position = '';
         });
@@ -169,6 +172,8 @@ class Calendar {
             const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
             if (!cell) continue;
 
+            const preservedBg = preserved.get(cell);
+
             cell.innerText = day;
             cell.style.textAlign = 'left';
             cell.style.verticalAlign = 'top';
@@ -183,7 +188,6 @@ class Calendar {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
 
-            // Re-add dots for this date
             const dotsForDate = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString());
             dotsForDate.forEach(dot => this.addDot(cellDate, dot.colour));
         }
