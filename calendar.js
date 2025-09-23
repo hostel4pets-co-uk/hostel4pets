@@ -44,6 +44,7 @@ class Calendar {
         await this.fetchBankHolidays();
         await this.bankHolidaysToTexts();
         this.addTexts();
+        await this.loadBookings();
     }
 
     // Create the header with navigation buttons and a month picker
@@ -471,12 +472,6 @@ class Calendar {
 
                     // Fill entire range with grey background
                     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                        const dateKey = this.getDateKey(d);
-                        if (!this.texts[dateKey]) this.texts[dateKey] = [];
-                        if (!this.texts[dateKey].includes("Not Available")) {
-                            this.texts[dateKey].push("Not Available");
-                        }
-
                         const table = document.getElementById('Calendar');
                         const tbody = table.querySelector('tbody');
 
@@ -530,6 +525,4 @@ class Calendar {
 // Usage
 document.addEventListener('DOMContentLoaded', () => {
     const calendar = new Calendar('calendar-container');
-
-    calendar.loadBookings();
 });
