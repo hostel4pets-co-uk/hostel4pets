@@ -51,9 +51,7 @@ class Calendar {
 
         document.addEventListener("booking:datesChanged", e => {
             const { checkIn, checkOut } = e.detail;
-            if (window.calendarInstance) {
-                window.calendarInstance.highlightSelected(checkIn, checkOut);
-            }
+            this.highlightSelected(checkIn, checkOut);
         });
 
     }
@@ -513,6 +511,10 @@ class Calendar {
 
     // Load bookings from bookings.json and add dots to the calendar
     async loadBookings() {
+        if (this.abortController) this.abortController.abort(); // Abort any ongoing fetch
+        this.abortController = new AbortController(); // Create a new controller for this fetch
+        const signal = this.abortController.signal; // Get the signal
+
         try {
             const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json');
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
@@ -570,7 +572,11 @@ class Calendar {
                 }
             }
         } catch (error) {
-            console.error('Error loading bookings:', error);
+            if (error.name === 'AbortError') {
+                console.log('Fetch aborted');
+            } else {
+                console.error('Error loading bookings:', error);
+            }
         }
     }
 
