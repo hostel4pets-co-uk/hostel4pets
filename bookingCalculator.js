@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
     file.href += '?v=' + new Date().getTime();
   });
 
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-    document.body.classList.add('mobile');
-  }
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('checkInDate').setAttribute('min', today);
+  document.getElementById('checkOutDate').setAttribute('min', today);
 });
