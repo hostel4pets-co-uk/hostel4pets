@@ -291,13 +291,12 @@ button:hover {
 }
 
 .calendar-container button {
-  padding: 4px 8px;
+  padding: 5px 10px;
   background: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  flex: 0 0 auto;
 }
 
 .calendar-container button:hover {
@@ -348,27 +347,27 @@ button:hover {
 }
 
 .legend-box.past {
-  background-color: var(--past, #ddd);
+  background-color: var(--past, #d3d3d3);
 }
 
 .legend-box.today {
-  background-color: var(--today, #ffff99);
+  background-color: var(--today, #add8e6);
 }
 
 .legend-box.busy {
-  background-color: var(--busy, #ffa500);
+  background-color: var(--busy, #ffebcd);
 }
 
 .legend-box.booked {
-  background-color: var(--booked, #ff4c4c);
+  background-color: var(--booked, #ffc0cb);
 }
 
 .legend-box.bankholiday {
-  background-color: var(--bankholiday, #87cefa);
+  background-color: var(--bankholiday, #e6ccff);
 }
 
 .legend-box.not-available {
-  background-color: var(--not-available, #999);
+  background-color: var(--not-available, #a9a9a9);
 }
 
 /* Animation */
