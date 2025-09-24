@@ -104,18 +104,18 @@ button:hover {
 }
 
 /* Responsive styles for mobile screens */
-.mobile .container {
+.container.mobile {
   max-width: 90%;
   min-width: 80%;
   margin-left: 5%;
   margin-right: 5%;
 }
 
-.mobile button,
-.mobile input,
-.mobile select,
-.mobile textarea,
-.mobile label {
+.container.mobile button,
+.container.mobile input,
+.container.mobile select,
+.container.mobile textarea,
+.container.mobile label {
   /* Increase sizes for mobile */
   font-size: calc(100% + 25%);
 }
