@@ -347,27 +347,27 @@ button:hover {
 }
 
 .legend-box.past {
-  background-color: var(--past, #d3d3d3);
+  background-color: var(--past);
 }
 
 .legend-box.today {
-  background-color: var(--today, #add8e6);
+  background-color: var(--today);
 }
 
 .legend-box.busy {
-  background-color: var(--busy, #ffebcd);
+  background-color: var(--busy);
 }
 
 .legend-box.booked {
-  background-color: var(--booked, #ffc0cb);
+  background-color: var(--booked);
 }
 
 .legend-box.bankholiday {
-  background-color: var(--bankholiday, #e6ccff);
+  background-color: var(--bankholiday);
 }
 
 .legend-box.not-available {
-  background-color: var(--not-available, #a9a9a9);
+  background-color: var(--not-available);
 }
 
 /* Animation */

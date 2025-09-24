@@ -6,6 +6,18 @@ export const dotColours = Object.freeze({
     BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
 });
 
+export const backgroundColours = Object.freeze({
+    PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
+    BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
+});
+
+(() => {
+    const root = document.documentElement;
+    Object.entries(backgroundColours).forEach(([key, value]) => {
+        root.style.setProperty(`--${key.toLowerCase()}`, value);
+    });
+})();
+
 class Calendar {
 
     constructor(containerId) {
@@ -23,10 +35,7 @@ class Calendar {
 
         this.dotColours = dotColours;
 
-        this.backgroundColours = Object.freeze({
-            PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
-            BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
-        });
+        this.backgroundColours = backgroundColours;
 
         this.dots = [];
         this.texts = {};
@@ -36,7 +45,7 @@ class Calendar {
         this.shortDayNames = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
         this.veryShortDayNames = ['S', 'm', 't', 'w', 'T', 'f', 's'];
         this.thEls = [];
-        
+
         this.render();
     }
 
