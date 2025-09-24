@@ -104,9 +104,9 @@ button:hover {
 }
 
 /* Responsive styles for mobile screens */
-/* .mobile .container {
+.mobile .container {
   width: 95%;
-} */
+}
 
 .mobile button,
 .mobile input,
