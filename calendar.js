@@ -391,37 +391,20 @@ class Calendar {
     // Add a legend to the calendar
     addLegend() {
         const legend = document.createElement('div');
-        legend.style.marginTop = '20px';
+        legend.className = 'calendar-legend';
         legend.innerHTML = `
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.PAST}; margin-right: 5px;"></span>Past Day
+        <div class="calendar-legend-row">
+            <div><span class="legend-box past"></span>Past Day</div>
+            <div><span class="legend-box today"></span>Today</div>
+            <div><span class="legend-box busy"></span>Busy</div>
+            <div><span class="legend-box booked"></span>Completely Booked</div>
+            <div><span class="legend-box bankholiday"></span>Bank Holiday</div>
+            <div><span class="legend-box not-available"></span>Not Available</div>
             </div>
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.TODAY}; margin-right: 5px;"></span>Today
-            </div>
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.BUSY}; margin-right: 5px;"></span>Busy
-            </div>
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.BOOKED}; margin-right: 5px;"></span>Completely Booked
-            </div>
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.BANKHOLIDAY}; margin-right: 5px;"></span>Bank Holiday
-            </div>
-            <div>
-                <span style="display: inline-block; width: 20px; height: 20px;
-                background-color: ${this.backgroundColours.NOT_AVAILABLE}; margin-right: 5px;"></span>Not Available
-            </div>
-        </div>
-    `;
+        `;
         this.container.appendChild(legend);
     }
+
 
     getDateKey(date) {
         const year = date.getFullYear();

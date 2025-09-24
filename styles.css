@@ -250,7 +250,7 @@ button:hover {
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
+  overflow-x: hidden; /* stop sideways scroll, let children wrap instead */
 }
 
 .calendar-title {
@@ -281,7 +281,7 @@ button:hover {
   border: 2px solid #4caf50;
 }
 
-/* Calendar buttons and inputs */
+/* Calendar header */
 .calendar-container .calendar-header {
   display: flex;
   justify-content: space-between;
@@ -291,13 +291,13 @@ button:hover {
 }
 
 .calendar-container button {
-  padding: 5px 10px;
+  padding: 4px 8px;
   background: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  flex-shrink: 0; /* don’t collapse buttons */
+  flex: 0 0 auto;
 }
 
 .calendar-container button:hover {
@@ -305,11 +305,71 @@ button:hover {
 }
 
 .calendar-container input[type="month"] {
-  flex: 1;      /* shrink/stretch with space */
-  min-width: 0; /* prevents overflow on slim screens */
+  flex: 1; /* takes all remaining space */
+  min-width: 0;
+  font-size: 0.85em;
+  text-align: center;
+}
+
+/* Legend */
+.calendar-container .calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 0.8em;
+}
+
+.calendar-legend {
+  margin-top: 15px;
   font-size: 0.85em;
 }
 
+.calendar-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 15px;
+  align-items: center;
+}
+
+.calendar-legend-row div {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.legend-box {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  border-radius: 3px;
+}
+
+.legend-box.past {
+  background-color: var(--past, #ddd);
+}
+
+.legend-box.today {
+  background-color: var(--today, #ffff99);
+}
+
+.legend-box.busy {
+  background-color: var(--busy, #ffa500);
+}
+
+.legend-box.booked {
+  background-color: var(--booked, #ff4c4c);
+}
+
+.legend-box.bankholiday {
+  background-color: var(--bankholiday, #87cefa);
+}
+
+.legend-box.not-available {
+  background-color: var(--not-available, #999);
+}
 
 /* Animation */
 @keyframes fadeIn {
