@@ -55,6 +55,7 @@ html {
   margin-left: 2.5%;
   margin-right: 2.5%;
   font-family: Arial, sans-serif;
+  box-sizing: border-box;
 }
 
 .form-group,
@@ -105,10 +106,10 @@ button:hover {
 
 /* Responsive styles for mobile screens */
 .container.mobile {
-  max-width: 90%;
-  min-width: 80%;
-  margin-left: 5%;
-  margin-right: 5%;
+  max-width: 90% !important;
+  min-width: 80% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .container.mobile button,
