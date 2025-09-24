@@ -85,6 +85,8 @@
   </div>
 
   <script type="module" src="./calendar.js"></script>
+
+  <!-- Responsive Layout Script -->
   <script>
     function arrangeLayout() {
       const wrapper = document.querySelector('.flex-wrapper');
@@ -96,10 +98,22 @@
         wrapper.style.alignItems = 'center';
       }
     }
-
     window.addEventListener('resize', arrangeLayout);
     window.addEventListener('DOMContentLoaded', arrangeLayout);
   </script>
+
+  <!-- Mobile Detection Script -->
+  <script src="https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const md = new MobileDetect(window.navigator.userAgent);
+
+      if (md.mobile()) {
+        document.body.classList.add("mobile");
+      }
+    });
+  </script>
+
 </body>
 
 </html>
