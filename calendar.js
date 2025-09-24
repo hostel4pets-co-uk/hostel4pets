@@ -56,6 +56,7 @@ class Calendar {
         document.addEventListener("booking:datesChanged", e => {
             const start = new Date(e.detail.checkIn);
             start.setHours(0, 0, 0, 0);
+
             const end = new Date(e.detail.checkOut);
             end.setHours(23, 59, 59, 999);
 
@@ -277,7 +278,6 @@ class Calendar {
     }
 
     highlightSelected(checkIn, checkOut) {
-        // Clear previous selections
         this.container.querySelectorAll("td.selected").forEach(cell => {
             cell.classList.remove("selected");
         });
@@ -286,7 +286,9 @@ class Calendar {
 
         const cells = this.container.querySelectorAll("td[data-date]");
         cells.forEach(cell => {
-            const cellDate = new Date(cell.getAttribute("data-date"));
+            const [year, month, day] = cell.getAttribute("data-date").split("-").map(Number);
+            const cellDate = new Date(year, month - 1, day, 0, 0, 0, 0); // local midnight
+
             if (cellDate >= checkIn && cellDate <= checkOut) {
                 cell.classList.add("selected");
             }
