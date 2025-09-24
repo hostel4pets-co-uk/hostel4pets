@@ -4,6 +4,42 @@ function normalise(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+async function searchWiki(term) {
+    const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json&origin=*`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.query?.search?.[0] || null;
+}
+
+async function getWikiLink(breed) {
+    const firstHit = await searchWiki(breed);
+    if (!firstHit) return await tryAnimalVariants(breed);
+
+    const title = firstHit.title.toLowerCase();
+    if (title.includes(breed.toLowerCase())) {
+        return `https://en.wikipedia.org/wiki/${encodeURIComponent(firstHit.title.replace(/ /g, "_"))}`;
+    }
+
+    return await tryAnimalVariants(breed);
+}
+
+async function tryAnimalVariants(breed) {
+    const attempts = [`${breed} dog`, `${breed} cat`, `${breed} breed`];
+
+    for (const term of attempts) {
+        const hit = await searchWiki(term);
+        if (!hit) continue;
+
+        const valid = await isAnimalBreed(hit.pageid);
+        if (!valid) continue;
+
+        return `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`;
+    }
+
+    return null;
+}
+
 async function isAnimalBreed(pageId) {
     try {
         const url = `https://en.wikipedia.org/w/api.php?action=query&prop=categories&pageids=${pageId}&cllimit=50&format=json&origin=*`;
@@ -17,29 +53,6 @@ async function isAnimalBreed(pageId) {
     } catch {
         return false;
     }
-}
-
-async function getWikiLink(breed) {
-    const attempts = [breed, `${breed} dog`, `${breed} cat`, `${breed} breed`];
-
-    for (const term of attempts) {
-        try {
-            const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json&origin=*`;
-            const res = await fetch(url);
-            if (!res.ok) continue;
-            const data = await res.json();
-            const hit = data?.query?.search?.[0];
-            if (!hit) continue;
-
-            if (await isAnimalBreed(hit.pageid)) {
-                return `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`;
-            }
-        } catch {
-            // try next attempt
-        }
-    }
-
-    return null; // nothing suitable found
 }
 
 function getQueryDate() {
@@ -71,15 +84,23 @@ async function loadDayView() {
         const stays = {};
 
         for (const ev of events) {
-            if (ev.type.includes("Check-in")) {
-                if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkIn = normalise(new Date(ev.start));
-                stays[ev.petId].pet = ev;
+            const s = (stays[ev.petId] ||= {});
+
+            const type = ev.type.toLowerCase().replace(/[\s-]+/g, "");
+
+            const isIn = type.includes("checkin");
+            const isOut = type.includes("checkout");
+
+            if (isIn === isOut) {
+                continue;
             }
-            if (ev.type.includes("Check-out")) {
-                if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkOut = normalise(new Date(ev.end));
-                stays[ev.petId].pet = ev;
+
+            if (isIn) {
+                s.checkIn = normalise(new Date(ev.start));
+                s.pet = ev;
+            } else {
+                s.checkOut = normalise(new Date(ev.end));
+                s.pet = ev;
             }
         }
 
