@@ -305,7 +305,7 @@ button:hover {
 
 .calendar-container input[type="month"] {
   flex: 1; /* takes all remaining space */
-  min-width: 0;
+  min-width: 120px;
   font-size: 0.85em;
   text-align: center;
 }
@@ -326,10 +326,10 @@ button:hover {
 }
 
 .calendar-legend-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px 15px;
-  align-items: center;
+  margin-top: 10px;
 }
 
 .calendar-legend-row div {
