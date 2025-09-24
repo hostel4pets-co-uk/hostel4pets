@@ -7,7 +7,7 @@ export const dotColours = Object.freeze({
 });
 
 export const backgroundColours = Object.freeze({
-    PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
+    SELECTED: '#AADBAC', PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
     BANKHOLIDAY: '#e6ccff', NOTAVAILABLE: '#a9a9a9'
 });
 
@@ -47,6 +47,14 @@ class Calendar {
         this.thEls = [];
 
         this.render();
+
+        document.addEventListener("booking:datesChanged", e => {
+            const { checkIn, checkOut } = e.detail;
+            if (window.calendarInstance) {
+                window.calendarInstance.highlightSelected(checkIn, checkOut);
+            }
+        });
+
     }
 
     // Render the entire calendar UI
@@ -204,12 +212,13 @@ class Calendar {
 
             const preservedBg = preserved.get(cell);
 
+            const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
             cell.innerText = day;
+            cell.dataset.date = cellDate.toISOString().split("T")[0];
             cell.style.textAlign = 'left';
             cell.style.verticalAlign = 'top';
             cell.style.fontSize = '0.85em';
 
-            const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
             const isToday = cellDate.toDateString() === today.toDateString();
             const isPast = cellDate < today && !isToday;
             const dotsCount = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString()).length;
@@ -247,6 +256,22 @@ class Calendar {
         }
     }
 
+    highlightSelected(checkIn, checkOut) {
+        // Clear previous selections
+        this.container.querySelectorAll(".selected").forEach(cell => {
+            cell.classList.remove("selected");
+        });
+
+        if (!checkIn || !checkOut) return;
+
+        const cells = this.container.querySelectorAll("td[data-date]");
+        cells.forEach(cell => {
+            const cellDate = new Date(cell.getAttribute("data-date"));
+            if (cellDate >= checkIn && cellDate <= checkOut) {
+                cell.classList.add("selected");
+            }
+        });
+    }
 
     // Fetch and return bank holidays for Scotland, England, and Wales
     async fetchBankHolidays() {
@@ -424,7 +449,7 @@ class Calendar {
         legend.className = 'calendar-legend';
         legend.innerHTML = `
         <div class="calendar-legend-row">
-            <div><span class="legend-box past"></span>Past Day</div>
+            <div><span class="legend-box selected"></span>Selected Day(s)</div>
             <div><span class="legend-box today"></span>Today</div>
             <div><span class="legend-box busy"></span>Busy</div>
             <div><span class="legend-box booked"></span>Completely Booked</div>

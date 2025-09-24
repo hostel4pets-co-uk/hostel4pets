@@ -278,7 +278,6 @@ button:hover {
 
 .calendar-container .today {
   font-weight: bold;
-  border: 2px solid #4caf50;
 }
 
 /* Calendar header */
@@ -380,6 +379,14 @@ button:hover {
 
 .legend-box.notavailable {
   background-color: var(--notavailable);
+}
+
+.legend-box.selected {
+  background-color: var(--selected);
+}
+
+.calendar-container td.selected {
+  background-color: var(--selected);
 }
 
 /* Animation */

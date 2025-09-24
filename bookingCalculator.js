@@ -102,6 +102,13 @@ function calculateTotal() {
     document.getElementById('checkOutTime').value
   );
 
+  // Dispatch selection change event if both dates are valid
+  if (!isNaN(checkIn) && !isNaN(checkOut)) {
+    document.dispatchEvent(new CustomEvent("booking:datesChanged", {
+      detail: { checkIn, checkOut }
+    }));
+  }
+
   const numOfPets = parseInt(document.getElementById('numOfPets').value);
   const neuteredStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('neutered' + (i + 1)).value);
   const cubStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('cub' + (i + 1)).value);
