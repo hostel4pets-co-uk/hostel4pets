@@ -298,3 +298,11 @@ button:hover {
     transform: translateY(0);
   }
 }
+
+.flex-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* minimal gap between containers */
+  width: 100%;
+  box-sizing: border-box;
+}
