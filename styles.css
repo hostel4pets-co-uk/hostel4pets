@@ -105,7 +105,10 @@ button:hover {
 
 /* Responsive styles for mobile screens */
 .mobile .container {
-  width: 95%;
+  max-width: 90%;
+  min-width: 80%;
+  margin-left: 5%;
+  margin-right: 5%;
 }
 
 .mobile button,
