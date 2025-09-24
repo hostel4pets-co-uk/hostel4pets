@@ -104,11 +104,13 @@ button:hover {
 }
 
 /* Responsive styles for mobile screens */
+/*
 .mobile .container {
-  width: 75vw; /* Adjust width to account for 5% margin on each side */
-  margin: 5% auto; /* 5% top margin, auto horizontal margin for centering, and 5% bottom margin */
-  padding: 25px; /* Adjust padding if necessary for mobile */
+  width: 75vw; /* Adjust width to account for 5% margin on each side
+  margin: 5% auto; /* 5% top margin, auto horizontal margin for centering, and 5% bottom margin
+  padding: 25px; /* Adjust padding if necessary for mobile
 }
+*/
 
 .mobile button,
 .mobile input,
@@ -308,11 +310,4 @@ button:hover {
   gap: 10px; /* minimal gap between containers */
   width: 100%;
   box-sizing: border-box;
-}
-
-/* Zoom out slightly on iOS devices to prevent layout issues */
-@supports (-webkit-touch-callout: none) {
-  html {
-    zoom: 0.95;
-  }
 }
