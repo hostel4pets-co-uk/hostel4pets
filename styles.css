@@ -309,3 +309,10 @@ button:hover {
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Zoom out slightly on iOS devices to prevent layout issues */
+@supports (-webkit-touch-callout: none) {
+  html {
+    zoom: 0.95;
+  }
+}
