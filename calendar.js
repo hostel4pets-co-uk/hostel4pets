@@ -11,6 +11,10 @@ export const backgroundColours = Object.freeze({
     BANKHOLIDAY: '#e6ccff', NOTAVAILABLE: '#a9a9a9'
 });
 
+const FULLDAYDAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SHORTDAYNAMES = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
+const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
+
 (() => {
     const root = document.documentElement;
     Object.entries(backgroundColours).forEach(([key, value]) => {
@@ -41,9 +45,6 @@ class Calendar {
         this.texts = {};
         this.bankHolidays = {};
 
-        this.fullDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        this.shortDayNames = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
-        this.veryShortDayNames = ['S', 'm', 't', 'w', 'T', 'f', 's'];
         this.thEls = [];
 
         this.render();
@@ -125,7 +126,7 @@ class Calendar {
         // Create table header for days of the week
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        for (const day of this.fullDayNames) {
+        for (const day of FULLDAYDAMES) {
             const th = document.createElement('th');
             th.innerText = day;
             this.thEls.push(th);
@@ -174,10 +175,10 @@ class Calendar {
         const veryNarrow = this.container.offsetWidth < 350;
         this.thEls.forEach((th, i) => {
             th.innerText = veryNarrow ?
-                this.veryShortDayNames[i] :
+                VERYSHORTDAYNAMES[i] :
                 narrow ?
-                    this.shortDayNames[i] :
-                    this.fullDayNames[i];
+                    SHORTDAYNAMES[i] :
+                    FULLDAYDAMES[i];
         });
     }
 
