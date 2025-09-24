@@ -154,7 +154,7 @@ class Calendar {
     updateDayHeaders() {
         if (!this.thEls) return;
         const narrow = this.container.offsetWidth < 400;
-        const veryNarrow = this.container.offsetWidth < 200;
+        const veryNarrow = this.container.offsetWidth < 350;
         this.thEls.forEach((th, i) => {
             th.innerText = veryNarrow ?
                 this.veryShortDayNames[i] :
