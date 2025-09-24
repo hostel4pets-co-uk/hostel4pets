@@ -7,6 +7,7 @@ export const dotColours = Object.freeze({
 });
 
 class Calendar {
+
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.date = new Date(); // default current date
@@ -32,6 +33,10 @@ class Calendar {
         this.bankHolidays = {};
 
         this.render();
+
+        this.fullDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        this.shortDayNames = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
+        this.thEls = [];
     }
 
     // Render the entire calendar UI
@@ -102,10 +107,10 @@ class Calendar {
         // Create table header for days of the week
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        for (const day of daysOfWeek) {
+        for (const day of this.fullDayNames) {
             const th = document.createElement('th');
             th.innerText = day;
+            this.thEls.push(th);
             th.style.border = '1px solid #ddd';
             th.style.padding = '8px';
             th.style.textAlign = 'center';
@@ -113,6 +118,8 @@ class Calendar {
         }
         thead.appendChild(headerRow);
         table.appendChild(thead);
+        this.updateDayHeaders();
+        window.addEventListener('resize', () => this.updateDayHeaders());
 
         // Create table body for the calendar dates
         const tbody = document.createElement('tbody');
@@ -141,6 +148,14 @@ class Calendar {
 
         table.appendChild(tbody);
         this.container.appendChild(table);
+    }
+
+    updateDayHeaders() {
+        if (!this.thEls) return;
+        const narrow = this.container.offsetWidth < 400;
+        this.thEls.forEach((th, i) => {
+            th.innerText = narrow ? this.shortDayNames[i] : this.fullDayNames[i];
+        });
     }
 
     // Update the calendar table with the current month
