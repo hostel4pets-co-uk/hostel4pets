@@ -109,7 +109,9 @@
       const md = new MobileDetect(window.navigator.userAgent);
 
       if (md.mobile()) {
-        document.body.classList.add("mobile");
+        document.querySelectorAll(".container").forEach(el => {
+          el.classList.add("mobile");
+        });
       }
     });
   </script>
