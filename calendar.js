@@ -53,24 +53,23 @@ class Calendar {
     // Create the header with navigation buttons and a month picker
     createHeader() {
         const header = document.createElement('div');
-        header.style.display = 'flex';
-        header.style.justifyContent = 'space-between';
-        header.style.alignItems = 'center';
-        header.style.marginBottom = '10px';
+        header.classList.add('calendar-header');
 
         const backButton = document.createElement('button');
         backButton.innerText = '<';
+        backButton.classList.add('calendar-nav-button');
         backButton.addEventListener('click', () => this.changeMonth(-1));
 
         const forwardButton = document.createElement('button');
         forwardButton.innerText = '>';
+        forwardButton.classList.add('calendar-nav-button');
         forwardButton.addEventListener('click', () => this.changeMonth(1));
 
         // Always visible month picker
         const monthPicker = document.createElement('input');
         monthPicker.type = 'month';
         monthPicker.value = `${this.date.getFullYear()}-${String(this.date.getMonth() + 1).padStart(2, '0')}`;
-        monthPicker.style.margin = '0 10px';
+        monthPicker.classList.add('calendar-month-picker');
         monthPicker.addEventListener('change', () => {
             const [year, month] = monthPicker.value.split('-').map(Number);
             this.date.setFullYear(year);
@@ -97,8 +96,7 @@ class Calendar {
     createTable() {
         const table = document.createElement('table');
         table.id = 'Calendar';
-        table.style.borderCollapse = 'collapse';
-        table.style.width = '100%';
+        table.classList.add('calendar-table');
 
         // Create table header for days of the week
         const thead = document.createElement('thead');
@@ -107,9 +105,7 @@ class Calendar {
         for (const day of daysOfWeek) {
             const th = document.createElement('th');
             th.innerText = day;
-            th.style.border = '1px solid #ddd';
-            th.style.padding = '8px';
-            th.style.textAlign = 'center';
+            th.classList.add('calendar-heading');
             headerRow.appendChild(th);
         }
         thead.appendChild(headerRow);
@@ -128,9 +124,7 @@ class Calendar {
 
         Array.from({ length: rowsNeeded * 7 }).forEach((_, index) => {
             const td = document.createElement('td');
-            td.style.border = '1px solid #ddd';
-            td.style.padding = '8px';
-            td.style.textAlign = 'center';
+            td.classList.add('calendar-cell');
             td.style.cursor = 'pointer';
             td.dataset.day = index % 7;
             td.dataset.week = Math.floor(index / 7);
@@ -156,7 +150,7 @@ class Calendar {
         cells.forEach(cell => {
             preserved.set(cell, cell.style.backgroundColor);
             cell.innerText = '';
-            cell.className = '';
+            cell.className = 'calendar-cell';
             cell.style.backgroundColor = preserved.get(cell);
             cell.style.fontWeight = '';
             cell.style.position = '';
@@ -208,7 +202,7 @@ class Calendar {
         } else if (isToday) {
             cell.style.backgroundColor = this.backgroundColours.TODAY;
             cell.style.fontWeight = 'bold';
-            cell.className = 'today';
+            cell.classList.add('today');
         } else if (dots > 5) {
             cell.style.backgroundColor = this.backgroundColours.BOOKED;
         } else if (dots >= 4 && dots <= 5) {

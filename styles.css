@@ -45,11 +45,11 @@ html {
   flex-direction: column;
   align-items: center;
   background-color: var(--white);
-  margin: 10vh auto;
-  padding: 20px;
-  width: 80vw;
+  margin: clamp(16px, 8vh, 64px) auto;
+  padding: clamp(16px, 4vw, 32px);
+  width: min(92vw, 720px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
+  max-width: 720px;
   border-radius: 20px;
   font-family: Arial, sans-serif;
 }
@@ -235,31 +235,76 @@ button:hover {
 
 /* Calendar component styles */
 .calendar-container {
-  margin: 20px auto;
-  padding: 10px;
-  max-width: 600px;
+  margin: clamp(8px, 3vh, 24px) auto;
+  padding: clamp(12px, 3vw, 24px);
+  width: 100%;
+  max-width: inherit;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: clamp(12px, 2vw, 20px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-title {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: clamp(8px, 2vw, 16px);
+}
+
+.calendar-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: clamp(8px, 2vw, 18px);
+  margin-bottom: clamp(8px, 2vw, 16px);
+}
+
+.calendar-nav-button {
+  flex: 0 0 auto;
+  font-size: clamp(1.1rem, 3.8vw, 1.6rem);
+  padding: clamp(8px, 2vw, 12px);
+  border-radius: clamp(8px, 2vw, 12px);
+  min-width: clamp(44px, 10vw, 56px);
+}
+
+.calendar-month-picker {
+  flex: 1 1 clamp(180px, 45vw, 320px);
+  min-width: clamp(160px, 40vw, 320px);
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
+  padding: clamp(6px, 1.5vw, 10px);
+  border-radius: clamp(8px, 2vw, 12px);
+  border: 1px solid #ccc;
 }
 
 /* Calendar table */
 .calendar-container table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  font-size: clamp(0.7rem, 2.2vw, 1rem);
 }
 
-.calendar-container th,
-.calendar-container td {
-  width: 14%;
-  height: 50px;
+.calendar-heading,
+.calendar-cell {
+  width: 14.2857%;
+  padding: clamp(6px, 1.6vw, 12px);
+  border: 1px solid #ddd;
+  text-align: left;
+  vertical-align: top;
+}
+
+.calendar-heading {
   text-align: center;
-  vertical-align: middle;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.calendar-cell {
+  min-height: clamp(52px, 14vw, 112px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: clamp(2px, 0.8vw, 6px);
 }
 
 .calendar-container .today {
@@ -269,11 +314,11 @@ button:hover {
 
 /* Calendar buttons */
 .calendar-container button {
-  padding: 5px 10px;
+  padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2.6vw, 16px);
   background: #4caf50;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: clamp(6px, 1.6vw, 10px);
   cursor: pointer;
 }
 
