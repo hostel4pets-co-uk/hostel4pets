@@ -11,7 +11,7 @@ export const backgroundColours = Object.freeze({
     BANKHOLIDAY: '#e6ccff', NOTAVAILABLE: '#a9a9a9'
 });
 
-const FULLDAYDAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const FULLDAYNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SHORTDAYNAMES = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
 const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
 
@@ -27,6 +27,8 @@ class Calendar {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.date = new Date(); // default current date
+
+        this.onResize = this.updateDayHeaders.bind(this);
 
         const m = new URLSearchParams(window.location.search).get("m") || "";
         const match = m.match(/^(\d{4})(\d{2})$/);
@@ -47,11 +49,19 @@ class Calendar {
 
         this.thEls = [];
 
+        this.loadId = 0;
+
         this.render();
 
         document.addEventListener("booking:datesChanged", e => {
-            const { checkIn, checkOut } = e.detail;
-            this.highlightSelected(checkIn, checkOut);
+            const start = new Date(e.detail.checkIn);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(e.detail.checkOut);
+            end.setHours(23, 59, 59, 999);
+
+            this.selectedCheckIn = start;
+            this.selectedCheckOut = end;
+            this.highlightSelected(this.selectedCheckIn, this.selectedCheckOut);
         });
 
     }
@@ -116,6 +126,7 @@ class Calendar {
 
     // Create the calendar table
     createTable() {
+        this.thEls = []; // Reset thEls to avoid duplicates
         const table = document.createElement('table');
         table.id = 'Calendar';
         table.style.borderCollapse = 'collapse';
@@ -124,7 +135,7 @@ class Calendar {
         // Create table header for days of the week
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        for (const day of FULLDAYDAMES) {
+        for (const day of FULLDAYNAMES) {
             const th = document.createElement('th');
             th.innerText = day;
             this.thEls.push(th);
@@ -136,7 +147,8 @@ class Calendar {
         thead.appendChild(headerRow);
         table.appendChild(thead);
         this.updateDayHeaders();
-        window.addEventListener('resize', () => this.updateDayHeaders());
+        window.removeEventListener('resize', this.onResize);
+        window.addEventListener('resize', this.onResize);
 
         // Create table body for the calendar dates
         const tbody = document.createElement('tbody');
@@ -176,7 +188,7 @@ class Calendar {
                 VERYSHORTDAYNAMES[i] :
                 narrow ?
                     SHORTDAYNAMES[i] :
-                    FULLDAYDAMES[i];
+                    FULLDAYNAMES[i];
         });
     }
 
@@ -186,16 +198,24 @@ class Calendar {
         const tbody = table.querySelector('tbody');
         const cells = tbody.querySelectorAll('td');
 
-        // map to preserve backgrounds per cell
-        const preserved = new Map();
-
+        // reset cells but preserve bank holidays
         cells.forEach(cell => {
-            preserved.set(cell, cell.style.backgroundColor);
-            cell.innerText = '';
-            cell.className = '';
-            cell.style.backgroundColor = preserved.get(cell);
-            cell.style.fontWeight = '';
-            cell.style.position = '';
+            if (cell.dataset.locked === 'bank') {
+                cell.textContent = '';
+                cell.className = '';
+                cell.style.fontWeight = '';
+                cell.style.position = '';
+                delete cell.dataset.date;
+            } else {
+                // full reset
+                cell.textContent = '';
+                cell.className = '';
+                cell.style.backgroundColor = '';
+                cell.style.fontWeight = '';
+                cell.style.position = '';
+                delete cell.dataset.date;
+                delete cell.dataset.locked;
+            }
         });
 
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
@@ -209,10 +229,8 @@ class Calendar {
             const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
             if (!cell) continue;
 
-            const preservedBg = preserved.get(cell);
-
             const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
-            cell.innerText = day;
+            cell.textContent = day;
             cell.dataset.date = cellDate.toISOString().split("T")[0];
             cell.style.textAlign = 'left';
             cell.style.verticalAlign = 'top';
@@ -227,14 +245,17 @@ class Calendar {
                 this.openDayModal(dateStr);
             });
 
-            if (!preservedBg) {
+            if (cell.dataset.locked !== 'bank') {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
 
             const dotsForDate = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString());
             dotsForDate.forEach(dot => this.addDot(cellDate, dot.colour));
         }
+
+        this.highlightSelected(this.selectedCheckIn, this.selectedCheckOut);
     }
+
 
     // Helper to update background colour of a single cell
     async updateCellBackground(cell, isToday, isPast, dots, isBankHoliday = false) {
@@ -257,7 +278,7 @@ class Calendar {
 
     highlightSelected(checkIn, checkOut) {
         // Clear previous selections
-        this.container.querySelectorAll(".selected").forEach(cell => {
+        this.container.querySelectorAll("td.selected").forEach(cell => {
             cell.classList.remove("selected");
         });
 
@@ -511,32 +532,38 @@ class Calendar {
 
     // Load bookings from bookings.json and add dots to the calendar
     async loadBookings() {
-        if (this.abortController) this.abortController.abort(); // Abort any ongoing fetch
-        this.abortController = new AbortController(); // Create a new controller for this fetch
-        const signal = this.abortController.signal; // Get the signal
+        if (this.abortController) this.abortController.abort();
+        this.abortController = new AbortController();
+        const signal = this.abortController.signal;
+
+        // new token for this run
+        const loadId = ++this.loadId;
 
         try {
-            const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json');
+            const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
             const events = await response.json();
+
+            // if another run has started since we began, bail early
+            if (loadId !== this.loadId) return;
 
             const petStays = {};
 
             for (const ev of events) {
-                if (!ev.petId) continue;
-                if (ev.petId === "Unknown") continue;
+                if (!ev.petId || ev.petId === "Unknown") continue;
 
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
                 if (!types.includes("Not available")) continue;
 
                 const start = new Date(ev.start);
                 const end = new Date(ev.end);
-                const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
 
                 for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    if (loadId !== this.loadId) return; // cancel mid-loop if outdated
                     if (d.getMonth() !== this.date.getMonth()) continue;
                     if (d.getFullYear() !== this.date.getFullYear()) continue;
 
+                    const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
                     const cellIndex = firstDay + d.getDate() - 1;
                     const row = Math.floor(cellIndex / 7);
                     const column = cellIndex % 7;
@@ -550,9 +577,9 @@ class Calendar {
                 }
             }
 
+            // second loop: normal stays
             for (const ev of events) {
-                if (!ev.petId) continue;
-                if (ev.petId === "Unknown") continue;
+                if (!ev.petId || ev.petId === "Unknown") continue;
 
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
                 if (types.includes("Not available")) continue;
@@ -568,6 +595,7 @@ class Calendar {
                 if (!stay.checkIn || !stay.checkOut) continue;
 
                 for (let d = new Date(stay.checkIn); d <= stay.checkOut; d.setDate(d.getDate() + 1)) {
+                    if (loadId !== this.loadId) return; // cancel mid-loop
                     this.addDot(new Date(d));
                 }
             }
