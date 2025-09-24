@@ -378,8 +378,8 @@ button:hover {
   background-color: var(--bankholiday);
 }
 
-.legend-box.not-available {
-  background-color: var(--not-available);
+.legend-box.notavailable {
+  background-color: var(--notavailable);
 }
 
 /* Animation */

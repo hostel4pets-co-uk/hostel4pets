@@ -8,7 +8,7 @@ export const dotColours = Object.freeze({
 
 export const backgroundColours = Object.freeze({
     PAST: '#d3d3d3', TODAY: '#add8e6', BUSY: '#ffebcd', BOOKED: '#ffc0cb',
-    BANKHOLIDAY: '#e6ccff', NOT_AVAILABLE: '#a9a9a9'
+    BANKHOLIDAY: '#e6ccff', NOTAVAILABLE: '#a9a9a9'
 });
 
 (() => {
@@ -429,7 +429,7 @@ class Calendar {
             <div><span class="legend-box busy"></span>Busy</div>
             <div><span class="legend-box booked"></span>Completely Booked</div>
             <div><span class="legend-box bankholiday"></span>Bank Holiday</div>
-            <div><span class="legend-box not-available"></span>Not Available</div>
+            <div><span class="legend-box notavailable"></span>Not Available</div>
             </div>
         `;
         this.container.appendChild(legend);
@@ -517,7 +517,7 @@ class Calendar {
                     const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
                     if (!cell) continue;
 
-                    cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
+                    cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
                     cell.dataset.locked = 'na';
                 }
             }
