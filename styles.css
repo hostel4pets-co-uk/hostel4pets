@@ -25,7 +25,7 @@ html {
   text-overflow: ellipsis; /* Adds an ellipsis to indicate text overflow (optional) */
 }
 
-#subtitle {
+.subtitle {
   background-color: var(
     --h4pgreen
   ); /* Using the CSS variable for green color */
