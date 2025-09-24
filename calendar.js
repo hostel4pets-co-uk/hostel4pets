@@ -55,9 +55,11 @@ class Calendar {
 
         document.addEventListener("booking:datesChanged", e => {
             const start = new Date(e.detail.checkIn);
+            start.setDate(start.getDate() - 1);
             start.setHours(0, 0, 0, 0);
 
             const end = new Date(e.detail.checkOut);
+            end.setDate(end.getDate() - 1);
             end.setHours(23, 59, 59, 999);
 
             this.selectedCheckIn = start;
