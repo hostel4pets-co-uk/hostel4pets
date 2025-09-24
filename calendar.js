@@ -1,24 +1,23 @@
 export const dotColours = Object.freeze({
-            RED: 'red', GREEN: 'green', DARK_BLUE: '#00008b', YELLOW: '#d4a017',
-            PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
-            GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
-            BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
-            BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'});
+    RED: 'red', GREEN: 'green', DARK_BLUE: '#00008b', YELLOW: '#d4a017',
+    PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
+    GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
+    BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
+    BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
+});
 
 class Calendar {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         this.date = new Date(); // default current date
 
-        // Check for ?m=YYYYMM in query string
-        const params = new URLSearchParams(window.location.search);
-        const m = params.get("m");
-        if (m && /^\d{6}$/.test(m)) {
-            const year = parseInt(m.slice(0, 4), 10);
-            const month = parseInt(m.slice(4, 6), 10);
-            if (!isNaN(year) && !isNaN(month) && month >= 1 && month <= 12) {
-                this.date = new Date(year, month - 1, 1);
-            }
+        const m = new URLSearchParams(window.location.search).get("m") || "";
+        const match = m.match(/^(\d{4})(\d{2})$/);
+        const year = match ? Number(match[1]) : NaN;
+        const month = match ? Number(match[2]) : NaN;
+
+        if (!Number.isNaN(year) && month >= 1 && month <= 12) {
+            this.date = new Date(year, month - 1, 1);
         }
 
         this.dotColours = dotColours;
@@ -53,23 +52,24 @@ class Calendar {
     // Create the header with navigation buttons and a month picker
     createHeader() {
         const header = document.createElement('div');
-        header.classList.add('calendar-header');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '10px';
 
         const backButton = document.createElement('button');
         backButton.innerText = '<';
-        backButton.classList.add('calendar-nav-button');
         backButton.addEventListener('click', () => this.changeMonth(-1));
 
         const forwardButton = document.createElement('button');
         forwardButton.innerText = '>';
-        forwardButton.classList.add('calendar-nav-button');
         forwardButton.addEventListener('click', () => this.changeMonth(1));
 
         // Always visible month picker
         const monthPicker = document.createElement('input');
         monthPicker.type = 'month';
         monthPicker.value = `${this.date.getFullYear()}-${String(this.date.getMonth() + 1).padStart(2, '0')}`;
-        monthPicker.classList.add('calendar-month-picker');
+        monthPicker.style.margin = '0 10px';
         monthPicker.addEventListener('change', () => {
             const [year, month] = monthPicker.value.split('-').map(Number);
             this.date.setFullYear(year);
@@ -96,7 +96,8 @@ class Calendar {
     createTable() {
         const table = document.createElement('table');
         table.id = 'Calendar';
-        table.classList.add('calendar-table');
+        table.style.borderCollapse = 'collapse';
+        table.style.width = '100%';
 
         // Create table header for days of the week
         const thead = document.createElement('thead');
@@ -105,7 +106,9 @@ class Calendar {
         for (const day of daysOfWeek) {
             const th = document.createElement('th');
             th.innerText = day;
-            th.classList.add('calendar-heading');
+            th.style.border = '1px solid #ddd';
+            th.style.padding = '8px';
+            th.style.textAlign = 'center';
             headerRow.appendChild(th);
         }
         thead.appendChild(headerRow);
@@ -124,7 +127,9 @@ class Calendar {
 
         Array.from({ length: rowsNeeded * 7 }).forEach((_, index) => {
             const td = document.createElement('td');
-            td.classList.add('calendar-cell');
+            td.style.border = '1px solid #ddd';
+            td.style.padding = '8px';
+            td.style.textAlign = 'center';
             td.style.cursor = 'pointer';
             td.dataset.day = index % 7;
             td.dataset.week = Math.floor(index / 7);
@@ -150,7 +155,7 @@ class Calendar {
         cells.forEach(cell => {
             preserved.set(cell, cell.style.backgroundColor);
             cell.innerText = '';
-            cell.className = 'calendar-cell';
+            cell.className = '';
             cell.style.backgroundColor = preserved.get(cell);
             cell.style.fontWeight = '';
             cell.style.position = '';
@@ -202,7 +207,7 @@ class Calendar {
         } else if (isToday) {
             cell.style.backgroundColor = this.backgroundColours.TODAY;
             cell.style.fontWeight = 'bold';
-            cell.classList.add('today');
+            cell.className = 'today';
         } else if (dots > 5) {
             cell.style.backgroundColor = this.backgroundColours.BOOKED;
         } else if (dots >= 4 && dots <= 5) {
@@ -279,27 +284,27 @@ class Calendar {
         const table = document.getElementById('Calendar');
         const tbody = table.querySelector('tbody');
 
+        const sameYear = date.getFullYear() === this.date.getFullYear();
+        const sameMonth = date.getMonth() === this.date.getMonth();
+        if (!sameYear || !sameMonth) return;
+
         const day = date.getDate();
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+        const cellIndex = firstDay + day - 1;
+        const row = Math.floor(cellIndex / 7);
+        const column = cellIndex % 7;
 
-        // Only update cells in the current month
-        if (date.getFullYear() === this.date.getFullYear() && date.getMonth() === this.date.getMonth()) {
-            const cellIndex = firstDay + day - 1;
-            const row = Math.floor(cellIndex / 7);
-            const column = cellIndex % 7;
-            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+        const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+        if (!cell) return;
 
-            if (cell) {
-                const isToday = date.toDateString() === new Date().toDateString();
-                const isPast = date < new Date() && !isToday;
-                const dots = this.dots.filter(d => d.date.toDateString() === date.toDateString()).length;
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isPast = date < new Date() && !isToday;
+        const dots = this.dots.filter(d => d.date.toDateString() === date.toDateString()).length;
 
-                // Call the updated updateCellBackground method
-                await this.updateCellBackground(cell, isToday, isPast, dots, true);
-                cell.dataset.locked = 'bank';
-            }
-        }
+        await this.updateCellBackground(cell, isToday, isPast, dots, true);
+        cell.dataset.locked = 'bank';
     }
+
 
     // Add a coloured dot to a date
     addDot(date, colour) {
@@ -313,10 +318,10 @@ class Calendar {
                 .map(d => d.colour);
 
             colour = Object.values(this.dotColours).find(c => !usedColours.includes(c));
-            if (!colour) return; // No available colours
-        } else if (!Object.values(this.dotColours).includes(colour)) {
-            return; // Ignore invalid colours
         }
+
+        if (!colour) return; // No available colours
+        if (!Object.values(this.dotColours).includes(colour)) return; // Ignore invalid colours
 
         // Add the dot to the dots array (prevent duplicates)
         if (!this.dots.some(d => d.date.getTime() === dotDate.getTime() && d.colour === colour)) {
@@ -472,53 +477,51 @@ class Calendar {
         try {
             const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json');
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
-
-            /** @type {Array<{ type: string[], petId: string, start: string, end: string }>} */
             const events = await response.json();
 
             const petStays = {};
 
             for (const ev of events) {
-                if (!ev.petId || ev.petId === "Unknown") continue;
+                if (!ev.petId) continue;
+                if (ev.petId === "Unknown") continue;
 
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                if (!types.includes("Not available")) continue;
 
-                if (types.includes("Not available")) {
-                    const start = new Date(ev.start);
-                    const end = new Date(ev.end);
+                const start = new Date(ev.start);
+                const end = new Date(ev.end);
+                const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
 
-                    const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    if (d.getMonth() !== this.date.getMonth()) continue;
+                    if (d.getFullYear() !== this.date.getFullYear()) continue;
 
-                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                        if (d.getMonth() !== this.date.getMonth() || d.getFullYear() !== this.date.getFullYear()) continue;
+                    const cellIndex = firstDay + d.getDate() - 1;
+                    const row = Math.floor(cellIndex / 7);
+                    const column = cellIndex % 7;
+                    const table = document.getElementById('Calendar');
+                    const tbody = table.querySelector('tbody');
+                    const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+                    if (!cell) continue;
 
-                        const cellIndex = firstDay + d.getDate() - 1;
-                        const row = Math.floor(cellIndex / 7);
-                        const column = cellIndex % 7;
-                        const table = document.getElementById('Calendar');
-                        const tbody = table.querySelector('tbody');
-                        const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-                        if (!cell) continue;
-
-                        cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
-                        cell.dataset.locked = 'na';
-                    }
-                    continue;
-                }
-
-                // Normal events
-                if (types.includes("Check-in")) {
-                    if (!petStays[ev.petId]) petStays[ev.petId] = {};
-                    petStays[ev.petId].checkIn = new Date(ev.start);
-                }
-
-                if (types.includes("Check-out")) {
-                    if (!petStays[ev.petId]) petStays[ev.petId] = {};
-                    petStays[ev.petId].checkOut = new Date(ev.end);
+                    cell.style.backgroundColor = this.backgroundColours.NOT_AVAILABLE;
+                    cell.dataset.locked = 'na';
                 }
             }
 
-            // Render check-in / check-out events as before
+            for (const ev of events) {
+                if (!ev.petId) continue;
+                if (ev.petId === "Unknown") continue;
+
+                const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                if (types.includes("Not available")) continue;
+
+                if (!petStays[ev.petId]) petStays[ev.petId] = {};
+
+                if (types.includes("Check-in")) petStays[ev.petId].checkIn = new Date(ev.start);
+                if (types.includes("Check-out")) petStays[ev.petId].checkOut = new Date(ev.end);
+            }
+
             for (const petId in petStays) {
                 const stay = petStays[petId];
                 if (!stay.checkIn || !stay.checkOut) continue;
