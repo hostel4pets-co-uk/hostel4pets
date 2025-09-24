@@ -332,6 +332,18 @@ button:hover {
   margin-top: 10px;
 }
 
+@media (max-width: 450px) and (min-width: 301px) {
+  .calendar-legend-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 300px) {
+  .calendar-legend-row {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
 .calendar-legend-row div {
   display: flex;
   align-items: center;
