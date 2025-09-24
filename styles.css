@@ -104,13 +104,14 @@ button:hover {
 }
 
 /* Responsive styles for mobile screens */
-/*
 .mobile .container {
-  width: 75vw; /* Adjust width to account for 5% margin on each side
-  margin: 5% auto; /* 5% top margin, auto horizontal margin for centering, and 5% bottom margin
-  padding: 25px; /* Adjust padding if necessary for mobile
+  /*width: 95%; /* Adjust width to account for 5% margin on each side */
+  margin-left: 5%;
+  margin-right: 5%;
+  max-width: none;
+  min-width: none;
+  width: 95%;
 }
-*/
 
 .mobile button,
 .mobile input,
