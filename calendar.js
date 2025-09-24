@@ -55,7 +55,7 @@ class Calendar {
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
         header.style.alignItems = 'center';
-        header.style.marginBottom = '10px';
+        header.style.marginBottom = '5px';
 
         const backButton = document.createElement('button');
         backButton.innerText = '<';
