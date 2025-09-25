@@ -539,34 +539,33 @@ class Calendar {
         if (this.abortController) this.abortController.abort();
         this.abortController = new AbortController();
         const signal = this.abortController.signal;
-
+    
         // new token for this run
         const loadId = ++this.loadId;
-
+    
         try {
             const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
             const events = await response.json();
-
+    
             // if another run has started since we began, bail early
             if (loadId !== this.loadId) return;
-
-            const petStays = {};
-
+    
+            // First pass: handle "Not available" blocks
             for (const ev of events) {
                 if (!ev.petId || ev.petId === "Unknown") continue;
-
+    
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
                 if (!types.includes("Not available")) continue;
-
+    
                 const start = new Date(ev.start);
                 const end = new Date(ev.end);
-
+    
                 for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                     if (loadId !== this.loadId) return; // cancel mid-loop if outdated
                     if (d.getMonth() !== this.date.getMonth()) continue;
                     if (d.getFullYear() !== this.date.getFullYear()) continue;
-
+    
                     const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
                     const cellIndex = firstDay + d.getDate() - 1;
                     const row = Math.floor(cellIndex / 7);
@@ -575,32 +574,46 @@ class Calendar {
                     const tbody = table.querySelector('tbody');
                     const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
                     if (!cell) continue;
-
+    
                     cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
                     cell.dataset.locked = 'na';
                 }
             }
-
-            // second loop: normal stays
-            for (const ev of events) {
-                if (!ev.petId || ev.petId === "Unknown") continue;
-
-                const types = Array.isArray(ev.type) ? ev.type : [ev.type];
-                if (types.includes("Not available")) continue;
-
-                if (!petStays[ev.petId]) petStays[ev.petId] = {};
-
-                if (types.includes("Check-in")) petStays[ev.petId].checkIn = new Date(ev.start);
-                if (types.includes("Check-out")) petStays[ev.petId].checkOut = new Date(ev.end);
-            }
-
-            for (const petId in petStays) {
-                const stay = petStays[petId];
-                if (!stay.checkIn || !stay.checkOut) continue;
-
-                for (let d = new Date(stay.checkIn); d <= stay.checkOut; d.setDate(d.getDate() + 1)) {
-                    if (loadId !== this.loadId) return; // cancel mid-loop
-                    this.addDot(new Date(d));
+    
+            // Second pass: normal stays (support multiple stays per pet)
+            const staysByPet = {};
+    
+            // Sort by start time so check-in/out are paired correctly
+            events
+                .filter(ev => ev.petId && ev.petId !== "Unknown")
+                .sort((a, b) => new Date(a.start) - new Date(b.start))
+                .forEach(ev => {
+                    const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                    if (types.includes("Not available")) return;
+    
+                    const petId = ev.petId;
+                    if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [] };
+    
+                    if (types.includes("Check-in")) {
+                        staysByPet[petId].open = new Date(ev.start);
+                    }
+                    if (types.includes("Check-out")) {
+                        const start = staysByPet[petId].open;
+                        const end = new Date(ev.end);
+                        if (start) {
+                            staysByPet[petId].ranges.push([start, end]);
+                            staysByPet[petId].open = null;
+                        }
+                    }
+                });
+    
+            // Draw all ranges
+            for (const petId in staysByPet) {
+                for (const [start, end] of staysByPet[petId].ranges) {
+                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        if (loadId !== this.loadId) return; // cancel mid-loop
+                        this.addDot(new Date(d));
+                    }
                 }
             }
         } catch (error) {
