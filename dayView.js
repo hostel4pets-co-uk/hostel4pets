@@ -80,27 +80,48 @@ async function loadDayView() {
         if (!res.ok) throw new Error("Failed to fetch calendar.json");
         const events = await res.json();
 
-        // Build stays map
-        const stays = {};
+        // Build stays map with multiple ranges per pet
+        const staysByPet = {};
 
-        for (const ev of events) {
-            if (ev.type.includes("Check-in")) {
-                if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkIn = normalise(new Date(ev.start));
-                stays[ev.petId].pet = ev;
-            }
-            if (ev.type.includes("Check-out")) {
-                if (!stays[ev.petId]) stays[ev.petId] = {};
-                stays[ev.petId].checkOut = normalise(new Date(ev.end));
-                stays[ev.petId].pet = ev;
+        events
+            .filter(ev => ev.petId && ev.petId !== "Unknown")
+            .sort((a, b) => new Date(a.start) - new Date(b.start))
+            .forEach(ev => {
+                const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                if (types.includes("Not available")) return;
+
+                const petId = ev.petId;
+                if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [], pet: ev };
+
+                if (types.includes("Check-in")) {
+                    staysByPet[petId].open = normalise(new Date(ev.start));
+                    staysByPet[petId].pet = ev; // latest metadata
+                }
+
+                if (types.includes("Check-out")) {
+                    const start = staysByPet[petId].open;
+                    const end = normalise(new Date(ev.end));
+                    if (start) {
+                        staysByPet[petId].ranges.push([start, end]);
+                        staysByPet[petId].open = null;
+                    }
+                    staysByPet[petId].pet = ev; // latest metadata
+                }
+            });
+
+        // Gather only pets active on targetDate
+        const activePets = [];
+        for (const petId in staysByPet) {
+            const { ranges, pet } = staysByPet[petId];
+            for (const [start, end] of ranges) {
+                if (targetDate >= start && targetDate <= end) {
+                    activePets.push({ pet, checkIn: start, checkOut: end });
+                }
             }
         }
 
-        // Gather only pets checked in on targetDate
-        const activePets = Object.values(stays)
-            .filter(s => s.checkIn && s.checkOut &&
-                targetDate >= s.checkIn && targetDate <= s.checkOut)
-            .sort((a, b) => (a.checkIn.getTime() - b.checkIn.getTime()));
+        // Sort by check-in time
+        activePets.sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
 
         // Assign colours in order
         const colours = Object.values(dotColours);
