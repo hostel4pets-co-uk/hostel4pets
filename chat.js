@@ -130,8 +130,12 @@ class ChatApp {
 
         if (author === this.session.nickname) {
             wrapper.classList.add("guest");
+            msgEl.classList.add("guest");
+            timeEl.classList.add("guest");
         } else {
             wrapper.classList.add("host");
+            msgEl.classList.add("host");
+            timeEl.classList.add("host");
         }
 
         wrapper.appendChild(msgEl);
@@ -140,6 +144,7 @@ class ChatApp {
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
     }
+
 
     formatTime(timestamp) {
         const date = new Date(timestamp);
