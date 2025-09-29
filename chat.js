@@ -1,0 +1,174 @@
+class ChatApp {
+    constructor() {
+        this.chatroomEl = document.getElementById("chatroom");
+        this.messageEl = document.getElementById("message");
+        this.sendBtn = document.getElementById("send-button");
+        this.submitBtn = document.getElementById("submit-button");
+        this.nicknameEl = document.getElementById("nickname");
+
+        this.sessionKey = "chatSession";
+        this.session = null;
+
+        this.backendUrl = "https://kittycrypto.ddns.net:5493";
+        this.init();
+    }
+
+    init() {
+        const stored = localStorage.getItem(this.sessionKey);
+        if (stored) {
+            this.session = JSON.parse(stored);
+            this.restoreSession();
+        } else {
+            this.prepareNicknameSetup();
+        }
+    }
+
+    prepareNicknameSetup() {
+        this.chatroomEl.style.display = "none";
+        this.messageEl.style.display = "none";
+        this.sendBtn.style.display = "none";
+
+        this.nicknameEl.hidden = false;
+        this.submitBtn.hidden = false;
+
+        this.submitBtn.addEventListener("click", () => this.setNickname());
+    }
+
+    async setNickname() {
+        const nickname = this.nicknameEl.value.trim();
+        if (!nickname) return;
+
+        const sessionId = await this.generateSessionId(nickname);
+        this.session = { sessionId, nickname };
+
+        localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
+        this.restoreSession();
+    }
+
+    restoreSession() {
+        this.chatroomEl.style.display = "flex";
+        this.messageEl.style.display = "block";
+        this.sendBtn.style.display = "block";
+
+        this.nicknameEl.hidden = true;
+        this.submitBtn.hidden = true;
+
+        this.chatroomEl.innerHTML = "";
+
+        this.sendBtn.addEventListener("click", () => this.handleSend());
+
+        // start SSE connection
+        this.startStream();
+    }
+
+    async handleSend() {
+        const text = this.messageEl.value.trim();
+        if (!text) return;
+
+        const msg = {
+            text,
+            sender: this.session.nickname,
+            timestamp: Date.now(),
+            sessionId: this.session.sessionId
+        };
+
+        try {
+            await fetch(`${this.backendUrl}/chat/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(msg)
+            });
+        } catch (err) {
+            console.error("Failed to send:", err);
+        }
+
+        this.messageEl.value = "";
+    }
+
+    startStream() {
+        const url = `${this.backendUrl}/chat/stream?sessionId=${this.session.sessionId}`;
+        const evtSource = new EventSource(url);
+
+        evtSource.onmessage = (event) => {
+            try {
+                const history = JSON.parse(event.data);
+                this.chatroomEl.innerHTML = "";
+                history.forEach(msg =>
+                    this.addMessage(msg.text, msg.sender, msg.timestamp)
+                );
+            } catch (e) {
+                console.error("SSE parse error:", e);
+            }
+        };
+
+        evtSource.onerror = (err) => {
+            console.error("SSE connection error:", err);
+        };
+    }
+
+    addMessage(text, author, timestamp) {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("message-wrapper");
+
+        const msgEl = document.createElement("div");
+        msgEl.classList.add("message");
+
+        const nickEl = document.createElement("div");
+        nickEl.classList.add("nickname-strip");
+        nickEl.textContent = author;
+
+        const textEl = document.createElement("div");
+        textEl.classList.add("message-text");
+        textEl.textContent = text;
+
+        msgEl.appendChild(nickEl);
+        msgEl.appendChild(textEl);
+
+        const timeEl = document.createElement("div");
+        timeEl.classList.add("timestamp");
+        timeEl.textContent = this.formatTime(timestamp);
+
+        if (author === this.session.nickname) {
+            wrapper.classList.add("guest");
+        } else {
+            wrapper.classList.add("host");
+        }
+
+        wrapper.appendChild(msgEl);
+        wrapper.appendChild(timeEl);
+
+        this.chatroomEl.appendChild(wrapper);
+        this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+    }
+
+    formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    async generateSessionId(nickname) {
+        let ip = "0.0.0.0";
+        try {
+            const res = await fetch("https://kittycrypto.ddns.net:7619/get-ip");
+            if (res.ok) {
+                const data = await res.json();
+                ip = data.ip || "0.0.0.0";
+            }
+        } catch (e) {
+            console.error("Could not retrieve IP:", e);
+        }
+
+        const timestamp = Date.now().toString();
+        const input = `${nickname}|${timestamp}|${ip}`;
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+        return Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => new ChatApp());
