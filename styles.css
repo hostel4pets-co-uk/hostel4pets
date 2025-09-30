@@ -417,7 +417,7 @@ button:hover {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
   width: 95%;
   max-width: 600px;
-  height: 99%;
+  height: auto; /* let it size naturally */
   max-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -425,6 +425,8 @@ button:hover {
   font-family: Arial, sans-serif;
   animation: fadeIn 0.3s ease-in-out;
   margin: 0 auto;
+
+  transition: max-height 0.35s ease;
 }
 
 /* Consistent sizing and override global 80% cap inside the modal */
@@ -442,10 +444,12 @@ button:hover {
 
 /* Header */
 .chat-header {
+  display: flex;
+  justify-content: space-between; /* keeps title on left, controls on right */
+  align-items: center;
   background: var(--h4pgreen);
   color: var(--white);
   font-weight: bold;
-  text-align: center;
   padding: 15px;
   font-size: 1.2em;
   border-top-left-radius: 20px;
@@ -472,11 +476,40 @@ button:hover {
 
   overflow: hidden;
   margin: 0;
+
+  max-height: 500px;
 }
+
+.chat-body,
+.chat-footer {
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+.chat-body.collapsed,
+.chat-footer.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  max-height: 200px;
+}
+
+/* .chat-modal.collapsed .chat-body,
+.chat-modal.collapsed .chat-footer {
+  opacity: 0;
+  pointer-events: none;
+} */
+
+.chat-modal.collapsed {
+  max-height: 60px;
+  height: auto;
+}
+
 
 /* Message history box */
 #chatroom {
   height: 100%;
+  min-height: 300px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -650,6 +683,25 @@ button:hover {
 
 .timestamp.host {
   align-self: flex-end;
+}
+
+#chat-controls {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.emoji-btn {
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.emoji-btn:hover {
+  transform: scale(1.2);
 }
 
 /* Scrollbars inside history */

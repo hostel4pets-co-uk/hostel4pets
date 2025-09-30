@@ -1,3 +1,18 @@
+(function initMobileDetect() {
+    if (typeof window.MobileDetect !== "undefined") {
+        window.md = new window.MobileDetect(window.navigator.userAgent);
+        return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
+    script.async = true;
+    script.onload = () => {
+        window.md = new window.MobileDetect(window.navigator.userAgent);
+    };
+    document.head.appendChild(script);
+})();
+
 class ChatApp {
     constructor() {
         this.chatroomEl = document.getElementById("chatroom");
@@ -5,12 +20,22 @@ class ChatApp {
         this.sendBtn = document.getElementById("send-button");
         this.submitBtn = document.getElementById("submit-button");
         this.nicknameEl = document.getElementById("nickname");
+        this.isMobile = !!(window.md && (window.md.mobile() || window.md.tablet()));
 
         this.sessionKey = "chatSession";
         this.session = null;
 
         this.backendUrl = "https://kittycrypto.ddns.net:5493";
         this.init();
+
+        this.clearBtn = document.getElementById("clear-btn");
+        this.collapseBtn = document.getElementById("collapse-btn");
+
+        this.isCollapsed = false;
+
+        this.clearBtn.addEventListener("click", () => this.clearChat());
+        this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
+
     }
 
     init() {
@@ -32,6 +57,15 @@ class ChatApp {
         this.submitBtn.hidden = false;
 
         this.submitBtn.addEventListener("click", () => this.setNickname());
+
+        if (this.isMobile) return;
+
+        this.nicknameEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                this.setNickname();
+            }
+        });
     }
 
     async setNickname() {
@@ -59,6 +93,16 @@ class ChatApp {
 
         // start SSE connection
         this.startStream();
+
+        if (this.isMobile) return;
+
+        this.messageEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                this.handleSend();
+            }
+        });
+
     }
 
     async handleSend() {
@@ -179,6 +223,42 @@ class ChatApp {
             .map(b => b.toString(16).padStart(2, "0"))
             .join("");
     }
+
+    clearChat() {
+        const confirmClear = confirm(
+            "Do you wish to clear the chat? Your session will be lost and you will not be able to recover the messages you have sent."
+        );
+        if (!confirmClear) return;
+
+        localStorage.removeItem(this.sessionKey);
+        this.session = null;
+        this.chatroomEl.innerHTML = "";
+        this.prepareNicknameSetup();
+    }
+
+    collapseChat() {
+        const modal = document.querySelector(".chat-modal");
+        modal.classList.add("collapsed");
+        this.collapseBtn.textContent = "➕";
+        this.isCollapsed = true;
+    }
+
+    uncollapseChat() {
+        const modal = document.querySelector(".chat-modal");
+        modal.classList.remove("collapsed");
+        this.collapseBtn.textContent = "➖";
+        this.isCollapsed = false;
+    }
+
+
+    toggleCollapse() {
+        if (this.isCollapsed) {
+            this.uncollapseChat();
+        } else {
+            this.collapseChat();
+        }
+    }
+
 }
 
 document.addEventListener("DOMContentLoaded", () => new ChatApp());
