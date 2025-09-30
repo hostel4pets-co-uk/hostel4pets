@@ -26,16 +26,48 @@ class ChatApp {
         this.session = null;
 
         this.backendUrl = "https://kittycrypto.ddns.net:5493";
-        this.init();
 
         this.clearBtn = document.getElementById("clear-btn");
         this.collapseBtn = document.getElementById("collapse-btn");
 
         this.isCollapsed = false;
 
+        // Header elements
+        this.modalEl = document.querySelector(".chat-modal");
+        this.shellEl = document.getElementById("chat-panel-shell");
+        this.headerEl =
+            document.querySelector(".chat-header .title") ||
+            document.querySelector(".chat-header");
+
         this.clearBtn.addEventListener("click", () => this.clearChat());
         this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
 
+        // Clear "New Message(s)!" on hover or touch
+        const clearTargets = [this.modalEl, this.chatroomEl, this.shellEl].filter(Boolean);
+        clearTargets.forEach(el => {
+            el.addEventListener("mouseenter", () => this.clearNewMessage());
+            el.addEventListener("mousemove", () => this.clearNewMessage());
+            el.addEventListener("touchstart", () => this.clearNewMessage(), { passive: true });
+        });
+
+        // Default collapsed on load
+        this.setHeader("Chat");
+        this.collapseChat();
+
+        this.init();
+    }
+
+    setHeader(text) {
+        if (!this.headerEl) return;
+        this.headerEl.textContent = text || "Chat";
+    }
+
+    markNewMessage() {
+        this.setHeader("New Message(s)!");
+    }
+
+    clearNewMessage() {
+        this.setHeader("Chat");
     }
 
     init() {
@@ -43,9 +75,11 @@ class ChatApp {
         if (stored) {
             this.session = JSON.parse(stored);
             this.restoreSession();
-        } else {
-            this.prepareNicknameSetup();
+            return;
         }
+        // No session yet, show that there is a new message due to the injected welcome
+        this.setHeader("New Message!");
+        this.prepareNicknameSetup();
     }
 
     prepareNicknameSetup() {
@@ -91,6 +125,9 @@ class ChatApp {
 
         this.sendBtn.addEventListener("click", () => this.handleSend());
 
+        // Inject welcome message before loading real history
+        this.injectWelcome();
+
         // start SSE connection
         this.startStream();
 
@@ -102,7 +139,6 @@ class ChatApp {
                 this.handleSend();
             }
         });
-
     }
 
     async handleSend() {
@@ -140,6 +176,8 @@ class ChatApp {
                 history.forEach(msg =>
                     this.addMessage(msg.text, msg.sender, msg.timestamp)
                 );
+                // Any arrived message should flag the header
+                if (history.length) this.markNewMessage();
             } catch (e) {
                 console.error("SSE parse error:", e);
             }
@@ -172,7 +210,7 @@ class ChatApp {
         timeEl.classList.add("timestamp");
         timeEl.textContent = this.formatTime(timestamp);
 
-        if (author === this.session.nickname) {
+        if (author === this.session?.nickname) {
             wrapper.classList.add("guest");
             msgEl.classList.add("guest");
             timeEl.classList.add("guest");
@@ -187,8 +225,18 @@ class ChatApp {
 
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+
+        // Flag header on any new message
+        this.markNewMessage();
     }
 
+    injectWelcome() {
+        const text =
+            "Hello! Welcome to Hostel4Pets, the Home away from Home for your four legged companions!\nFeel free to write to us in here if you have any queries!";
+        const author = "Host";
+        const ts = Date.now();
+        this.addMessage(text, author, ts);
+    }
 
     formatTime(timestamp) {
         const date = new Date(timestamp);
@@ -233,25 +281,24 @@ class ChatApp {
         localStorage.removeItem(this.sessionKey);
         this.session = null;
         this.chatroomEl.innerHTML = "";
+        // Reflect fake-message state in header when logged out
+        this.setHeader("New Message!");
         this.prepareNicknameSetup();
     }
 
     collapseChat() {
-        const modal = document.querySelector(".chat-modal");
-        const shell = document.getElementById("chat-panel-shell");
-
+        const modal = this.modalEl;
+        const shell = this.shellEl;
         if (!modal || !shell) return;
 
-        // remember original shell height once
         if (!shell.dataset.origHeight) {
-            shell.dataset.origHeight = getComputedStyle(shell).height; // e.g. "400px"
+            shell.dataset.origHeight = getComputedStyle(shell).height;
         }
 
         modal.classList.add("collapsed");
         this.collapseBtn.textContent = "➕";
         this.isCollapsed = true;
 
-        // after styles apply, size shell so the header sits flush at the bottom
         requestAnimationFrame(() => {
             const header = modal.querySelector(".chat-header");
             const h = header ? header.offsetHeight : modal.offsetHeight || 60;
@@ -260,30 +307,25 @@ class ChatApp {
     }
 
     uncollapseChat() {
-        const modal = document.querySelector(".chat-modal");
-        const shell = document.getElementById("chat-panel-shell");
-
+        const modal = this.modalEl;
+        const shell = this.shellEl;
         if (!modal || !shell) return;
 
         modal.classList.remove("collapsed");
         this.collapseBtn.textContent = "➖";
         this.isCollapsed = false;
 
-        // restore the shell height to what it was before collapsing
         const restore = shell.dataset.origHeight || "400px";
         shell.style.height = restore;
     }
 
-
-
     toggleCollapse() {
         if (this.isCollapsed) {
             this.uncollapseChat();
-        } else {
-            this.collapseChat();
+            return;
         }
+        this.collapseChat();
     }
-
 }
 
 window.ChatApp = ChatApp;
