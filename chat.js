@@ -257,7 +257,7 @@ class ChatApp {
             const h = header ? header.offsetHeight : modal.offsetHeight || 60;
             shell.style.height = `${h}px`;
         });
-    },
+    }
 
     uncollapseChat() {
         const modal = document.querySelector(".chat-modal");
