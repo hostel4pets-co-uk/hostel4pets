@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Test</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script>
+        // Add a version parameter to avoid caching
+        const addCacheBuster = (url) => {
+            const cacheBuster = `v=${Date.now()}`;
+            return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+        };
+
+        document.querySelectorAll('script[src], link[rel="stylesheet"]').forEach(tag => {
+            const srcAttr = tag.tagName === 'SCRIPT' ? 'src' : 'href';
+            tag.setAttribute(srcAttr, addCacheBuster(tag.getAttribute(srcAttr)));
+        });
+
+        const originalFetch = window.fetch;
+        window.fetch = async (resource, config) => {
+            if (typeof resource === 'string') {
+                resource = addCacheBuster(resource);
+            }
+            return originalFetch(resource, config);
+        };
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="calendar-container" id="calendar-container"></div>
+    </div>
+    <script type="module" src="calendar.js"></script>
+</body>
+
+</html>

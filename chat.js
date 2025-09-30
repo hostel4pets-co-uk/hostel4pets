@@ -282,7 +282,7 @@ class ChatApp {
             if (localStorage.getItem(key)) return;
 
             const payload = {
-                text: "Hello! Welcome to Hostel4Pets, the Home away from Home for your four legged companions!\nFeel free to write to us in here if you have any queries!",
+                text: `Hello, ${this.session.nickname}! Welcome to Hostel4Pets, the Home away from Home for your four legged pals!\nFeel free to write to us in here if you have any queries!`,
                 sender: "Hostel4Pets",
                 timestamp: Date.now(),
                 sessionId: this.session.sessionId,
