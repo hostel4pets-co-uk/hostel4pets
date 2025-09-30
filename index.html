@@ -157,13 +157,17 @@
       document.body.appendChild(shell);
     }
 
-    openChatPanel();
+    (async () => {
+      await openChatPanel();
+      const s = document.createElement("script");
+      s.src = "./chat.js";
+      s.onload = () => {
+        if (window.ChatApp && !window.__chatApp) window.__chatApp = new ChatApp();
+      };
+      document.body.appendChild(s);
+    })();
 
-    const s = document.createElement("script");
-    s.src = "./chat.js";
-    s.onload = () => { if (window.ChatApp && !window.__chatApp) window.__chatApp = new ChatApp(); };
-    document.body.appendChild(s);
-    
+
   </script>
 
 </body>
