@@ -57,8 +57,6 @@ class ChatApp {
             el.addEventListener("touchstart", () => this.clearNewMessage(), { passive: true });
         });
 
-        this.measureModalHeight({ captureAsOrig: true, apply: true });
-
         // Default collapsed on load
         this.setHeader("Chat");
         if (savedCollapse === "true") {
@@ -122,7 +120,7 @@ class ChatApp {
             });
         }
 
-        this.measureModalHeight({ captureAsOrig: !this.isCollapsed, apply: true });
+        this.reflowToModalHeight(!this.isCollapsed);
     }
 
     async setNickname() {
@@ -151,7 +149,7 @@ class ChatApp {
 
         this.sendBtn.addEventListener("click", () => this.handleSend());
 
-        this.measureModalHeight({ captureAsOrig: !this.isCollapsed, apply: true });
+        this.reflowToModalHeight(!this.isCollapsed);
 
         // start SSE connection
         this.startStream();
@@ -263,18 +261,6 @@ class ChatApp {
         }
     }
 
-    measureModalHeight({ captureAsOrig = false, apply = true } = {}) {
-        const modal = this.modalEl;
-        const shell = this.shellEl;
-        if (!modal || !shell) return;
-
-        requestAnimationFrame(() => {
-            const h = modal.offsetHeight; // actual rendered height
-            if (apply) shell.style.height = `${h}px`;
-            if (captureAsOrig) shell.dataset.origHeight = `${h}px`;
-        });
-    }
-
     // New: ensure shell height matches current modal
     reflowToModalHeight(captureAsOrig = false) {
         const modal = this.modalEl;
@@ -372,15 +358,15 @@ class ChatApp {
         const shell = this.shellEl;
         if (!modal || !shell) return;
 
-        // Capture current (uncollapsed) height as orig before collapsing
-        this.measureModalHeight({ captureAsOrig: true, apply: false });
+        if (!shell.dataset.origHeight) {
+            shell.dataset.origHeight = getComputedStyle(shell).height;
+        }
 
         modal.classList.add("collapsed");
         this.collapseBtn.textContent = "➕";
         this.isCollapsed = true;
         localStorage.setItem("chatCollapsed", "true");
 
-        // After class applies, set shell to header height
         requestAnimationFrame(() => {
             const header = modal.querySelector(".chat-header");
             const h = header ? header.offsetHeight : modal.offsetHeight || 60;
@@ -398,8 +384,8 @@ class ChatApp {
         this.isCollapsed = false;
         localStorage.setItem("chatCollapsed", "false");
 
-        // Measure *after* layout updates; don't rely on dataset.origHeight on first run
-        this.measureModalHeight({ captureAsOrig: true, apply: true });
+        const restore = shell.dataset.origHeight || "400px";
+        shell.style.height = restore;
     }
 
     toggleCollapse() {
