@@ -386,7 +386,7 @@ class ChatApp {
 
         // Recalculate from the now-expanded modal so the shell snaps to the correct Y.
         
-        const restore = shell.dataset.origHeight || "400px";
+        const restore = shell.dataset.origHeight || "306px";
         shell.style.height = restore;
     }
 

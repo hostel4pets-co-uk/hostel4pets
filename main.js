@@ -7,7 +7,7 @@ async function openChatPanel() {
     shell.style.bottom = "0";
     shell.style.right = "0";
     shell.style.width = "300px";
-    shell.style.height = "400px";
+    shell.style.height = "auto";
     shell.style.zIndex = "2000";
     shell.style.display = "flex";
     shell.style.flexDirection = "column";
