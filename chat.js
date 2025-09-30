@@ -238,17 +238,42 @@ class ChatApp {
 
     collapseChat() {
         const modal = document.querySelector(".chat-modal");
+        const shell = document.getElementById("chat-panel-shell");
+
+        if (!modal || !shell) return;
+
+        // remember original shell height once
+        if (!shell.dataset.origHeight) {
+            shell.dataset.origHeight = getComputedStyle(shell).height; // e.g. "400px"
+        }
+
         modal.classList.add("collapsed");
         this.collapseBtn.textContent = "➕";
         this.isCollapsed = true;
-    }
+
+        // after styles apply, size shell so the header sits flush at the bottom
+        requestAnimationFrame(() => {
+            const header = modal.querySelector(".chat-header");
+            const h = header ? header.offsetHeight : modal.offsetHeight || 60;
+            shell.style.height = `${h}px`;
+        });
+    },
 
     uncollapseChat() {
         const modal = document.querySelector(".chat-modal");
+        const shell = document.getElementById("chat-panel-shell");
+
+        if (!modal || !shell) return;
+
         modal.classList.remove("collapsed");
         this.collapseBtn.textContent = "➖";
         this.isCollapsed = false;
+
+        // restore the shell height to what it was before collapsing
+        const restore = shell.dataset.origHeight || "400px";
+        shell.style.height = restore;
     }
+
 
 
     toggleCollapse() {
