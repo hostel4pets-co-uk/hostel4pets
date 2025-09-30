@@ -35,9 +35,7 @@ class ChatApp {
         // Header elements
         this.modalEl = document.querySelector(".chat-modal");
         this.shellEl = document.getElementById("chat-panel-shell");
-        this.headerEl =
-            document.querySelector(".chat-header .title") ||
-            document.querySelector(".chat-header");
+        this.titleEl = document.querySelector(".chat-header .title");
 
         this.clearBtn.addEventListener("click", () => this.clearChat());
         this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
@@ -54,12 +52,17 @@ class ChatApp {
         this.setHeader("Chat");
         this.collapseChat();
 
+        const headerDiv = document.querySelector(".chat-header");
+        if (headerDiv) {
+            if (this.isMobile) headerDiv.addEventListener("click", () => this.toggleCollapse()); // single tap on mobile
+            else headerDiv.addEventListener("dblclick", () => this.toggleCollapse()); // double click on desktop
+        }
         this.init();
     }
 
     setHeader(text) {
-        if (!this.headerEl) return;
-        this.headerEl.textContent = text || "Chat";
+        if (!this.titleEl) return;
+        this.titleEl.textContent = text || "Chat";
     }
 
     markNewMessage() {
