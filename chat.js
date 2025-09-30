@@ -385,11 +385,9 @@ class ChatApp {
         localStorage.setItem("chatCollapsed", "false");
 
         // Recalculate from the now-expanded modal so the shell snaps to the correct Y.
-        requestAnimationFrame(() => {
-            const h = modal.offsetHeight;
-            shell.style.height = `${h}px`;
-            shell.dataset.origHeight = `${h}px`;
-        });
+        
+        const restore = shell.dataset.origHeight || "400px";
+        shell.style.height = restore;
     }
 
     toggleCollapse() {
