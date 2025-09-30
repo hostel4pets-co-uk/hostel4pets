@@ -672,7 +672,7 @@ button:hover {
 
 /* Timestamp outside bubble */
 .timestamp {
-  font-size: 0.7em;
+  font-size: 0.45em;
   color: #555;
   margin-top: 2px;
 }
