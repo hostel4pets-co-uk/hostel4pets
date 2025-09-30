@@ -44,7 +44,10 @@ class ChatApp {
         this.titleEl = document.querySelector(".chat-header .title");
 
         this.clearBtn.addEventListener("click", () => this.clearChat());
-        this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
+        this.collapseBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.toggleCollapse();
+        });
 
         // Clear "New Message(s)!" on hover or touch
         const clearTargets = [this.modalEl, this.chatroomEl, this.shellEl].filter(Boolean);
@@ -67,6 +70,8 @@ class ChatApp {
             if (this.isMobile) headerDiv.addEventListener("click", () => this.toggleCollapse()); // single tap on mobile
             else headerDiv.addEventListener("dblclick", () => this.toggleCollapse()); // double click on desktop
         }
+
+        window.addEventListener("resize", () => this.reflowToModalHeight(false));
         this.init();
     }
 
@@ -87,10 +92,11 @@ class ChatApp {
         const stored = localStorage.getItem(this.sessionKey);
         if (stored) {
             this.session = JSON.parse(stored);
-            this.restoreSession();
+            // Ensure welcome exists server-side for older sessions that missed it
+            this.sendWelcomeIfNeeded().finally(() => this.restoreSession());
             return;
         }
-        this.injectWelcome();
+        // Pre-login state shows there is a message waiting
         this.setHeader("New Message!");
         this.prepareNicknameSetup();
     }
@@ -105,14 +111,16 @@ class ChatApp {
 
         this.submitBtn.addEventListener("click", () => this.setNickname());
 
-        if (this.isMobile) return;
+        if (!this.isMobile) {
+            this.nicknameEl.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.setNickname();
+                }
+            });
+        }
 
-        this.nicknameEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                this.setNickname();
-            }
-        });
+        this.reflowToModalHeight(!this.isCollapsed);
     }
 
     async setNickname() {
@@ -123,6 +131,9 @@ class ChatApp {
         this.session = { sessionId, nickname };
 
         localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
+
+        await this.sendWelcomeIfNeeded();
+
         this.restoreSession();
     }
 
@@ -138,17 +149,19 @@ class ChatApp {
 
         this.sendBtn.addEventListener("click", () => this.handleSend());
 
+        this.reflowToModalHeight(!this.isCollapsed);
+
         // start SSE connection
         this.startStream();
 
-        if (this.isMobile) return;
-
-        this.messageEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                this.handleSend();
-            }
-        });
+        if (!this.isMobile) {
+            this.messageEl.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.handleSend();
+                }
+            });
+        }
     }
 
     async handleSend() {
@@ -248,12 +261,48 @@ class ChatApp {
         }
     }
 
+    // New: ensure shell height matches current modal
+    reflowToModalHeight(captureAsOrig = false) {
+        const modal = this.modalEl;
+        const shell = this.shellEl;
+        if (!modal || !shell) return;
 
-    injectWelcome() {
-        const text =
-            "Hello! Welcome to Hostel4Pets, the Home away from Home for your four legged companions!\nFeel free to write to us in here if you have any queries!";
-        this.addMessage(text, "Host", Date.now());
-        this.markNewMessage();
+        requestAnimationFrame(() => {
+            const h = modal.offsetHeight;
+            shell.style.height = `${h}px`;
+            if (captureAsOrig) shell.dataset.origHeight = `${h}px`;
+        });
+    }
+
+    // New: post the welcome message to the server once per session
+    async sendWelcomeIfNeeded() {
+        try {
+            if (!this.session?.sessionId) return;
+            const key = `welcomeSent:${this.session.sessionId}`;
+            if (localStorage.getItem(key)) return;
+
+            const payload = {
+                text: "Hello! Welcome to Hostel4Pets, the Home away from Home for your four legged companions!\nFeel free to write to us in here if you have any queries!",
+                sender: "Hostel4Pets",
+                timestamp: Date.now(),
+                sessionId: this.session.sessionId,
+                messageID: 0
+            };
+
+            const res = await fetch(`${this.backendUrl}/chat/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                localStorage.setItem(key, "true");
+            } else {
+                console.error("Welcome send failed with status", res.status);
+            }
+        } catch (e) {
+            console.error("Failed to send welcome:", e);
+        }
     }
 
     formatTime(timestamp) {
