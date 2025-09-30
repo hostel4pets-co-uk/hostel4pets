@@ -132,11 +132,12 @@
       shell.style.display = "flex";
       shell.style.flexDirection = "column";
       shell.style.overflow = "hidden";
-      shell.style.background = "transparent"; // let chat.html drive styling
+      shell.style.background = "transparent";
 
       let html = "";
       try {
-        const resp = await fetch("./chat.html");
+        // cache-bust while developing so you do not see a stale chat.html
+        const resp = await fetch("./chat.html?v=" + Date.now());
         if (!resp.ok) throw new Error("Failed to load chat.html");
         html = await resp.text();
       } catch (err) {
@@ -160,14 +161,12 @@
     (async () => {
       await openChatPanel();
       const s = document.createElement("script");
-      s.src = "./chat.js";
+      s.src = "./chat.js?v=" + Date.now(); // cache-bust while developing
       s.onload = () => {
         if (window.ChatApp && !window.__chatApp) window.__chatApp = new ChatApp();
       };
       document.body.appendChild(s);
     })();
-
-
   </script>
 
 </body>

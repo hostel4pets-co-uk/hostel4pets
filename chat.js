@@ -261,4 +261,4 @@ class ChatApp {
 
 }
 
-document.addEventListener("DOMContentLoaded", () => new ChatApp());
+window.ChatApp = ChatApp;
