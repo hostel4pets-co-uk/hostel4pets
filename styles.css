@@ -421,6 +421,7 @@ button:hover {
   max-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-clip: padding-box;
   overflow: hidden;
   font-family: Arial, sans-serif;
   animation: fadeIn 0.3s ease-in-out;
@@ -504,7 +505,6 @@ button:hover {
   max-height: 60px;
   height: auto;
 }
-
 
 /* Message history box */
 #chatroom {
