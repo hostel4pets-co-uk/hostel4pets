@@ -541,6 +541,13 @@ button:hover {
   background: #fdfdfd;
 }
 
+#message:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+}
+
+
 /* Footer */
 .chat-footer {
   --footer-pad-y: 10px;
