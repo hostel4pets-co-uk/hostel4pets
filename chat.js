@@ -21,8 +21,10 @@ class ChatApp {
         this.sendBtn = document.getElementById("send-button");
         this.submitBtn = document.getElementById("submit-button");
         this.nicknameEl = document.getElementById("nickname");
+        this.muteBtn = document.getElementById("mute-btn");
         this.isMobile = !!(window.md && (window.md.mobile() || window.md.tablet()));
         let savedCollapse = localStorage.getItem("chatCollapsed");
+        this.isMuted = localStorage.getItem("mute") === "true";
 
         if (savedCollapse === null) {
             localStorage.setItem("chatCollapsed", "true");
@@ -49,6 +51,7 @@ class ChatApp {
             e.stopPropagation();
             this.toggleCollapse();
         });
+        this.muteBtn.addEventListener("click", () => this.toggleMute());
 
         // Clear "New Message(s)!" on hover or touch
         const clearTargets = [this.modalEl, this.chatroomEl, this.shellEl].filter(Boolean);
@@ -72,8 +75,27 @@ class ChatApp {
             else headerDiv.addEventListener("dblclick", () => this.toggleCollapse()); // double click on desktop
         }
 
+        this.updateMuteButton();
+
         window.addEventListener("resize", () => this.reflowToModalHeight(false));
+        this._setupNotificationSound();
         this.init();
+    }
+
+    _setupNotificationSound() {
+        this.notificationAudio = new Audio("/sounds/dogBark.mp3");
+        this.notificationAudio.volume = 0.3;
+    }
+
+    updateMuteButton() {
+        if (!this.muteBtn) return;
+        this.muteBtn.textContent = this.isMuted ? "🔔" : "🔕";
+    }
+
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        localStorage.setItem("mute", this.isMuted.toString());
+        this.updateMuteButton();
     }
 
     setHeader(text) {
@@ -345,6 +367,8 @@ class ChatApp {
                     const last = history[history.length - 1];
                     if (last.sender !== this.session.nickname) {
                         this.markNewMessage();
+                        this._playNotificationSound();
+                        this.blinkBorder();
                     }
                 }
             } catch (e) {
@@ -355,6 +379,15 @@ class ChatApp {
         evtSource.onerror = (err) => {
             console.error("SSE connection error:", err);
         };
+    }
+
+    _playNotificationSound() {
+        if (this.isMuted) return; // skip if muted
+        if (!this.notificationAudio) return;
+        this.notificationAudio.currentTime = 0;
+        this.notificationAudio.play().catch(err => {
+            console.warn("Notification sound failed to play:", err);
+        });
     }
 
     addMessage(text, author, timestamp) {
@@ -421,6 +454,14 @@ class ChatApp {
             shell.style.height = `${h}px`;
             if (captureAsOrig) shell.dataset.origHeight = `${h}px`;
         });
+    }
+
+    blinkBorder() {
+        if (!this.modalEl) return;
+        this.modalEl.classList.add("blink");
+        setTimeout(() => {
+            this.modalEl.classList.remove("blink");
+        }, 3000); // blink for 3 seconds
     }
 
     // New: post the welcome message to the server once per session

@@ -730,3 +730,15 @@ button:hover {
     width: 98%;
   }
 }
+
+@keyframes blink-border {
+  0%   { border-color: transparent; }
+  50%  { border-color: var(--h4pgreen, #04dc3b); }
+  100% { border-color: transparent; }
+}
+
+.chat-modal.blink {
+  animation: blink-border 0.5s ease-in-out infinite;
+  border-width: 2px;
+  border-style: solid;
+}
