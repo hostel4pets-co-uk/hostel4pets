@@ -1,3 +1,4 @@
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 (function initMobileDetect() {
     if (typeof window.MobileDetect !== "undefined") {
         window.md = new window.MobileDetect(window.navigator.userAgent);
@@ -235,7 +236,7 @@ class ChatApp {
 
         const textEl = document.createElement("div");
         textEl.classList.add("message-text");
-        textEl.textContent = text;
+        textEl.innerHTML = DOMPurify.sanitize(text.replace(/\n/g, "<br>"));
 
         msgEl.appendChild(nickEl);
         msgEl.appendChild(textEl);
