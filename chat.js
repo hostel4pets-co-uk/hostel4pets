@@ -15,6 +15,8 @@
 
 class ChatApp {
     constructor() {
+        window.nicknameSet = false;
+
         this.chatroomEl = document.getElementById("chatroom");
         this.messageEl = document.getElementById("message");
         this.sendBtn = document.getElementById("send-button");
@@ -102,6 +104,7 @@ class ChatApp {
     }
 
     prepareNicknameSetup() {
+
         this.chatroomEl.style.display = "none";
         this.messageEl.style.display = "none";
         this.sendBtn.style.display = "none";
@@ -119,6 +122,8 @@ class ChatApp {
                 }
             });
         }
+
+        window.nicknameSet = true;
 
         this.reflowToModalHeight(!this.isCollapsed);
     }
@@ -138,6 +143,8 @@ class ChatApp {
     }
 
     restoreSession() {
+        window.nicknameSet = true;
+
         this.chatroomEl.style.display = "flex";
         this.messageEl.style.display = "block";
         this.sendBtn.style.display = "block";

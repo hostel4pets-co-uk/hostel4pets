@@ -7,7 +7,7 @@ async function openChatPanel() {
     shell.style.bottom = "0";
     shell.style.right = "0";
     shell.style.width = "300px";
-    shell.style.height = "auto";
+    shell.style.height = window.nicknameSet ? "450px" : "300px";
     shell.style.zIndex = "2000";
     shell.style.display = "flex";
     shell.style.flexDirection = "column";
@@ -17,7 +17,7 @@ async function openChatPanel() {
     let html = "";
     try {
         // cache-bust while developing so you do not see a stale chat.html
-        const resp = await fetch("./chat.html?v=" + Date.now());
+        const resp = await fetch("./chat.html");
         if (!resp.ok) throw new Error("Failed to load chat.html");
         html = await resp.text();
     } catch (err) {

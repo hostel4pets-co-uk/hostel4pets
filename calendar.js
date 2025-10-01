@@ -536,92 +536,92 @@ class Calendar {
 
     // Load bookings from bookings.json and add dots to the calendar
     async loadBookings() {
-      if (this.abortController) this.abortController.abort();
-      this.abortController = new AbortController();
-      const signal = this.abortController.signal;
-    
-      const loadId = ++this.loadId;
-    
-      const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); // local midnight
-    
-      try {
-        const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
-        if (!response.ok) throw new Error('Failed to fetch calendar.json');
-        const events = await response.json();
-    
-        if (loadId !== this.loadId) return;
-    
-        // First pass: handle "Not available" blocks (normalise dates)
-        for (const ev of events) {
-          if (!ev.petId || ev.petId === "Unknown") continue;
-    
-          const types = Array.isArray(ev.type) ? ev.type : [ev.type];
-          if (!types.includes("Not available")) continue;
-    
-          const startDay = toDay(new Date(ev.start));
-          const endDay   = toDay(new Date(ev.end));
-    
-          for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+        if (this.abortController) this.abortController.abort();
+        this.abortController = new AbortController();
+        const signal = this.abortController.signal;
+
+        const loadId = ++this.loadId;
+
+        const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); // local midnight
+
+        try {
+            const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
+            if (!response.ok) throw new Error('Failed to fetch calendar.json');
+            const events = await response.json();
+
             if (loadId !== this.loadId) return;
-            if (d.getMonth() !== this.date.getMonth()) continue;
-            if (d.getFullYear() !== this.date.getFullYear()) continue;
-    
-            const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
-            const cellIndex = firstDay + d.getDate() - 1;
-            const row = Math.floor(cellIndex / 7);
-            const column = cellIndex % 7;
-            const table = document.getElementById('Calendar');
-            const tbody = table.querySelector('tbody');
-            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-            if (!cell) continue;
-    
-            cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
-            cell.dataset.locked = 'na';
-          }
-        }
-    
-        // Second pass: normal stays (support multiple stays per pet) — normalise
-        const staysByPet = {};
-    
-        events
-          .filter(ev => ev.petId && ev.petId !== "Unknown")
-          .sort((a, b) => new Date(a.start) - new Date(b.start))
-          .forEach(ev => {
-            const types = Array.isArray(ev.type) ? ev.type : [ev.type];
-            if (types.includes("Not available")) return;
-    
-            const petId = ev.petId;
-            if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [] };
-    
-            if (types.includes("Check-in")) {
-              staysByPet[petId].open = toDay(new Date(ev.start));
-            }
-            if (types.includes("Check-out")) {
-              const open = staysByPet[petId].open;
-              if (open) {
+
+            // First pass: handle "Not available" blocks (normalise dates)
+            for (const ev of events) {
+                if (!ev.petId || ev.petId === "Unknown") continue;
+
+                const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                if (!types.includes("Not available")) continue;
+
+                const startDay = toDay(new Date(ev.start));
                 const endDay = toDay(new Date(ev.end));
-                staysByPet[petId].ranges.push([open, endDay]);
-                staysByPet[petId].open = null;
-              }
+
+                for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+                    if (loadId !== this.loadId) return;
+                    if (d.getMonth() !== this.date.getMonth()) continue;
+                    if (d.getFullYear() !== this.date.getFullYear()) continue;
+
+                    const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+                    const cellIndex = firstDay + d.getDate() - 1;
+                    const row = Math.floor(cellIndex / 7);
+                    const column = cellIndex % 7;
+                    const table = document.getElementById('Calendar');
+                    const tbody = table.querySelector('tbody');
+                    const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+                    if (!cell) continue;
+
+                    cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
+                    cell.dataset.locked = 'na';
+                }
             }
-          });
-    
-        // Draw all ranges (dates already normalised)
-        for (const petId in staysByPet) {
-          for (const [startDay, endDay] of staysByPet[petId].ranges) {
-            for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
-              if (loadId !== this.loadId) return;
-              this.addDot(new Date(d));
+
+            // Second pass: normal stays (support multiple stays per pet) — normalise
+            const staysByPet = {};
+
+            events
+                .filter(ev => ev.petId && ev.petId !== "Unknown")
+                .sort((a, b) => new Date(a.start) - new Date(b.start))
+                .forEach(ev => {
+                    const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                    if (types.includes("Not available")) return;
+
+                    const petId = ev.petId;
+                    if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [] };
+
+                    if (types.includes("Check-in")) {
+                        staysByPet[petId].open = toDay(new Date(ev.start));
+                    }
+                    if (types.includes("Check-out")) {
+                        const open = staysByPet[petId].open;
+                        if (open) {
+                            const endDay = toDay(new Date(ev.end));
+                            staysByPet[petId].ranges.push([open, endDay]);
+                            staysByPet[petId].open = null;
+                        }
+                    }
+                });
+
+            // Draw all ranges (dates already normalised)
+            for (const petId in staysByPet) {
+                for (const [startDay, endDay] of staysByPet[petId].ranges) {
+                    for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+                        if (loadId !== this.loadId) return;
+                        this.addDot(new Date(d));
+                    }
+                }
             }
-          }
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.log('Fetch aborted');
+            } else {
+                console.error('Error loading bookings:', error);
+            }
         }
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          console.log('Fetch aborted');
-        } else {
-          console.error('Error loading bookings:', error);
-        }
-      }
     }
 
     // Change the current month
