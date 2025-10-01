@@ -536,14 +536,22 @@ class ChatApp {
         );
         if (!confirmClear) return;
 
+        if (this.session?.sessionId) {
+            const key = `welcomeSent:${this.session.sessionId}`;
+            localStorage.removeItem(key);
+        }
+
+        Object.keys(localStorage)
+            .filter(k => k.startsWith("welcomeSent:"))
+            .forEach(k => localStorage.removeItem(k));
+
         localStorage.removeItem(this.sessionKey);
-        const key = `welcomeSent:${this.session.sessionId}`;
-        localStorage.removeItem(key);
         this.session = null;
         this.chatroomEl.innerHTML = "";
-        // Reflect fake-message state in header when logged out
+
         this.setHeader("New Message!");
         this.prepareNicknameSetup();
+        this.reflowToModalHeight(!this.isCollapsed);
     }
 
     collapseChat() {
