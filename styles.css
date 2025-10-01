@@ -18,8 +18,8 @@ html {
 #pageTitle {
   text-align: center; /* Centers the title text */
   font-size: 4vw; /* Example of making the font size responsive to the viewport width */
-  max-font-size: 24px; /* Optional: Prevents the font size from getting too large on wide screens */
-  min-font-size: 16px; /* Optional: Ensures readability on smaller screens */
+  /* max-font-size: 24px; 
+  min-font-size: 16px;  */
   white-space: nowrap; /* Prevents the title from wrapping into multiple lines */
   overflow: hidden; /* Hides overflow text if it gets too long for the container */
   text-overflow: ellipsis; /* Adds an ellipsis to indicate text overflow (optional) */
