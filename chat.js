@@ -537,6 +537,8 @@ class ChatApp {
         if (!confirmClear) return;
 
         localStorage.removeItem(this.sessionKey);
+        const key = `welcomeSent:${this.session.sessionId}`;
+        localStorage.removeItem(key);
         this.session = null;
         this.chatroomEl.innerHTML = "";
         // Reflect fake-message state in header when logged out
