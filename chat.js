@@ -509,19 +509,9 @@ class ChatApp {
     }
 
     async generateSessionId(nickname) {
-        let ip = "0.0.0.0";
-        try {
-            const res = await fetch("https://kittycrypto.ddns.net:7619/get-ip");
-            if (res.ok) {
-                const data = await res.json();
-                ip = data.ip || "0.0.0.0";
-            }
-        } catch (e) {
-            console.error("Could not retrieve IP:", e);
-        }
 
         const timestamp = Date.now().toString();
-        const input = `${nickname}|${timestamp}|${ip}`;
+        const input = `${nickname}|${timestamp}`;
 
         const encoder = new TextEncoder();
         const data = encoder.encode(input);
