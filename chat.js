@@ -15,7 +15,6 @@
 
 class ChatApp {
     constructor() {
-        window.nicknameSet = false;
 
         this.chatroomEl = document.getElementById("chatroom");
         this.messageEl = document.getElementById("message");
@@ -123,8 +122,6 @@ class ChatApp {
             });
         }
 
-        window.nicknameSet = true;
-
         this.reflowToModalHeight(!this.isCollapsed);
     }
 
@@ -138,14 +135,11 @@ class ChatApp {
         localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
 
         await this.sendWelcomeIfNeeded();
-        
-        shell.style.height = window.nicknameSet ? "450px" : "300px";
 
         this.restoreSession();
     }
 
     restoreSession() {
-        window.nicknameSet = true;
 
         this.chatroomEl.style.display = "flex";
         this.messageEl.style.display = "block";
@@ -171,6 +165,8 @@ class ChatApp {
                 }
             });
         }
+
+        window.shell.style.height = "450px";
     }
 
     async handleSend() {
