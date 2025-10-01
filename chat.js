@@ -241,7 +241,6 @@ class ChatApp {
     }
 
     prepareNicknameSetup() {
-
         this.chatroomEl.style.display = "none";
         this.messageEl.style.display = "none";
         this.sendBtn.style.display = "none";
@@ -249,19 +248,25 @@ class ChatApp {
         this.nicknameEl.hidden = false;
         this.submitBtn.hidden = false;
 
-        this.submitBtn.addEventListener("click", () => this.setNickname());
+        // clear old listeners
+        this.submitBtn.onclick = null;
+        this.nicknameEl.onkeydown = null;
+
+        // re-bind
+        this.submitBtn.onclick = () => this.setNickname();
 
         if (!this.isMobile) {
-            this.nicknameEl.addEventListener("keydown", (e) => {
+            this.nicknameEl.onkeydown = (e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     this.setNickname();
                 }
-            });
+            };
         }
 
         this.reflowToModalHeight(!this.isCollapsed);
     }
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -278,7 +283,6 @@ class ChatApp {
     }
 
     restoreSession() {
-
         this.chatroomEl.style.display = "flex";
         this.messageEl.style.display = "block";
         this.sendBtn.style.display = "block";
@@ -288,7 +292,9 @@ class ChatApp {
 
         this.chatroomEl.innerHTML = "";
 
-        this.sendBtn.addEventListener("click", () => this.handleSend());
+        // clear old listener first
+        this.sendBtn.onclick = null;
+        this.sendBtn.onclick = () => this.handleSend();
 
         this.reflowToModalHeight(!this.isCollapsed);
 
@@ -296,25 +302,14 @@ class ChatApp {
         this.startStream();
 
         if (!this.isMobile) {
-            this.messageEl.addEventListener("keydown", (e) => {
+            this.messageEl.onkeydown = null;
+            this.messageEl.onkeydown = (e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     this.handleSend();
                 }
-            });
+            };
         }
-
-        // this.messageEl.addEventListener("input", () => {
-        //     const raw = this.messageEl.innerText;
-        //     const html = this.messageEl.innerHTML;
-        //     this.messageEl.innerHTML = this.parseTags(raw);
-        //     const range = document.createRange();
-        //     range.selectNodeContents(this.messageEl);
-        //     range.collapse(false);
-        //     const sel = window.getSelection();
-        //     sel.removeAllRanges();
-        //     sel.addRange(range);
-        // });
 
         this.enableLivePreview();
 
@@ -469,7 +464,7 @@ class ChatApp {
         try {
             if (!this.session?.sessionId) return;
 
-            
+
 
             const key = `welcomeSent:${this.session.sessionId}`;
             if (localStorage.getItem(key)) return;
@@ -491,9 +486,9 @@ class ChatApp {
 
             if (res.ok) {
                 Object.keys(localStorage)
-                .filter(k => k.startsWith("welcomeSent:"))
-                .forEach(k => localStorage.removeItem(k));
-                
+                    .filter(k => k.startsWith("welcomeSent:"))
+                    .forEach(k => localStorage.removeItem(k));
+
                 localStorage.setItem(key, "true");
             } else {
                 console.error("Welcome send failed with status", res.status);
