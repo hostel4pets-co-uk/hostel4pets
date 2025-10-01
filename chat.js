@@ -476,7 +476,8 @@ class ChatApp {
                 sender: "Hostel4Pets",
                 timestamp: Date.now(),
                 sessionId: this.session.sessionId,
-                messageID: 0
+                messageID: 0,
+                isWelcomeMessage: true
             };
 
             const res = await fetch(`${this.backendUrl}/chat/send`, {
