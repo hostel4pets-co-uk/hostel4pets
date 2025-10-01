@@ -468,10 +468,8 @@ class ChatApp {
     async sendWelcomeIfNeeded() {
         try {
             if (!this.session?.sessionId) return;
+
             
-            Object.keys(localStorage)
-            .filter(k => k.startsWith("welcomeSent:"))
-            .forEach(k => localStorage.removeItem(k));
 
             const key = `welcomeSent:${this.session.sessionId}`;
             if (localStorage.getItem(key)) return;
@@ -492,6 +490,10 @@ class ChatApp {
             });
 
             if (res.ok) {
+                Object.keys(localStorage)
+                .filter(k => k.startsWith("welcomeSent:"))
+                .forEach(k => localStorage.removeItem(k));
+                
                 localStorage.setItem(key, "true");
             } else {
                 console.error("Welcome send failed with status", res.status);
