@@ -13,6 +13,7 @@ async function openChatPanel() {
     shell.style.flexDirection = "column";
     shell.style.overflow = "hidden";
     shell.style.background = "transparent";
+    window.shell = shell;
 
     let html = "";
     try {

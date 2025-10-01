@@ -138,6 +138,8 @@ class ChatApp {
         localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
 
         await this.sendWelcomeIfNeeded();
+        
+        shell.style.height = window.nicknameSet ? "450px" : "300px";
 
         this.restoreSession();
     }
