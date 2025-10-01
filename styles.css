@@ -547,6 +547,7 @@ button:hover {
   pointer-events: none;
 }
 
+
 /* Footer */
 .chat-footer {
   --footer-pad-y: 10px;
@@ -723,23 +724,16 @@ button:hover {
   border-radius: 4px;
 }
 
-
-.chat-modal.blink {
-  animation: blink-outline 0.5s ease-in-out infinite;
-  outline: 2px solid transparent; /* reserve the outline for animation */
-  outline-offset: -2px; /* optional: keeps it snug against the modal edges */
+@keyframes blink-border {
+  0%   { border-color: transparent; }
+  50%  { border-color: var(--h4pgreen, #04dc3b); }
+  100% { border-color: transparent; }
 }
 
-@keyframes blink-outline {
-  0% {
-    outline-color: transparent;
-  }
-  50% {
-    outline-color: var(--h4pgreen, #04dc3b);
-  }
-  100% {
-    outline-color: transparent;
-  }
+.chat-modal.blink {
+  animation: blink-border 0.5s ease-in-out infinite;
+  border-width: 2px;
+  border-style: solid;
 }
 
 /* Responsive tweaks */
