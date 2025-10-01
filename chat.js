@@ -468,6 +468,11 @@ class ChatApp {
     async sendWelcomeIfNeeded() {
         try {
             if (!this.session?.sessionId) return;
+            
+            Object.keys(localStorage)
+            .filter(k => k.startsWith("welcomeSent:"))
+            .forEach(k => localStorage.removeItem(k));
+
             const key = `welcomeSent:${this.session.sessionId}`;
             if (localStorage.getItem(key)) return;
 
@@ -540,10 +545,6 @@ class ChatApp {
             const key = `welcomeSent:${this.session.sessionId}`;
             localStorage.removeItem(key);
         }
-
-        Object.keys(localStorage)
-            .filter(k => k.startsWith("welcomeSent:"))
-            .forEach(k => localStorage.removeItem(k));
 
         localStorage.removeItem(this.sessionKey);
         this.session = null;
