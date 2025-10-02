@@ -124,10 +124,13 @@ function calculateTotal() {
 }
 
 function updatePetOptions() {
-  const numOfPets = parseInt(document.getElementById('numOfPets').value);
-  let petOptionsHTML = '';
+  const numOfPets = parseInt(document.getElementById('numOfPets').value, 10);
+  const container = document.getElementById('petOptions');
+
+  // rebuild HTML
+  let html = '';
   for (let i = 0; i < numOfPets; i++) {
-    petOptionsHTML += `
+    html += `
       <label for="neutered${i + 1}">Pet ${i + 1} Neutered/Spayed:</label>
       <select id="neutered${i + 1}">
         <option value="yes">Yes</option>
@@ -140,15 +143,48 @@ function updatePetOptions() {
       </select><br>
     `;
   }
-  document.getElementById('petOptions').innerHTML = petOptionsHTML;
+  container.innerHTML = html;
+
+  // restore saved values if present
+  for (let i = 0; i < numOfPets; i++) {
+    const neuteredEl = document.getElementById('neutered' + (i + 1));
+    const cubEl = document.getElementById('cub' + (i + 1));
+
+    const neuteredSaved = localStorage.getItem('neutered' + (i + 1));
+    const cubSaved = localStorage.getItem('cub' + (i + 1));
+
+    if (neuteredSaved) neuteredEl.value = neuteredSaved;
+    if (cubSaved) cubEl.value = cubSaved;
+
+    // add listeners to persist changes
+    neuteredEl.addEventListener('change', e => {
+      localStorage.setItem('neutered' + (i + 1), e.target.value);
+    });
+    cubEl.addEventListener('change', e => {
+      localStorage.setItem('cub' + (i + 1), e.target.value);
+    });
+  }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
+  // restore numOfPets first
+  const savedNum = localStorage.getItem('numOfPets');
+  if (savedNum) {
+    document.getElementById('numOfPets').value = savedNum;
+  }
+
   updatePetOptions();
+
+  // save numOfPets changes
+  document.getElementById('numOfPets').addEventListener('change', e => {
+    localStorage.setItem('numOfPets', e.target.value);
+    updatePetOptions();
+  });
+
   document.getElementById('calculateButton').addEventListener('click', calculateTotal);
 
   const cssFiles = document.querySelectorAll('link[rel="stylesheet"]');
-  cssFiles.forEach(function (file) {
+  cssFiles.forEach(file => {
     file.href += '?v=' + new Date().getTime();
   });
 

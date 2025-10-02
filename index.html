@@ -28,62 +28,64 @@
       <img src="h4p.png" alt="Hostel4Pets Booking Calculator" id="pageTitle"
         style="width:100%; max-width:600px; height:auto; display:block; margin:auto;">
       <div class="subtitle">Booking Calculator</div>
+      <div id="booking-form">
+        <div class="form-group">
+          <label for="checkInDate">Check-in Date:</label>
+          <input type="date" id="checkInDate" name="checkIn">
+        </div>
 
-      <div class="form-group">
-        <label for="checkInDate">Check-in Date:</label>
-        <input type="date" id="checkInDate">
-      </div>
+        <div class="form-group">
+          <label for="checkInTime">Check-in Time:</label>
+          <input type="time" id="checkInTime" name="timeIn" min="07:00" max="22:00" step="1800">
+        </div>
 
-      <div class="form-group">
-        <label for="checkInTime">Check-in Time:</label>
-        <input type="time" id="checkInTime" min="07:00" max="22:00" step="1800">
-      </div>
+        <div class="form-group">
+          <label for="checkOutDate">Check-out Date:</label>
+          <input type="date" id="checkOutDate" name="checkOut">
+        </div>
 
-      <div class="form-group">
-        <label for="checkOutDate">Check-out Date:</label>
-        <input type="date" id="checkOutDate">
-      </div>
+        <div class="form-group">
+          <label for="checkOutTime">Check-out Time:</label>
+          <input type="time" id="checkOutTime" name="timeOut" min="07:00" max="22:00" step="1800">
+        </div>
 
-      <div class="form-group">
-        <label for="checkOutTime">Check-out Time:</label>
-        <input type="time" id="checkOutTime" min="07:00" max="22:00" step="1800">
-      </div>
+        <div class="form-group">
+          <label for="numOfPets">Number of Pets:</label>
+          <select id="numOfPets" name="numOfPets">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="numOfPets">Number of Pets:</label>
-        <select id="numOfPets" onchange="updatePetOptions()">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-      </div>
+        <div id="petOptions" class="form-group"></div>
 
-      <div id="petOptions" class="form-group"></div>
+        <button id="calculateButton">Calculate Total</button>
 
-      <button id="calculateButton">Calculate Total</button>
+        <div class="form-group">
+          <label for="totalPrice">Total Price:</label>
+          <input type="text" id="totalPrice" readonly name="totalPrice">
+        </div>
 
-      <div class="form-group">
-        <label for="totalPrice">Total Price:</label>
-        <input type="text" id="totalPrice" readonly>
-      </div>
+        <div class="form-group">
+          <label for="deposit">Deposit (25%):</label>
+          <input type="text" id="deposit" readonly name="deposit">
+        </div>
 
-      <div class="form-group">
-        <label for="deposit">Deposit (25%):</label>
-        <input type="text" id="deposit" readonly>
-      </div>
-
-      <div class="form-group">
-        <label for="priceBreakdown">Price Breakdown:</label>
-        <textarea id="priceBreakdown" readonly rows="10" cols="50"></textarea>
+        <div class="form-group">
+          <label for="priceBreakdown">Price Breakdown:</label>
+          <textarea id="priceBreakdown" readonly rows="10" cols="50" name="priceBreakdown"></textarea>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Calendar -->
-    <div class="container">
-      <div class="subtitle">Availability Calendar</div>
-      <div class="calendar-container" id="calendar-container"></div>
-    </div>
+  <!-- Calendar -->
+  <div class="container">
+    <div class="subtitle">Availability Calendar</div>
+    <div class="calendar-container" id="calendar-container"></div>
+  </div>
   </div>
 
   <script type="module" src="./calendar.js"></script>
