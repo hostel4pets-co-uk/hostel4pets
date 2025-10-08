@@ -22,6 +22,20 @@ const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
     });
 })();
 
+const petTooltip = document.createElement('div');
+petTooltip.id = 'pet-tooltip';
+petTooltip.style.position = 'fixed';
+petTooltip.style.background = 'rgba(0,0,0,0.8)';
+petTooltip.style.color = 'white';
+petTooltip.style.padding = '4px 8px';
+petTooltip.style.borderRadius = '4px';
+petTooltip.style.fontSize = '12px';
+petTooltip.style.pointerEvents = 'none';
+petTooltip.style.zIndex = '1000';
+petTooltip.style.display = 'none';
+document.body.appendChild(petTooltip);
+
+
 class Calendar {
 
     constructor(containerId) {
@@ -389,7 +403,7 @@ class Calendar {
 
 
     // Add a coloured dot to a date
-    addDot(date, colour) {
+    addDot(date, colour, petId = null) {
         // Normalise the date to ensure consistent format (strip time)
         const dotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -451,6 +465,7 @@ class Calendar {
         dot.style.bottom = `${padding + rowIndex * (dotSize + padding)}px`;
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
+        if (petId) dot.id = petId;
         cell.appendChild(dot);
 
         // Update the cell's background dynamically
@@ -468,6 +483,25 @@ class Calendar {
             // Only update normal backgrounds when not locked
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         }
+
+        if (petId) {
+            dot.addEventListener('mouseenter', e => {
+                const pet = this.allPets?.find(p => p.petId === petId);
+                if (!pet) return;
+                petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+                petTooltip.style.display = 'block';
+            });
+
+            dot.addEventListener('mousemove', e => {
+                petTooltip.style.left = e.pageX + 10 + 'px';
+                petTooltip.style.top = e.pageY + 10 + 'px';
+            });
+
+            dot.addEventListener('mouseleave', () => {
+                petTooltip.style.display = 'none';
+            });
+        }
+
     }
 
     // Add a legend to the calendar
@@ -551,6 +585,8 @@ class Calendar {
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
             const events = await response.json();
 
+            this.allPets = events.filter(ev => ev.petId && ev.petId !== "Unknown");
+
             if (loadId !== this.loadId) return;
 
             // First pass: "Not available" blocks
@@ -633,7 +669,7 @@ class Calendar {
                 for (const [startDay, endDay] of staysByPet[petId].ranges) {
                     for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
                         if (loadId !== this.loadId) return;
-                        this.addDot(new Date(d), assignedColour);
+                        this.addDot(new Date(d), assignedColour, petId);
                     }
                 }
             }
