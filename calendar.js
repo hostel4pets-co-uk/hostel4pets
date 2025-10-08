@@ -35,6 +35,32 @@ petTooltip.style.zIndex = '1000';
 petTooltip.style.display = 'none';
 document.body.appendChild(petTooltip);
 
+function addMobileTooltip(dot, petId) {
+    let pressTimer;
+
+    const showInfo = e => {
+        const pet = window.calendarInstance?.allPets?.find(p => p.petId === petId);
+        if (!pet) return;
+        petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+        petTooltip.style.display = 'block';
+        petTooltip.style.left = e.touches[0].pageX + 10 + 'px';
+        petTooltip.style.top = e.touches[0].pageY + 10 + 'px';
+    };
+
+    dot.addEventListener('touchstart', e => {
+        pressTimer = setTimeout(() => showInfo(e), 500);
+    });
+
+    dot.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+        petTooltip.style.display = 'none';
+    });
+
+    dot.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+        petTooltip.style.display = 'none';
+    });
+}
 
 class Calendar {
 
@@ -466,6 +492,8 @@ class Calendar {
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
         if (petId) dot.id = petId;
+        if (petId && window.md && (window.md.mobile() || window.md.tablet())) addMobileTooltip(dot, petId);
+
         cell.appendChild(dot);
 
         // Update the cell's background dynamically
