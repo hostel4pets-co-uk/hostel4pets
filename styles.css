@@ -216,16 +216,6 @@ button:hover {
   font-weight: 500;
 }
 
-#booking-form {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-#booking-form form {
-  width: 100%;
-  max-width: 600px; /* or whatever you used before */
-}
-
 .modal-content .close {
   position: absolute;
   top: 10px;
