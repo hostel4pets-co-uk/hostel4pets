@@ -3,7 +3,7 @@ export const dotColours = Object.freeze({
     PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
     GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
     BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
-    BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
+    AQUAMARINE: '#7fffd4', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
 });
 
 export const backgroundColours = Object.freeze({
