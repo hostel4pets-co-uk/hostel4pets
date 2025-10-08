@@ -26,17 +26,13 @@ async function getWikiLink(breed) {
 
 async function tryAnimalVariants(breed) {
     const attempts = [`${breed} dog`, `${breed} cat`, `${breed} breed`];
-
     for (const term of attempts) {
         const hit = await searchWiki(term);
         if (!hit) continue;
-
         const valid = await isAnimalBreed(hit.pageid);
         if (!valid) continue;
-
         return `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, "_"))}`;
     }
-
     return null;
 }
 
@@ -47,9 +43,7 @@ async function isAnimalBreed(pageId) {
         if (!res.ok) return false;
         const data = await res.json();
         const categories = data?.query?.pages?.[pageId]?.categories || [];
-        return categories.some(c =>
-            /dog breeds|cat breeds|domestic dogs|domestic cats/i.test(c.title)
-        );
+        return categories.some(c => /dog breeds|cat breeds|domestic dogs|domestic cats/i.test(c.title));
     } catch {
         return false;
     }
@@ -80,7 +74,6 @@ async function loadDayView() {
         if (!res.ok) throw new Error("Failed to fetch calendar.json");
         const events = await res.json();
 
-        // Build stays map with multiple ranges per pet
         const staysByPet = {};
 
         events
@@ -95,21 +88,24 @@ async function loadDayView() {
 
                 if (types.includes("Check-in")) {
                     staysByPet[petId].open = normalise(new Date(ev.start));
-                    staysByPet[petId].pet = ev; // latest metadata
+                    staysByPet[petId].pet = ev;
+                    return;
                 }
 
-                if (types.includes("Check-out")) {
-                    const start = staysByPet[petId].open;
-                    const end = normalise(new Date(ev.end));
-                    if (start) {
-                        staysByPet[petId].ranges.push([start, end]);
-                        staysByPet[petId].open = null;
-                    }
-                    staysByPet[petId].pet = ev; // latest metadata
+                if (!types.includes("Check-out")) return;
+
+                const start = staysByPet[petId].open;
+                if (!start) {
+                    staysByPet[petId].pet = ev;
+                    return;
                 }
+
+                const end = normalise(new Date(ev.end));
+                staysByPet[petId].ranges.push([start, end]);
+                staysByPet[petId].open = null;
+                staysByPet[petId].pet = ev;
             });
 
-        // Gather only pets active on targetDate
         const activePets = [];
         for (const petId in staysByPet) {
             const { ranges, pet } = staysByPet[petId];
@@ -120,16 +116,38 @@ async function loadDayView() {
             }
         }
 
-        // Sort by check-in time
         activePets.sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
 
-        // Assign colours in order
-        const colours = Object.values(dotColours);
-        activePets.forEach((stay, i) => {
-            stay.pet.colour = colours[i % colours.length];
-        });
+        // Persistent colour mapping
+        const guestColourMap = window.guestColourMap || {};
+        const colourHistory = window.colourHistory || [];
+        window.guestColourMap = guestColourMap;
+        window.colourHistory = colourHistory;
 
-        // Render list
+        const allColours = Object.values(dotColours);
+        const activePetIds = new Set(activePets.map(a => a.pet.petId));
+
+        for (const { pet } of activePets) {
+            const petId = pet.petId;
+            let assignedColour = guestColourMap[petId];
+
+            if (!assignedColour) {
+                const usedColours = Object.entries(guestColourMap)
+                    .filter(([id]) => activePetIds.has(id))
+                    .map(([, colour]) => colour);
+
+                const availableColours = allColours.filter(c => !usedColours.includes(c));
+                const unused = allColours.find(c => !colourHistory.includes(c));
+
+                assignedColour = availableColours[0] || unused || allColours[allColours.length - 1];
+                guestColourMap[petId] = assignedColour;
+            }
+
+            colourHistory.splice(colourHistory.indexOf(assignedColour), 1);
+            colourHistory.push(assignedColour);
+            pet.colour = assignedColour;
+        }
+
         const list = document.getElementById("pet-list");
         if (!list) return;
         list.innerHTML = "";
@@ -161,7 +179,6 @@ async function loadDayView() {
             breedLine.className = "detail breed";
             breedLine.textContent = `Breed: ${breed}`;
 
-            // Fetch Wikipedia link asynchronously
             getWikiLink(breed).then(link => {
                 if (link) {
                     const a = document.createElement("a");

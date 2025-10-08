@@ -47,6 +47,9 @@ class Calendar {
         this.texts = {};
         this.bankHolidays = {};
 
+        this.guestColourMap = {};
+        this.colourHistory = [];
+
         this.thEls = [];
 
         this.loadId = 0;
@@ -541,8 +544,7 @@ class Calendar {
         const signal = this.abortController.signal;
 
         const loadId = ++this.loadId;
-
-        const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); // local midnight
+        const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
 
         try {
             const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
@@ -551,10 +553,9 @@ class Calendar {
 
             if (loadId !== this.loadId) return;
 
-            // First pass: handle "Not available" blocks (normalise dates)
+            // First pass: "Not available" blocks
             for (const ev of events) {
                 if (!ev.petId || ev.petId === "Unknown") continue;
-
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
                 if (!types.includes("Not available")) continue;
 
@@ -580,9 +581,8 @@ class Calendar {
                 }
             }
 
-            // Second pass: normal stays (support multiple stays per pet) — normalise
+            // Second pass: normal stays
             const staysByPet = {};
-
             events
                 .filter(ev => ev.petId && ev.petId !== "Unknown")
                 .sort((a, b) => new Date(a.start) - new Date(b.start))
@@ -595,26 +595,54 @@ class Calendar {
 
                     if (types.includes("Check-in")) {
                         staysByPet[petId].open = toDay(new Date(ev.start));
+                        return;
                     }
-                    if (types.includes("Check-out")) {
-                        const open = staysByPet[petId].open;
-                        if (open) {
-                            const endDay = toDay(new Date(ev.end));
-                            staysByPet[petId].ranges.push([open, endDay]);
-                            staysByPet[petId].open = null;
-                        }
-                    }
+
+                    if (!types.includes("Check-out")) return;
+                    if (!staysByPet[petId].open) return;
+
+                    const endDay = toDay(new Date(ev.end));
+                    staysByPet[petId].ranges.push([staysByPet[petId].open, endDay]);
+                    staysByPet[petId].open = null;
                 });
 
-            // Draw all ranges (dates already normalised)
+            // Colour assignment logic
+            const allColours = Object.values(this.dotColours);
+            const activePetIds = new Set(Object.keys(staysByPet));
+
             for (const petId in staysByPet) {
+                let assignedColour = this.guestColourMap[petId];
+
+                if (!assignedColour) {
+                    const usedColours = Object.entries(this.guestColourMap)
+                        .filter(([id]) => activePetIds.has(id))
+                        .map(([, colour]) => colour);
+
+                    const availableColours = allColours.filter(c => !usedColours.includes(c));
+                    const unused = allColours.find(c => !this.colourHistory.includes(c));
+
+                    assignedColour = availableColours[0] || unused || allColours[allColours.length - 1];
+                    this.guestColourMap[petId] = assignedColour;
+                }
+
+                // Update recency order
+                this.colourHistory = this.colourHistory.filter(c => c !== assignedColour);
+                this.colourHistory.push(assignedColour);
+
+                // Draw the dots for each stay
                 for (const [startDay, endDay] of staysByPet[petId].ranges) {
                     for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
                         if (loadId !== this.loadId) return;
-                        this.addDot(new Date(d));
+                        this.addDot(new Date(d), assignedColour);
                     }
                 }
             }
+
+            // Remove colours of pets no longer active
+            Object.keys(this.guestColourMap).forEach(petId => {
+                if (!activePetIds.has(petId)) delete this.guestColourMap[petId];
+            });
+
         } catch (error) {
             if (error.name === 'AbortError') {
                 console.log('Fetch aborted');
