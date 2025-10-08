@@ -678,6 +678,10 @@ class Calendar {
         // prevent page scroll while open (matches your other project)
         document.body.classList.add("no-scroll");
 
+        // Ensure dayView.js can use the live colour state from this Calendar instance
+        window.guestColourMap = this.guestColourMap;
+        window.colourHistory = this.colourHistory;
+
         // Fetch backbone HTML
         let html = "";
         try {

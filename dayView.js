@@ -118,7 +118,7 @@ async function loadDayView() {
 
         activePets.sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
 
-        // Persistent colour mapping
+        // Use shared global colour state
         const guestColourMap = window.guestColourMap || {};
         const colourHistory = window.colourHistory || [];
         window.guestColourMap = guestColourMap;
@@ -136,14 +136,18 @@ async function loadDayView() {
                     .filter(([id]) => activePetIds.has(id))
                     .map(([, colour]) => colour);
 
-                const availableColours = allColours.filter(c => !usedColours.includes(c));
-                const unused = allColours.find(c => !colourHistory.includes(c));
+                const freeColours = allColours.filter(c => !usedColours.includes(c));
+                const unusedFree = freeColours.filter(c => !colourHistory.includes(c));
+                const lruFree = freeColours
+                    .slice()
+                    .sort((a, b) => colourHistory.indexOf(a) - colourHistory.indexOf(b));
 
-                assignedColour = availableColours[0] || unused || allColours[allColours.length - 1];
+                assignedColour = unusedFree[0] || lruFree[0] || allColours[0];
                 guestColourMap[petId] = assignedColour;
             }
 
-            colourHistory.splice(colourHistory.indexOf(assignedColour), 1);
+            const idx = colourHistory.indexOf(assignedColour);
+            if (idx !== -1) colourHistory.splice(idx, 1);
             colourHistory.push(assignedColour);
             pet.colour = assignedColour;
         }
