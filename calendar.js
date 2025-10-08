@@ -22,50 +22,17 @@ const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
     });
 })();
 
-const petTooltip = document.createElement('div');
-petTooltip.id = 'pet-tooltip';
-petTooltip.style.position = 'fixed';
-petTooltip.style.background = 'rgba(0,0,0,0.8)';
-petTooltip.style.color = 'white';
-petTooltip.style.padding = '4px 8px';
-petTooltip.style.borderRadius = '4px';
-petTooltip.style.fontSize = '12px';
-petTooltip.style.pointerEvents = 'none';
-petTooltip.style.zIndex = '1000';
-petTooltip.style.display = 'none';
-document.body.appendChild(petTooltip);
-
-function addMobileTooltip(dot, petId) {
-    let pressTimer;
-
-    const showInfo = e => {
-        const pet = window.calendarInstance?.allPets?.find(p => p.petId === petId);
-        if (!pet) return;
-        petTooltip.textContent = `${pet.name}, ${pet.breed}`;
-        petTooltip.style.display = 'block';
-        petTooltip.style.left = e.touches[0].pageX + 10 + 'px';
-        petTooltip.style.top = e.touches[0].pageY + 10 + 'px';
-    };
-
-    dot.addEventListener('touchstart', e => {
-        pressTimer = setTimeout(() => showInfo(e), 500);
-    });
-
-    dot.addEventListener('touchend', () => {
-        clearTimeout(pressTimer);
-        petTooltip.style.display = 'none';
-    });
-
-    dot.addEventListener('touchmove', () => {
-        clearTimeout(pressTimer);
-        petTooltip.style.display = 'none';
-    });
-}
-
 class Calendar {
 
     constructor(containerId) {
         this.container = document.getElementById(containerId);
+        this.container = document.getElementById(containerId);
+        this.guestColourMap = window.guestColourMap || {};
+        this.colourHistory = window.colourHistory || [];
+        this.allPets = [];
+
+        this.createPetTooltip();
+
         this.date = new Date(); // default current date
 
         this.onResize = this.updateDayHeaders.bind(this);
@@ -86,9 +53,6 @@ class Calendar {
         this.dots = [];
         this.texts = {};
         this.bankHolidays = {};
-
-        this.guestColourMap = {};
-        this.colourHistory = [];
 
         this.thEls = [];
 
@@ -111,6 +75,24 @@ class Calendar {
         });
 
     }
+
+    createPetTooltip() {
+        this.petTooltip = document.createElement('div');
+        this.petTooltip.id = 'pet-tooltip';
+        Object.assign(this.petTooltip.style, {
+            position: 'fixed',
+            background: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            pointerEvents: 'none',
+            zIndex: '1000',
+            display: 'none'
+        });
+        document.body.appendChild(this.petTooltip);
+    }
+
 
     // Render the entire calendar UI
     async render() {
@@ -427,6 +409,32 @@ class Calendar {
         cell.dataset.locked = 'bank';
     }
 
+    addMobileTooltip(dot, petId) {
+        let pressTimer;
+
+        const showInfo = e => {
+            const pet = this.allPets?.find(p => p.petId === petId);
+            if (!pet) return;
+            this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+            this.petTooltip.style.display = 'block';
+            this.petTooltip.style.left = e.touches[0].pageX + 10 + 'px';
+            this.petTooltip.style.top = e.touches[0].pageY + 10 + 'px';
+        };
+
+        dot.addEventListener('touchstart', e => {
+            pressTimer = setTimeout(() => showInfo(e), 500);
+        });
+
+        dot.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+            this.petTooltip.style.display = 'none';
+        });
+
+        dot.addEventListener('touchmove', () => {
+            clearTimeout(pressTimer);
+            this.petTooltip.style.display = 'none';
+        });
+    }
 
     // Add a coloured dot to a date
     addDot(date, colour, petId = null) {
@@ -492,7 +500,7 @@ class Calendar {
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
         if (petId) dot.id = petId;
-        if (petId && window.md && (window.md.mobile() || window.md.tablet())) addMobileTooltip(dot, petId);
+        if (petId && window.md && (window.md.mobile() || window.md.tablet())) this.addMobileTooltip(dot, petId);
 
         cell.appendChild(dot);
 
@@ -516,17 +524,17 @@ class Calendar {
             dot.addEventListener('mouseenter', e => {
                 const pet = this.allPets?.find(p => p.petId === petId);
                 if (!pet) return;
-                petTooltip.textContent = `${pet.name}, ${pet.breed}`;
-                petTooltip.style.display = 'block';
+                this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+                this.petTooltip.style.display = 'block';
             });
 
             dot.addEventListener('mousemove', e => {
-                petTooltip.style.left = e.pageX + 10 + 'px';
-                petTooltip.style.top = e.pageY + 10 + 'px';
+                this.petTooltip.style.left = e.pageX + 10 + 'px';
+                this.petTooltip.style.top = e.pageY + 10 + 'px';
             });
 
             dot.addEventListener('mouseleave', () => {
-                petTooltip.style.display = 'none';
+                this.petTooltip.style.display = 'none';
             });
         }
 
