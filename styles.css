@@ -186,6 +186,16 @@ button:hover {
   vertical-align: middle;
 }
 
+.dot {
+  transition: transform 0.15s ease-in-out;
+  transform-origin: center;
+}
+
+.dot:hover {
+  transform: scale(1.4);
+  z-index: 10;
+}
+
 .guest-num {
   font-weight: bold;
   font-size: 1em;
