@@ -70,7 +70,7 @@ async function loadDayView() {
     }
 
     try {
-        const res = await fetch("https://h4p.kittycrypto.gg/calendar.json");
+        const res = await fetch("https://h4p.api.kittycrypto.gg/calendar.json");
         if (!res.ok) throw new Error("Failed to fetch calendar.json");
         const events = await res.json();
 
