@@ -15,6 +15,13 @@ async function openChatPanel() {
     shell.style.background = "transparent";
     window.shell = shell;
 
+    window.md = new MobileDetect(window.navigator.userAgent);
+    if (window.md.mobile()) {
+        document.querySelectorAll(".container").forEach(el => {
+            el.classList.add("mobile");
+        });
+    }
+
     let html = "";
     try {
         // cache-bust while developing so you do not see a stale chat.html
@@ -42,7 +49,7 @@ async function openChatPanel() {
 (async () => {
     await openChatPanel();
     const s = document.createElement("script");
-    s.src = "./chat.js?v=" + Date.now(); // cache-bust while developing
+    s.src = "./chat.js";
     s.onload = () => {
         if (window.ChatApp && !window.__chatApp) window.__chatApp = new ChatApp();
     };

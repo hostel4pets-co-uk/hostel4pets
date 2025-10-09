@@ -86,9 +86,9 @@
       <div class="calendar-container" id="calendar-container"></div>
     </div>
   </div>
-
-  <script type="module" src="./calendar.js"></script>
+  
   <script src="./main.js"></script>
+  <script type="module" src="./calendar.js"></script>
 
   <!-- Responsive Layout Script -->
   <script>
@@ -108,16 +108,6 @@
 
   <!-- Mobile Detection Script -->
   <script src="https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const md = new MobileDetect(window.navigator.userAgent);
-      if (md.mobile()) {
-        document.querySelectorAll(".container").forEach(el => {
-          el.classList.add("mobile");
-        });
-      }
-    });
-  </script>
 </body>
 
 </html>
