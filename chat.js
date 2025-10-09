@@ -175,7 +175,7 @@ class ChatApp {
             range.insertNode(document.createTextNode(text));
             range.collapse(false);
             sel.removeAllRanges();
-            sel.addRange(range);
+            sel.addRange(range); 
         }
         this.applyLiveFormatting();
     }
