@@ -34,7 +34,7 @@ class ChatApp {
         this.sessionKey = "chatSession";
         this.session = null;
 
-        this.backendUrl = "https://kittycrypto.ddns.net:5493";
+        this.backendUrl = "https://h4p.kittycrypto.gg";
 
         this.clearBtn = document.getElementById("clear-btn");
         this.collapseBtn = document.getElementById("collapse-btn");
