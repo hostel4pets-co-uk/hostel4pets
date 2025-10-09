@@ -273,16 +273,15 @@ class Calendar {
                 this.openDayModal(dateStr);
             });
 
-            if (window.md && (window.md.mobile() || window.md.tablet())) {
-                cell.addEventListener('touchstart', e => {
-                    // If tapping directly a dot, prevent modal
-                    if (e.target.classList.contains('dot')) return;
-                    const dateStr = `${cellDate.getFullYear()}${String(cellDate.getMonth() + 1).padStart(2, '0')}${String(cellDate.getDate()).padStart(2, '0')}`;
-                    this.openDayModal(dateStr);
-                });
-            }
-
-
+            // if (window.md && (window.md.mobile() || window.md.tablet())) {
+            //     cell.addEventListener('touchstart', e => {
+            //         // If tapping directly a dot, prevent modal
+            //         if (e.target.classList.contains('dot')) return;
+            //         const dateStr = `${cellDate.getFullYear()}${String(cellDate.getMonth() + 1).padStart(2, '0')}${String(cellDate.getDate()).padStart(2, '0')}`;
+            //         this.openDayModal(dateStr);
+            //     });
+            // }
+            
             if (cell.dataset.locked !== 'bank') {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
@@ -419,32 +418,32 @@ class Calendar {
         cell.dataset.locked = 'bank';
     }
 
-    addMobileTooltip(dot, petId) {
-        const showInfo = e => {
-            e.stopPropagation(); // prevent triggering the dayView modal
-            const pet = this.allPets?.find(p => p.petId === petId);
-            if (!pet) return;
+    // addMobileTooltip(dot, petId) {
+    //     const showInfo = e => {
+    //         e.stopPropagation(); // prevent triggering the dayView modal
+    //         const pet = this.allPets?.find(p => p.petId === petId);
+    //         if (!pet) return;
 
-            this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
-            this.petTooltip.style.display = 'block';
-            const touch = e.touches ? e.touches[0] : e;
-            this.petTooltip.style.left = touch.pageX + 10 + 'px';
-            this.petTooltip.style.top = touch.pageY + 10 + 'px';
-        };
+    //         this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+    //         this.petTooltip.style.display = 'block';
+    //         const touch = e.touches ? e.touches[0] : e;
+    //         this.petTooltip.style.left = touch.pageX + 10 + 'px';
+    //         this.petTooltip.style.top = touch.pageY + 10 + 'px';
+    //     };
 
-        const hideInfo = () => {
-            this.petTooltip.style.display = 'none';
-        };
+    //     const hideInfo = () => {
+    //         this.petTooltip.style.display = 'none';
+    //     };
 
-        // On mobile, just tap (no hold)
-        dot.addEventListener('touchstart', e => {
-            showInfo(e);
-            setTimeout(hideInfo, 2000); // auto-hide after 2s
-        });
+    //     // On mobile, just tap (no hold)
+    //     dot.addEventListener('touchstart', e => {
+    //         showInfo(e);
+    //         setTimeout(hideInfo, 2000); // auto-hide after 2s
+    //     });
 
-        dot.addEventListener('touchend', hideInfo);
-        dot.addEventListener('touchcancel', hideInfo);
-    }
+    //     dot.addEventListener('touchend', hideInfo);
+    //     dot.addEventListener('touchcancel', hideInfo);
+    // }
 
 
     // Add a coloured dot to a date
@@ -511,7 +510,7 @@ class Calendar {
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
         if (petId) dot.id = petId;
-        if (petId && window.md && (window.md.mobile() || window.md.tablet())) this.addMobileTooltip(dot, petId);
+        //if (petId && window.md && (window.md.mobile() || window.md.tablet())) this.addMobileTooltip(dot, petId);
 
         cell.appendChild(dot);
 
