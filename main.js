@@ -1,3 +1,10 @@
+window.md = new MobileDetect(window.navigator.userAgent);
+    if (window.md.mobile()) {
+        document.querySelectorAll(".container").forEach(el => {
+            el.classList.add("mobile");
+        });
+    }
+
 async function openChatPanel() {
     if (document.getElementById("chat-panel-shell")) return;
 
@@ -14,13 +21,6 @@ async function openChatPanel() {
     shell.style.overflow = "hidden";
     shell.style.background = "transparent";
     window.shell = shell;
-
-    window.md = new MobileDetect(window.navigator.userAgent);
-    if (window.md.mobile()) {
-        document.querySelectorAll(".container").forEach(el => {
-            el.classList.add("mobile");
-        });
-    }
 
     let html = "";
     try {
