@@ -192,3 +192,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('checkInDate').setAttribute('min', today);
   document.getElementById('checkOutDate').setAttribute('min', today);
 });
+
+export { BookingCalculator };
