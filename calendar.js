@@ -627,7 +627,7 @@ class Calendar {
         const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
 
         try {
-            const response = await fetch('https://h4p.api.kittycrypto.gg/calendar.json', { signal });
+            const response = await fetch('https://api.kittycrypto.gg:5493/calendar.json', { signal });
             if (!response.ok) throw new Error('Failed to fetch calendar.json');
             const events = await response.json();
 
