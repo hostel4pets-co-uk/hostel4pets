@@ -1,15 +1,15 @@
 class BookingCalculator {
-  constructor(hourlyRate, maxDailyRate, latePickupCharge, openingTime, closingTime, lateClosingTime, extraChargeNonNeutered, extraChargeCub) {
-    this.hourlyRate = hourlyRate;
-    this.maxDailyRate = maxDailyRate;
-    this.latePickupCharge = latePickupCharge;
-    this.openingTime = openingTime;
-    this.closingTime = closingTime;
-    this.lateClosingTime = lateClosingTime;
-    this.extraChargeNonNeutered = extraChargeNonNeutered;
-    this.extraChargeCub = extraChargeCub;
-    this.extraPetDiscountRate = 0.10; // 10% discount per extra pet
-    this.depositRateOfTotal = 0.25;   // 25% of final total
+  constructor(config) {
+    this.hourlyRate = config.hourlyRate;
+    this.maxDailyRate = config.maxDailyRate;
+    this.latePickupCharge = config.latePickupCharge;
+    this.openingTime = config.openingTime;
+    this.closingTime = config.closingTime;
+    this.lateClosingTime = config.lateClosingTime;
+    this.extraChargeNonNeutered = config.extraChargeNonNeutered;
+    this.extraChargeCub = config.extraChargeCub;
+    this.extraPetDiscountRate = config.extraPetDiscountRate ?? 0.10;
+    this.depositRateOfTotal = config.depositRateOfTotal ?? 0.25;
   }
 
   _timeBaseForOnePet(checkIn, checkOut) {
@@ -92,6 +92,17 @@ const combineLocal = (dateStr, timeStr) => {
   return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
 };
 
+export const bookingConfig = {
+  hourlyRate: 2.25,
+  maxDailyRate: 27,
+  latePickupCharge: 8,
+  openingTime: 7,
+  closingTime: 20,
+  lateClosingTime: 22,
+  extraChargeNonNeutered: 0.2,
+  extraChargeCub: 0.2,
+};
+
 function calculateTotal() {
   const checkIn = combineLocal(
     document.getElementById('checkInDate').value,
@@ -113,7 +124,7 @@ function calculateTotal() {
   const neuteredStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('neutered' + (i + 1)).value);
   const cubStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('cub' + (i + 1)).value);
 
-  const calculator = new BookingCalculator(2.25, 27, 8, 7, 20, 22, 0.2, 0.2);
+  const calculator = new BookingCalculator(bookingConfig);
 
   const { totalCharge, depositAmount, breakdown } =
     calculator.calculatePrice(checkIn, checkOut, numOfPets, neuteredStatus, cubStatus);
