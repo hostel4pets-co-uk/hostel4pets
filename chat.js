@@ -299,12 +299,13 @@ class ChatApp {
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
 
-        this.isThinking = true;
+        return wrapper;
     }
 
     __removeThinkingBubble() {
         const bubble = this.chatroomEl.querySelector(".thinking-bubble");
         if (bubble) bubble.remove();
+        this.isThinking = false;
     }
 
     async setNickname() {
@@ -374,7 +375,7 @@ class ChatApp {
 
         this.messageEl.innerHTML = "";
 
-        this.__showThinkingBubble();
+        this.isThinking = true;
 
         try {
             await fetch(`${this.backendUrl}/chat/send`, {
@@ -398,28 +399,38 @@ class ChatApp {
                 const history = JSON.parse(event.data);
                 this.chatroomEl.innerHTML = "";
 
-                history.forEach(msg => {
-                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent);
-                });
+                history.forEach(msg =>
+                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent)
+                );
 
-                if (history.length) {
-                    const last = history[history.length - 1];
-                    if (last.sender !== this.session.nickname) {
-                        this.markNewMessage();
-                        this._playNotificationSound();
-                        this.blinkBorder();
-                    }
+                if (!history.length) return;
+
+                const last = history.at(-1);
+                this.isThinking = !last.isAIMessage;
+
+                if (this.isThinking) {
+                    const guests = this.chatroomEl.querySelectorAll(".message-wrapper.guest");
+                    const lastGuest = guests[guests.length - 1];
+                    const bubble = lastGuest && this.__showThinkingBubble();
+                    bubble ? lastGuest.after(bubble) : undefined;
+                } else {
+                    this.__removeThinkingBubble();
                 }
 
-            } catch (e) {
-                console.error("SSE parse error:", e);
+                if (last.sender !== this.session.nickname) {
+                    this.markNewMessage();
+                    this._playNotificationSound();
+                    // this.blinkBorder();
+                }
+
+            } catch (err) {
+                console.error("SSE parse error:", err);
             }
         };
 
-        evtSource.onerror = (err) => {
-            console.error("SSE connection error:", err);
-        };
+        evtSource.onerror = err => console.error("SSE connection error:", err);
     }
+
 
     _playNotificationSound() {
         if (this.isMuted) return; // skip if muted
