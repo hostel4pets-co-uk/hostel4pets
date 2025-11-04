@@ -39,6 +39,12 @@ export class BookingCalculator {
     for (let i = 0; i < numOfPets; i++) {
       if (cubStatus[i] === 'yes') cubSurcharge += this.extraChargeCub * baseOnePet;
       if (neuteredStatus[i] === 'no') nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
+      
+      if (isCub) {
+        cubSurcharge += this.extraChargeCub * baseOnePet;
+      } else if (isNonNeutered) {
+        nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
+      }
     }
 
     const checkoutHour = checkOut.getHours();
