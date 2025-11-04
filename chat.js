@@ -268,6 +268,14 @@ class ChatApp {
         this.reflowToModalHeight(!this.isCollapsed);
     }
 
+    __appendRobinIcon(textEl) {
+        const robinIcon = document.createElement("img");
+        robinIcon.src = "./graphics/robin.png";
+        robinIcon.alt = "AI bot";
+        robinIcon.classList.add("robin-icon");
+        textEl.appendChild(robinIcon);
+    }
+
     __showThinkingBubble() {
         // Avoid duplicates
         if (this.chatroomEl.querySelector(".thinking-bubble")) return;
@@ -285,14 +293,16 @@ class ChatApp {
         const textEl = document.createElement("div");
         textEl.classList.add("message-text");
         textEl.innerHTML = `
-    <div class="typing-indicator" aria-label="Thinking">
-        <p>Let me think about that
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-        </p>
-    </div>`;
+            <div class="typing-indicator" aria-label="Thinking">
+                <p>Let me think about that
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </p>
+            </div>
+        `.trim();
 
+        this.__appendRobinIcon(textEl);
         msgEl.appendChild(nickEl);
         msgEl.appendChild(textEl);
         wrapper.appendChild(msgEl);
@@ -476,13 +486,7 @@ class ChatApp {
             }
         );
 
-        if (isAIMessage) {
-            const robinIcon = document.createElement("img");
-            robinIcon.src = "./graphics/robin.png";
-            robinIcon.alt = "AI bot";
-            robinIcon.classList.add("robin-icon");
-            textEl.appendChild(robinIcon);
-        }
+        if (isAIMessage) this.__appendRobinIcon(textEl);
 
         msgEl.appendChild(nickEl);
         msgEl.appendChild(textEl);
