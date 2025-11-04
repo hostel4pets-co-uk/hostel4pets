@@ -226,7 +226,9 @@ button:hover {
   font-weight: 500;
 }
 
-#booking-form { display: contents; }
+#booking-form {
+  display: contents;
+}
 
 .modal-content .close {
   position: absolute;
@@ -267,9 +269,9 @@ button:hover {
 
 #calendar-container {
   -webkit-user-select: none; /* Safari */
-  -moz-user-select: none;    /* Firefox */
-  -ms-user-select: none;     /* IE10+ */
-  user-select: none;         /* Standard */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  user-select: none; /* Standard */
   -webkit-touch-callout: none; /* iOS: disables "copy/share" popup */
 }
 
@@ -567,7 +569,6 @@ button:hover {
   pointer-events: none;
 }
 
-
 /* Footer */
 .chat-footer {
   --footer-pad-y: 10px;
@@ -653,9 +654,24 @@ button:hover {
   border-bottom: 8px solid transparent;
 }
 
+.robin-icon {
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
 .message.host {
   background-color: var(--h4pblue);
   border-bottom-left-radius: 4px;
+}
+
+.message.host .message-text {
+  position: relative;
+  padding-right: 22px;
 }
 
 .message.host::after {
@@ -745,9 +761,15 @@ button:hover {
 }
 
 @keyframes blink-border {
-  0%   { border-color: transparent; }
-  50%  { border-color: var(--h4pgreen, #04dc3b); }
-  100% { border-color: transparent; }
+  0% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: var(--h4pgreen, #04dc3b);
+  }
+  100% {
+    border-color: transparent;
+  }
 }
 
 .chat-modal.blink {

@@ -175,7 +175,7 @@ class ChatApp {
             range.insertNode(document.createTextNode(text));
             range.collapse(false);
             sel.removeAllRanges();
-            sel.addRange(range); 
+            sel.addRange(range);
         }
         this.applyLiveFormatting();
     }
@@ -409,6 +409,14 @@ class ChatApp {
             }
         );
 
+        if (msg.isAIMessage) {
+            const robinIcon = document.createElement("img");
+            robinIcon.src = "./graphics/robin.png";
+            robinIcon.alt = "AI bot";
+            robinIcon.classList.add("robin-icon");
+            textEl.appendChild(robinIcon);
+        }
+
         msgEl.appendChild(nickEl);
         msgEl.appendChild(textEl);
 
@@ -470,7 +478,7 @@ class ChatApp {
             if (localStorage.getItem(key)) return;
 
             const payload = {
-                text: `Hello, ${this.session.nickname}! Welcome to Hostel4Pets, the Home away from Home for your four legged pals!\nFeel free to write to us in here if you have any queries!`.replace(/\n/g, "<br>"),
+                text: `Hello, ${this.session.nickname}! Welcome to Hostel4Pets, the Home away from Home for your four legged pals!\nMy name is Robin, I am Hostel4Pet's friendly AI assistant!\nFeel free to write to us in here if you have any queries!`.replace(/\n/g, "<br>"),
                 sender: "Hostel4Pets",
                 timestamp: Date.now(),
                 sessionId: this.session.sessionId,
