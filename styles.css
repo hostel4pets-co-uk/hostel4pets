@@ -638,7 +638,7 @@ button:hover {
 }
 
 .message.guest {
-  background-color: var(--h4pgreen);
+  background-color: var(--h4pblue);
   border-bottom-right-radius: 4px;
 }
 
@@ -649,7 +649,7 @@ button:hover {
   bottom: 1px;
   width: 0;
   height: 0;
-  border-left: 8px solid var(--h4pgreen);
+  border-left: 8px solid var(--h4pblue);
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
 }
@@ -665,7 +665,7 @@ button:hover {
 }
 
 .message.host {
-  background-color: var(--h4pblue);
+  background-color: var(--h4pgreen);
   border-bottom-left-radius: 4px;
 }
 
@@ -681,7 +681,7 @@ button:hover {
   bottom: 1px;
   width: 0;
   height: 0;
-  border-right: 8px solid var(--h4pblue);
+  border-right: 8px solid var(--h4pgreen);
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
 }
