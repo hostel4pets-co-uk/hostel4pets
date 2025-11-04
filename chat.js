@@ -406,9 +406,13 @@ class ChatApp {
                 if (!history.length) return;
 
                 const last = history.at(-1);
-                this.isThinking = !last.isAIMessage;
 
-                if (this.isThinking) {
+                const handedOff = !!last.handedOffToHuman;
+                const shouldThink = !last.isAIMessage && !handedOff;
+
+                this.isThinking = shouldThink;
+
+                if (shouldThink) {
                     const guests = this.chatroomEl.querySelectorAll(".message-wrapper.guest");
                     const lastGuest = guests[guests.length - 1];
                     const bubble = lastGuest && this.__showThinkingBubble();
