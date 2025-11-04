@@ -355,7 +355,7 @@ class ChatApp {
                 this.chatroomEl.innerHTML = "";
 
                 history.forEach(msg => {
-                    this.addMessage(msg.text, msg.sender, msg.timestamp);
+                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage);
                 });
 
                 if (history.length) {
@@ -385,7 +385,7 @@ class ChatApp {
         });
     }
 
-    addMessage(text, author, timestamp) {
+    addMessage(text, author, timestamp, isAIMessage = false) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
 
@@ -409,7 +409,7 @@ class ChatApp {
             }
         );
 
-        if (msg.isAIMessage) {
+        if (isAIMessage) {
             const robinIcon = document.createElement("img");
             robinIcon.src = "./graphics/robin.png";
             robinIcon.alt = "AI bot";
@@ -484,7 +484,7 @@ class ChatApp {
                 sessionId: this.session.sessionId,
                 messageID: 0,
                 isWelcomeMessage: true,
-                isAIMessage: true 
+                isAIMessage: true
             };
 
             const res = await fetch(`${this.backendUrl}/chat/send`, {
