@@ -483,7 +483,8 @@ class ChatApp {
                 timestamp: Date.now(),
                 sessionId: this.session.sessionId,
                 messageID: 0,
-                isWelcomeMessage: true
+                isWelcomeMessage: true,
+                isAIMessage: true 
             };
 
             const res = await fetch(`${this.backendUrl}/chat/send`, {
