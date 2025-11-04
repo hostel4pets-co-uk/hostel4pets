@@ -391,7 +391,6 @@ class ChatApp {
         const evtSource = new EventSource(url);
 
         evtSource.onmessage = (event) => {
-            this.__removeThinkingBubble();
             try {
                 const history = JSON.parse(event.data);
                 this.chatroomEl.innerHTML = "";
@@ -408,6 +407,9 @@ class ChatApp {
                         this.blinkBorder();
                     }
                 }
+
+                if (msg.isAIMessage) this.__removeThinkingBubble();
+
             } catch (e) {
                 console.error("SSE parse error:", e);
             }
