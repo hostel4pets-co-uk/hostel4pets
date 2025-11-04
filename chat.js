@@ -328,6 +328,7 @@ class ChatApp {
         const msg = {
             text,
             sender: this.session.nickname,
+            agent: null,
             timestamp: Date.now(),
             sessionId: this.session.sessionId
         };
@@ -355,7 +356,7 @@ class ChatApp {
                 this.chatroomEl.innerHTML = "";
 
                 history.forEach(msg => {
-                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage);
+                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent);
                 });
 
                 if (history.length) {
@@ -385,7 +386,7 @@ class ChatApp {
         });
     }
 
-    addMessage(text, author, timestamp, isAIMessage = false) {
+    addMessage(text, author, timestamp, isAIMessage = false, agent = null) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
 
@@ -394,7 +395,14 @@ class ChatApp {
 
         const nickEl = document.createElement("div");
         nickEl.classList.add("nickname-strip");
-        nickEl.textContent = author;
+
+        if (author === this.session?.nickname) {
+            nickEl.textContent = author;
+        } else if (isAIMessage) {
+            nickEl.textContent = "Robin - Hostel4Pets";
+        } else {
+            nickEl.textContent = `${agent ? agent + " - " : ""}Hostel4Pets`;
+        }
 
         const textEl = document.createElement("div");
         textEl.classList.add("message-text");
@@ -478,8 +486,8 @@ class ChatApp {
             if (localStorage.getItem(key)) return;
 
             const payload = {
-                text: `Hello, ${this.session.nickname}! Welcome to Hostel4Pets, the Home away from Home for your four legged pals!\nMy name is Robin, I am Hostel4Pet's friendly AI assistant!\nFeel free to write to us in here if you have any queries!`.replace(/\n/g, "<br>"),
-                sender: "Hostel4Pets",
+                text: `Hello, ${this.session.nickname}!\nWelcome to Hostel4Pets — your pet’s home away from home!\nI'm Robin, Hostel4Pets’ friendly AI assistant.\nIf you have any questions, just let me know!`.replace(/\n/g, "<br>"),
+                sender: "Robin - Hostel4Pets",
                 timestamp: Date.now(),
                 sessionId: this.session.sessionId,
                 messageID: 0,
