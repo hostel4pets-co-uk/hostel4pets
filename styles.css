@@ -612,6 +612,9 @@ button:hover {
   display: flex;
   flex-direction: column;
   max-width: 70%;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 .message-wrapper.guest {
@@ -622,6 +625,11 @@ button:hover {
 .message-wrapper.host {
   align-self: flex-start;
   align-items: flex-start;
+}
+
+.message-wrapper.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Bubble */

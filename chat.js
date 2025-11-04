@@ -341,6 +341,29 @@ class ChatApp {
         if (bubble) bubble.remove();
     }
 
+    __showTypingSignal(agentName) {
+        // Avoid duplicates
+        if (this.chatroomEl.querySelector(".typing-signal")) return;
+
+        const html = `
+            <div class="typing-indicator" aria-label="Agent typing">
+                <p>${agentName} is typing
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </p>
+            </div>
+        `.trim();
+
+        return this.__showSystemMessage("typing-signal", agentName, html);
+    }
+
+    __removeTypingSignal() {
+        const el = this.chatroomEl.querySelector(".typing-signal");
+        if (el) el.remove();
+    }
+
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -430,7 +453,14 @@ class ChatApp {
 
         evtSource.onmessage = (event) => {
             try {
-                const history = JSON.parse(event.data);
+                const data = JSON.parse(event.data);
+
+                if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
+                    this.__showTypingSignal(data[0].sender || "Agent");
+                    return;
+                }
+
+                const history = data;
                 this.chatroomEl.innerHTML = "";
 
                 history.forEach(msg =>
@@ -439,9 +469,10 @@ class ChatApp {
 
                 if (!history.length) return;
 
-                const last = history.at(-1);
+                this.__removeTypingSignal();
 
-                const handedOff = !!last.handedOffToHuman;
+                const handedOff = history.some(msg => msg.handedOffToHuman);
+                const last = history.at(-1);
                 const shouldThink = !last.isAIMessage && !handedOff;
 
                 this.isThinking = shouldThink;
@@ -539,6 +570,8 @@ class ChatApp {
 
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+
+        requestAnimationFrame(() => wrapper.classList.add("show"));
 
         // Only flag header for host messages
         if (author !== this.session?.nickname) {
