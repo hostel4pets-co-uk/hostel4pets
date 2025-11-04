@@ -276,31 +276,23 @@ class ChatApp {
         textEl.appendChild(robinIcon);
     }
 
-    __showThinkingBubble() {
-        // Avoid duplicates
-        if (this.chatroomEl.querySelector(".thinking-bubble")) return;
+    __showSystemMessage(className, nickname, innerHTML) {
+        // Avoid duplicates of the same system message type
+        if (this.chatroomEl.querySelector(`.${className}`)) return;
 
         const wrapper = document.createElement("div");
-        wrapper.classList.add("message-wrapper", "host", "thinking-bubble");
+        wrapper.classList.add("message-wrapper", "host", className);
 
         const msgEl = document.createElement("div");
         msgEl.classList.add("message", "host");
 
         const nickEl = document.createElement("div");
         nickEl.classList.add("nickname-strip");
-        nickEl.textContent = "Robin - Hostel4Pets";
+        nickEl.textContent = nickname;
 
         const textEl = document.createElement("div");
         textEl.classList.add("message-text");
-        textEl.innerHTML = `
-            <div class="typing-indicator" aria-label="Thinking">
-                <p>Let me think about that
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                </p>
-            </div>
-        `.trim();
+        textEl.innerHTML = innerHTML;
 
         this.__appendRobinIcon(textEl);
         msgEl.appendChild(nickEl);
@@ -309,7 +301,24 @@ class ChatApp {
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
 
+        requestAnimationFrame(() => wrapper.classList.add("show"));
+
         return wrapper;
+    }
+
+
+    __showThinkingBubble() {
+        const html = `
+        <div class="typing-indicator" aria-label="Thinking">
+            <p>Let me think about that
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </p>
+        </div>
+        `.trim();
+
+        return this.__showSystemMessage("thinking-bubble", "Robin - Hostel4Pets", html);
     }
 
     __removeThinkingBubble() {
@@ -317,6 +326,21 @@ class ChatApp {
         if (bubble) bubble.remove();
         this.isThinking = false;
     }
+
+    __showUnavailableAPI() {
+        const html = `
+            <p>We are so sorry for the inconvenience,<br>
+            the chat is not available at the moment!</p>
+        `.trim();
+
+        return this.__showSystemMessage("unavailable-api", "Robin - Hostel4Pets", html);
+    }
+
+    __removeUnavailableAPI() {
+        const bubble = this.chatroomEl.querySelector(".unavailable-api");
+        if (bubble) bubble.remove();
+    }
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -442,7 +466,12 @@ class ChatApp {
             }
         };
 
-        evtSource.onerror = err => console.error("SSE connection error:", err);
+        evtSource.onerror = err => {
+            console.error("SSE connection error:", err);
+            this.__showUnavailableAPI();
+        };
+
+        evtSource.onopen = () => this.__removeUnavailableAPI();
     }
 
 

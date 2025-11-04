@@ -825,3 +825,11 @@ button:hover {
     opacity: 0.7;
   }
 }
+
+.unavailable-api {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.unavailable-api.show {
+  opacity: 1;
+}
