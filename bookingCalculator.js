@@ -1,4 +1,4 @@
-class BookingCalculator {
+export class BookingCalculator {
   constructor(config) {
     this.hourlyRate = config.hourlyRate;
     this.maxDailyRate = config.maxDailyRate;
@@ -203,5 +203,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('checkInDate').setAttribute('min', today);
   document.getElementById('checkOutDate').setAttribute('min', today);
 });
-
-export { BookingCalculator };
