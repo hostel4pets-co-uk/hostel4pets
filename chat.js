@@ -332,7 +332,9 @@ class ChatApp {
             timestamp: Date.now(),
             sessionId: this.session.sessionId
         };
-
+        
+        this.messageEl.innerHTML = "";
+        
         try {
             await fetch(`${this.backendUrl}/chat/send`, {
                 method: "POST",
@@ -343,7 +345,6 @@ class ChatApp {
             console.error("Failed to send:", err);
         }
 
-        this.messageEl.innerHTML = "";
     }
 
     startStream() {
