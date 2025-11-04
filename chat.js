@@ -25,6 +25,7 @@ class ChatApp {
         this.isMobile = !!(window.md && (window.md.mobile() || window.md.tablet()));
         let savedCollapse = localStorage.getItem("chatCollapsed");
         this.isMuted = localStorage.getItem("mute") === "true";
+        this.isThinking = false;
 
         if (savedCollapse === null) {
             localStorage.setItem("chatCollapsed", "true");
@@ -297,6 +298,8 @@ class ChatApp {
         wrapper.appendChild(msgEl);
         this.chatroomEl.appendChild(wrapper);
         this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+
+        this.isThinking = true;
     }
 
     __removeThinkingBubble() {
@@ -407,8 +410,6 @@ class ChatApp {
                         this.blinkBorder();
                     }
                 }
-
-                if (msg.isAIMessage) this.__removeThinkingBubble();
 
             } catch (e) {
                 console.error("SSE parse error:", e);
