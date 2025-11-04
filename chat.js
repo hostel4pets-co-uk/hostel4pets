@@ -267,6 +267,42 @@ class ChatApp {
         this.reflowToModalHeight(!this.isCollapsed);
     }
 
+    __showThinkingBubble() {
+        // Avoid duplicates
+        if (this.chatroomEl.querySelector(".thinking-bubble")) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("message-wrapper", "host", "thinking-bubble");
+
+        const msgEl = document.createElement("div");
+        msgEl.classList.add("message", "host");
+
+        const nickEl = document.createElement("div");
+        nickEl.classList.add("nickname-strip");
+        nickEl.textContent = "Robin - Hostel4Pets";
+
+        const textEl = document.createElement("div");
+        textEl.classList.add("message-text");
+        textEl.innerHTML = `
+    <div class="typing-indicator" aria-label="Thinking">
+        <p>Let me think about that
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </p>
+    </div>`;
+
+        msgEl.appendChild(nickEl);
+        msgEl.appendChild(textEl);
+        wrapper.appendChild(msgEl);
+        this.chatroomEl.appendChild(wrapper);
+        this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+    }
+
+    __removeThinkingBubble() {
+        const bubble = this.chatroomEl.querySelector(".thinking-bubble");
+        if (bubble) bubble.remove();
+    }
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -332,9 +368,11 @@ class ChatApp {
             timestamp: Date.now(),
             sessionId: this.session.sessionId
         };
-        
+
         this.messageEl.innerHTML = "";
-        
+
+        this.__showThinkingBubble();
+
         try {
             await fetch(`${this.backendUrl}/chat/send`, {
                 method: "POST",
@@ -343,6 +381,7 @@ class ChatApp {
             });
         } catch (err) {
             console.error("Failed to send:", err);
+            this.__removeThinkingBubble();
         }
 
     }
@@ -352,6 +391,7 @@ class ChatApp {
         const evtSource = new EventSource(url);
 
         evtSource.onmessage = (event) => {
+            this.__removeThinkingBubble();
             try {
                 const history = JSON.parse(event.data);
                 this.chatroomEl.innerHTML = "";
