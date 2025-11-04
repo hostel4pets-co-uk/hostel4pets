@@ -37,12 +37,12 @@ export class BookingCalculator {
     let cubSurcharge = 0;
     let nonNeuteredSurcharge = 0;
     for (let i = 0; i < numOfPets; i++) {
-      if (cubStatus[i] === 'yes') cubSurcharge += this.extraChargeCub * baseOnePet;
-      if (neuteredStatus[i] === 'no') nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
-      
+      const isCub = cubStatus[i] === 'yes';
+      const isNeutered = neuteredStatus[i] === 'yes';
+
       if (isCub) {
         cubSurcharge += this.extraChargeCub * baseOnePet;
-      } else if (isNonNeutered) {
+      } else if (!isNeutered) {
         nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
       }
     }
