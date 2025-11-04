@@ -789,8 +789,8 @@ button:hover {
   display: inline-flex;
   align-items: flex-end;
   gap: 0.35rem;
-  height: 1em;            /* keeps layout steady while hopping */
-  color: #666;            /* inherits if you prefer */
+  height: 1em;
+  color: inherit;
 }
 
 .typing-indicator .dot {
