@@ -51,7 +51,9 @@ async function openChatPanel() {
     const s = document.createElement("script");
     s.src = "./chat.js";
     s.onload = () => {
-        if (window.ChatApp && !window.__chatApp) window.__chatApp = new ChatApp();
+        if (!window.chatApp && window.ChatApp) {
+            window.chatApp = new ChatApp();
+        }
     };
     document.body.appendChild(s);
 })();

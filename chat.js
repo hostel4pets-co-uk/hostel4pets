@@ -363,8 +363,6 @@ class ChatApp {
         if (el) el.remove();
     }
 
-
-
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
         if (!nickname) return;
