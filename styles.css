@@ -841,3 +841,32 @@ button:hover {
 .unavailable-api.show {
   opacity: 1;
 }
+
+/* Handoff notice: full-width, slim breaking bar */
+#chatroom .system-notice.handoff-notice {
+  display: block;
+  font-family: inherit;         /* same font as chat */
+  font-size: 12px;              /* small text */
+  line-height: 1.2;             /* tight height, close to text height */
+  color: #222;                  /* slightly lighter than pure black */
+  background: #f2f3f5;          /* slightly darker than white grey */
+
+  /* Make it span the whole chat room visually (account for #chatroom padding) */
+  width: calc(100% + 18px);     /* 12px left pad + 6px right pad in #chatroom */
+  margin-left: -12px;           /* match #chatroom left padding */
+  margin-right: -6px;           /* match #chatroom right padding */
+
+  /* No vertical padding so it’s only as tall as the text */
+  padding-left: 12px;           /* keep text aligned with other messages */
+  padding-right: 6px;
+
+  /* Sit flush in the flex column */
+  align-self: stretch;
+}
+
+/* Optional: if you want ultra-subtle separators, uncomment these
+#chatroom .system-notice.handoff-notice {
+  border-top: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+*/

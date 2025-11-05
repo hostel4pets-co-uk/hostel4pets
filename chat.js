@@ -306,7 +306,6 @@ class ChatApp {
         return wrapper;
     }
 
-
     __showThinkingBubble() {
         const html = `
         <div class="typing-indicator" aria-label="Thinking">
@@ -345,6 +344,11 @@ class ChatApp {
         // Avoid duplicates
         if (this.chatroomEl.querySelector(".typing-signal")) return;
 
+        this.__removeTypingSignal();
+        this.__removeThinkingBubble();
+
+        this.__insertHandoffNotice(agentName);
+
         const html = `
             <div class="typing-indicator" aria-label="Agent typing">
                 <p>${agentName} is typing
@@ -362,6 +366,27 @@ class ChatApp {
         const el = this.chatroomEl.querySelector(".typing-signal");
         if (el) el.remove();
     }
+
+    __insertHandoffNotice(agentName) {
+        // remove any previous notice to avoid duplicates
+        const prev = this.chatroomEl.querySelector(".handoff-notice");
+        if (prev) prev.remove();
+
+        const notice = document.createElement("div");
+        notice.classList.add("system-notice", "handoff-notice");
+        notice.setAttribute("aria-live", "polite");
+        notice.innerHTML = `<span class="handoff-text">The chat has been handed off to ${agentName}</span>`;
+
+        // place near the end; order with typing bubble handled by __showTypingSignal
+        this.chatroomEl.appendChild(notice);
+        this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+    }
+
+    __removeHandoffNotice() {
+        const el = this.chatroomEl.querySelector(".handoff-notice");
+        if (el) el.remove();
+    }
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -454,7 +479,8 @@ class ChatApp {
                 const data = JSON.parse(event.data);
 
                 if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
-                    this.__showTypingSignal(data[0].sender || "Agent");
+                    const agent = data[0].sender || "Agent";
+                    this.__showTypingSignal(agent);
                     return;
                 }
 
