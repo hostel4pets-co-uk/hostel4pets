@@ -375,7 +375,7 @@ class ChatApp {
         const notice = document.createElement("div");
         notice.classList.add("system-notice", "handoff-notice");
         notice.setAttribute("aria-live", "polite");
-        notice.innerHTML = `<span class="handoff-text">The chat has been handed off to ${agentName}</span>`;
+        notice.innerHTML = `<span class="handoff-text">The chat has been handed off to agent: ${agentName}</span>`;
 
         // place near the end; order with typing bubble handled by __showTypingSignal
         this.chatroomEl.appendChild(notice);
@@ -471,6 +471,8 @@ class ChatApp {
     }
 
     startStream() {
+        if (this.evtSource) this.evtSource.close();
+
         const url = `${this.backendUrl}/chat/stream?sessionId=${this.session.sessionId}`;
         const evtSource = new EventSource(url);
 
@@ -693,6 +695,11 @@ class ChatApp {
             "Do you wish to clear the chat? Your session will be lost and you will not be able to recover the messages you have sent."
         );
         if (!confirmClear) return;
+
+        if (this.evtSource) {
+            this.evtSource.close();
+            this.evtSource = null;
+        }
 
         if (this.session?.sessionId) {
             const key = `welcomeSent:${this.session.sessionId}`;
