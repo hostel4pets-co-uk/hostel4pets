@@ -349,29 +349,6 @@ class ChatApp {
 
         if (window.shell) window.shell.style.height = "450px";
     }
-    async loadSessionById(sessionId) {
-        if (!sessionId) {
-            console.error("⚠️ No sessionId provided.");
-            return;
-        }
-
-        // Close any active event stream
-        if (this.evtSource) {
-            this.evtSource.close();
-            this.evtSource = null;
-        }
-
-        // Clear current chat window
-        this.chatroomEl.innerHTML = "";
-
-        // Assign temporary session (cosmetic only)
-        this.session = { sessionId, nickname: "Session View" };
-
-        console.log(`📜 Loading chat for session: ${sessionId}`);
-
-        // Rebind interface and connect to SSE
-        this.restoreSession();
-    }
 
     async handleSend() {
         const raw = this.messageEl.innerText;
