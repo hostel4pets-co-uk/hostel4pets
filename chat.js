@@ -351,11 +351,15 @@ class ChatApp {
     }
 
     async handleSend() {
-        let text = this.messageEl.innerHTML.trim();
-        if (!text) return;
+        const raw = this.messageEl.innerText;
 
-        // text = text.replace(/<(?:div|p)><br><\/(?:div|p)>/gi, "<br>");
-        // text = text.replace(/\n/g, "<br>");
+        const text = raw
+            .replace(/\u00A0/g, " ") // NBSP -> space
+            .replace(/\r/g, "")      // CR -> nothing (Windows)
+            .replace(/\n{3,}/g, "\n\n") // collapse >2 blanks
+            .trim();
+
+        if (!text) return;
 
         const msg = {
             text,
@@ -366,7 +370,6 @@ class ChatApp {
         };
 
         this.messageEl.innerHTML = "";
-
         this.isThinking = true;
 
         try {
