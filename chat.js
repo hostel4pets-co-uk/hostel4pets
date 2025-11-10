@@ -283,12 +283,21 @@ class ChatApp {
     }
 
     _bindEnterOnMobile() {
-        // this.messageEl.onkeydown = e => {
-        //     if (e.key === "Enter") {
-        //         // allow newline but clean nbsp
-        //         //this.messageEl.innerHTML = this.messageEl.innerHTML.replace(/&nbsp;/gi, "\n");
-        //     }
-        // };
+        this.messageEl.onkeydown = e => {
+            if (e.key !== "Enter") return;
+
+            requestAnimationFrame(() => {
+                const walker = document.createTreeWalker(this.messageEl, NodeFilter.SHOW_TEXT);
+                const toReplace = [];
+                while (walker.nextNode()) {
+                    const node = walker.currentNode;
+                    if (node.nodeValue.includes("\u00A0")) toReplace.push(node);
+                }
+                for (const node of toReplace) {
+                    node.nodeValue = node.nodeValue.replace(/\u00A0/g, " ");
+                }
+            });
+        };
         console.log(`On mobile!`);
     }
 
