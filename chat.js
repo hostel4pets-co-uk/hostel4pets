@@ -1,18 +1,3 @@
-(function initMobileDetect() {
-    if (typeof window.MobileDetect !== "undefined") {
-        window.md = new window.MobileDetect(window.navigator.userAgent);
-        return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
-    script.async = true;
-    script.onload = () => {
-        window.md = new window.MobileDetect(window.navigator.userAgent);
-    };
-    document.head.appendChild(script);
-})();
-
 class ChatApp {
     constructor() {
 
@@ -111,122 +96,6 @@ class ChatApp {
     clearNewMessage() {
         this.setHeader("Chat");
     }
-
-    // enableLivePreview() {
-    //     if (!this.messageEl) return;
-
-    //     // Avoid formatting mid-IME composition
-    //     this.isComposing = false;
-    //     this.messageEl.addEventListener("compositionstart", () => { this.isComposing = true; });
-    //     this.messageEl.addEventListener("compositionend", () => { this.isComposing = false; this.applyLiveFormatting(); });
-
-    //     // Format on every input
-    //     this.messageEl.addEventListener("input", () => this.applyLiveFormatting());
-
-    //     // Paste as plain text, then format
-    //     this.messageEl.addEventListener("paste", (e) => this.handlePaste(e));
-
-    //     // Initial pass (placeholder is handled via CSS)
-    //     this.applyLiveFormatting();
-    // }
-
-    // applyLiveFormatting() {
-    //     if (this.isComposing) return;
-
-    //     // Get what the user actually typed (with literal < and new lines)
-    //     const raw = this.messageEl.innerText;
-
-    //     // Turn literal, whitelisted tags into real HTML + keep line breaks
-    //     const rendered = this.parseTags(raw);
-
-    //     // Final safety net
-    //     const safe = DOMPurify.sanitize(rendered, {
-    //         ALLOWED_TAGS: [
-    //             "b", "strong", "i", "em", "u", "s", "sub", "sup", "code", "pre",
-    //             "p", "br", "a", "ul", "ol", "li", "h1", "h2", "h3"
-    //         ],
-    //         ALLOWED_ATTR: ["href", "target", "rel"]
-    //     });
-
-    //     if (this.messageEl.innerHTML !== safe) {
-    //         this.messageEl.innerHTML = safe;
-    //         this.moveCaretToEnd(this.messageEl);
-    //     }
-    // }
-
-    // moveCaretToEnd(el) {
-    //     const range = document.createRange();
-    //     range.selectNodeContents(el);
-    //     range.collapse(false);
-    //     const sel = window.getSelection();
-    //     sel.removeAllRanges();
-    //     sel.addRange(range);
-    // }
-
-    // handlePaste(e) {
-    //     e.preventDefault();
-    //     const text = (e.clipboardData || window.clipboardData).getData("text/plain");
-    //     // Insert plain text at caret
-    //     const sel = window.getSelection();
-    //     if (!sel || !sel.rangeCount) {
-    //         this.messageEl.append(document.createTextNode(text));
-    //     } else {
-    //         const range = sel.getRangeAt(0);
-    //         range.deleteContents();
-    //         range.insertNode(document.createTextNode(text));
-    //         range.collapse(false);
-    //         sel.removeAllRanges();
-    //         sel.addRange(range);
-    //     }
-    //     this.applyLiveFormatting();
-    // }
-
-    // parseTags(raw) {
-    //     if (!raw) return "";
-
-    //     let html = raw
-    //         .replace(/&/g, "&amp;")
-    //         .replace(/</g, "&lt;")
-    //         .replace(/>/g, "&gt;");
-
-    //     html = html.replace(/\r\n|\r|\n/g, "<br>");
-
-    //     // Helper to unescape simple paired tags like <b>, <i>, etc.
-    //     const unescapePair = (tag) => {
-    //         const re = new RegExp(`&lt;${tag}&gt;([\\s\\S]*?)&lt;\\/${tag}&gt;`, "gi");
-    //         html = html.replace(re, `<${tag}>$1</${tag}>`);
-    //     };
-
-    //     // Simple singletons like <br>
-    //     html = html.replace(/&lt;br\s*\/?&gt;/gi, "<br>");
-
-    //     // Headings and paragraphs
-    //     ["p", "h1", "h2", "h3"].forEach(unescapePair);
-
-    //     // Inline formatting
-    //     ["b", "strong", "i", "em", "u", "s", "sub", "sup", "code"].forEach(unescapePair);
-
-    //     // Code blocks
-    //     unescapePair("pre");
-
-    //     ["ul", "ol"].forEach(unescapePair);
-    //     unescapePair("li");
-
-    //     // Links: allow http, https, mailto, tel. Everything else remains text.
-    //     html = html.replace(
-    //         /&lt;a\s+href=(["'])(.*?)\1(?:\s+target=(["'])(.*?)\3)?\s*&gt;([\s\S]*?)&lt;\/a&gt;/gi,
-    //         (_m, _q1, href, _q2, target, text) => {
-    //             const url = (href || "").trim();
-    //             const ok = /^(https?:|mailto:|tel:)/i.test(url);
-    //             if (!ok) return text; // drop the tag, keep text
-    //             const tgt = /^(?:_blank|_self|_parent|_top)$/i.test(target || "") ? ` target="${target}"` : "";
-    //             const rel = tgt ? ` rel="noopener noreferrer"` : "";
-    //             return `<a href="${url}"${tgt}${rel}>${text}</a>`;
-    //         }
-    //     );
-
-    //     return html;
-    // }
 
     init() {
         const stored = localStorage.getItem(this.sessionKey);
@@ -402,6 +271,46 @@ class ChatApp {
         this.restoreSession();
     }
 
+    _bindEnterKey() {
+        this.messageEl.onkeydown = e => {
+            if (e.key !== "Enter") return;
+            if (e.shiftKey) return; // Shift+Enter inserts newline
+            e.preventDefault();
+            this.handleSend();
+        };
+    }
+
+    _bindEnterOnMobile() {
+        this.messageEl.onkeydown = e => {
+            if (e.key === "Enter") {
+                // allow newline but clean nbsp
+                this.messageEl.innerHTML = this.messageEl.innerHTML.replace(/&nbsp;/gi, "\n");
+            }
+        };
+    }
+
+    _initEnterBinding() {
+        const apply = () => {
+            const md = new window.MobileDetect(window.navigator.userAgent);
+            this.isMobile = !!(md.mobile() || md.tablet());
+            if (!this.messageEl) return;
+            this.messageEl.onkeydown = null;
+            this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
+        };
+
+        if (window.MobileDetect) return apply();
+
+        const existing = document.querySelector('script[src*="mobile-detect"]');
+        if (existing) return existing.addEventListener("load", apply);
+
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
+        script.async = true;
+        script.onload = apply;
+        document.head.appendChild(script);
+    }
+
+
     restoreSession() {
         this.chatroomEl.style.display = "flex";
         this.messageEl.style.display = "block";
@@ -421,17 +330,7 @@ class ChatApp {
         // start SSE connection
         this.startStream();
 
-        if (!this.isMobile) {
-            this.messageEl.onkeydown = null;
-            this.messageEl.onkeydown = (e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    this.handleSend();
-                }
-            };
-        }
-
-        //this.enableLivePreview();
+        this._initEnterBinding();
 
         if (window.shell) window.shell.style.height = "450px";
     }
