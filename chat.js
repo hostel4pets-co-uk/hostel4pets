@@ -278,6 +278,8 @@ class ChatApp {
             e.preventDefault();
             this.handleSend();
         };
+
+        console.log(`On desktop!`);
     }
 
     _bindEnterOnMobile() {
@@ -291,26 +293,27 @@ class ChatApp {
     }
 
     _initEnterBinding() {
-        const apply = () => {
-            const md = new window.MobileDetect(window.navigator.userAgent);
-            this.isMobile = !!(md.mobile() || md.tablet());
-            if (!this.messageEl) return;
-            this.messageEl.onkeydown = null;
-            this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
-        };
 
-        if (window.MobileDetect) return apply();
+        this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
 
-        const existing = document.querySelector('script[src*="mobile-detect"]');
-        if (existing) return existing.addEventListener("load", apply);
+        // const apply = () => {
+        //     const md = new window.MobileDetect(window.navigator.userAgent);
+        //     this.isMobile = !!(md.mobile() || md.tablet());
+        //     if (!this.messageEl) return;
+        //     this.messageEl.onkeydown = null;
+        //     this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
+        // };
 
-        console.log(`On desktop!`);
+        // if (window.MobileDetect) return apply();
 
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
-        script.async = true;
-        script.onload = apply;
-        document.head.appendChild(script);
+        // const existing = document.querySelector('script[src*="mobile-detect"]');
+        // if (existing) return existing.addEventListener("load", apply);
+
+        // const script = document.createElement("script");
+        // script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
+        // script.async = true;
+        // script.onload = apply;
+        // document.head.appendChild(script);
     }
 
 
