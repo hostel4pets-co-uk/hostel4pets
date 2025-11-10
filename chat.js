@@ -281,12 +281,13 @@ class ChatApp {
     }
 
     _bindEnterOnMobile() {
-        this.messageEl.onkeydown = e => {
-            if (e.key === "Enter") {
-                // allow newline but clean nbsp
-                this.messageEl.innerHTML = this.messageEl.innerHTML.replace(/&nbsp;/gi, "\n");
-            }
-        };
+        // this.messageEl.onkeydown = e => {
+        //     if (e.key === "Enter") {
+        //         // allow newline but clean nbsp
+        //         //this.messageEl.innerHTML = this.messageEl.innerHTML.replace(/&nbsp;/gi, "\n");
+        //     }
+        // };
+        console.log(`On mobile!`);
     }
 
     _initEnterBinding() {
@@ -302,6 +303,8 @@ class ChatApp {
 
         const existing = document.querySelector('script[src*="mobile-detect"]');
         if (existing) return existing.addEventListener("load", apply);
+
+        console.log(`On desktop!`);
 
         const script = document.createElement("script");
         script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
