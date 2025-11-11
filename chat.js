@@ -256,6 +256,37 @@ class ChatApp {
         if (el) el.remove();
     }
 
+    _sendTypingSignal() {
+        if (!this.session?.sessionId) return;
+        if (this._typingTimeout) clearTimeout(this._typingTimeout);
+
+        // Skip spam: only send once per second
+        const now = Date.now();
+        if (this._lastTyping && now - this._lastTyping < 1000) return;
+        this._lastTyping = now;
+
+        const source = (new URLSearchParams(window.location.search)).get("source") || null;
+
+        const payload = {
+            text: `${this.session.nickname} is typing`,
+            sender: this.session.nickname,
+            sessionId: this.session.sessionId,
+            timestamp: now,
+            isTypingSignal: true,
+            source
+        };
+
+        fetch(`${this.backendUrl}/chat/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        }).catch(err => console.warn("Typing signal failed:", err));
+
+        // Clear after 3 seconds of inactivity
+        this._typingTimeout = setTimeout(() => (this._lastTyping = 0), 3000);
+    }
+
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -304,6 +335,12 @@ class ChatApp {
     _initEnterBinding() {
 
         this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
+
+        this.messageEl.addEventListener("keydown", e => {
+            if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
+                this._sendTypingSignal();
+            }
+        });
 
         // const apply = () => {
         //     const md = new window.MobileDetect(window.navigator.userAgent);
@@ -371,6 +408,7 @@ class ChatApp {
 
         this.messageEl.innerHTML = "";
         this.isThinking = true;
+        this._lastTyping = 0;
 
         try {
             await fetch(`${this.backendUrl}/chat/send`, {
@@ -396,8 +434,18 @@ class ChatApp {
                 const data = JSON.parse(event.data);
 
                 if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
-                    const agent = data[0].sender || "Agent";
-                    this.__showTypingSignal(agent);
+                    const signal = data[0];
+                    const source = (new URLSearchParams(window.location.search)).get("source");
+
+                    const isAgent = !!source;
+                    const isSelf = signal.sender === this.session.nickname;
+
+                    if ((isSelf && isAgent && signal.source) || (isSelf && !isAgent && !signal.source)) return;
+
+                    const name = isAgent
+                        ? signal.sender || "Guest"
+                        : signal.sender || "Agent";
+                    this.__showTypingSignal(name);
                     return;
                 }
 
