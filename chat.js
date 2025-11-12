@@ -209,14 +209,18 @@ class ChatApp {
         if (bubble) bubble.remove();
     }
 
-    __showTypingSignal(agentName) {
-        // Avoid duplicates
+    __showTypingSignal(agentName = "Agent") {
+
+
+
+        this.__shouldInsertHandoff(agentName) ?
+            this.__insertHandoffNotice(agentName) :
+            this.__removeHandoffNotice();
+
         if (this.chatroomEl.querySelector(".typing-signal")) return;
 
         this.__removeTypingSignal();
         this.__removeThinkingBubble();
-
-        this.__insertHandoffNotice(agentName);
 
         const html = `
             <div class="typing-indicator" aria-label="Agent typing">
@@ -234,6 +238,18 @@ class ChatApp {
     __removeTypingSignal() {
         const el = this.chatroomEl.querySelector(".typing-signal");
         if (el) el.remove();
+    }
+
+    _getHandoffKey() {
+        return this.session?.sessionId ? `lastAgent:${this.session.sessionId}` : "lastAgent";
+    }
+
+    __shouldInsertHandoff(agentName) {
+        const key = this._getHandoffKey();
+        const last = localStorage.getItem(key);
+        if (last === agentName) return false;
+        localStorage.setItem(key, agentName);
+        return true;
     }
 
     __insertHandoffNotice(agentName) {
@@ -659,6 +675,7 @@ class ChatApp {
         if (this.session?.sessionId) {
             const key = `welcomeSent:${this.session.sessionId}`;
             localStorage.removeItem(key);
+            localStorage.removeItem(`lastAgent:${this.session.sessionId}`);
         }
 
         localStorage.removeItem(this.sessionKey);
