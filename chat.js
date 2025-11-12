@@ -281,6 +281,8 @@ class ChatApp {
         if (this._lastTyping && now - this._lastTyping < 1000) return;
         this._lastTyping = now;
 
+        const source = (new URLSearchParams(window.location.search)).get("source") || null;
+        
         if (!window.__isAgentApp) {
             const raw = this.messageEl?.innerText ?? "";
             const draft = raw
@@ -293,7 +295,7 @@ class ChatApp {
                 sessionId: this.session.sessionId,
                 timestamp: now,
                 isTypingSignal: true,
-                source
+                source = 
             };
 
             fetch(`${this.backendUrl}/chat/send`, {
@@ -303,7 +305,7 @@ class ChatApp {
             }).catch(err => console.warn("Typing signal failed:", err));
         }
 
-        const source = (new URLSearchParams(window.location.search)).get("source") || null;
+
 
         const payload = {
             text: `${this.session.nickname} is typing`,
