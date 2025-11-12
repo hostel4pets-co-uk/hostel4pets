@@ -272,6 +272,31 @@ class ChatApp {
         if (el) el.remove();
     }
 
+    __showDraftPreview(agentName, text) {
+        const existing = this.chatroomEl.querySelector(".draft-preview");
+        if (existing) existing.remove();
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("message-wrapper", "host", "draft-preview");
+
+        const msgEl = document.createElement("div");
+        msgEl.classList.add("message", "host");
+
+        const nickEl = document.createElement("div");
+        nickEl.classList.add("nickname-strip");
+        nickEl.textContent = agentName;
+
+        const textEl = document.createElement("div");
+        textEl.classList.add("message-text");
+        textEl.textContent = text || "(empty draft)";
+
+        msgEl.appendChild(nickEl);
+        msgEl.appendChild(textEl);
+        wrapper.appendChild(msgEl);
+        this.chatroomEl.appendChild(wrapper);
+        this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+    }
+
 
     _sendTypingSignal() {
         if (!this.session?.sessionId) return;
@@ -284,7 +309,7 @@ class ChatApp {
 
         const source = (new URLSearchParams(window.location.search)).get("source") || null;
 
-        const payload = {
+        const typingPayload = {
             text: `${this.session.nickname} is typing`,
             sender: this.session.nickname,
             sessionId: this.session.sessionId,
@@ -296,30 +321,27 @@ class ChatApp {
         fetch(`${this.backendUrl}/chat/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        }).catch(err => console.warn("Typing signal failed:", err));
+            body: JSON.stringify(typingPayload)
+        }).catch(console.warn);
 
         if (!window.__isAgentApp) {
             const raw = this.messageEl?.innerText ?? "";
-            const draft = raw
-                .replace(/\u00A0/g, " ")
-                .replace(/\r/g, "")
-                .trim();
+            const draft = raw.replace(/\u00A0/g, " ").replace(/\r/g, "").trim();
 
-            const payload = {
-                text: `${draft}\n(Not sent yet)`,
+            const draftPayload = {
+                text: draft,
                 sender: this.session.nickname,
                 sessionId: this.session.sessionId,
                 timestamp: now,
-                isTypingSignal: true,
+                isDraftMessage: true,
                 source
             };
 
             fetch(`${this.backendUrl}/chat/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            }).catch(err => console.warn("Typing signal failed:", err));
+                body: JSON.stringify(draftPayload)
+            }).catch(console.warn);
         }
 
         // Clear after 3 seconds of inactivity
@@ -470,12 +492,19 @@ class ChatApp {
         evtSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                const signal = data[0];
 
                 if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
-                    const signal = data[0];
                     const source = (new URLSearchParams(window.location.search)).get("source");
                     if (signal.sender === this.session.nickname) return;
-                    if (signal.source === "agentApp") this.__showTypingSignal(signal.sender || "Agent");
+                    if (msg.sender !== this.session.nickname && signal.source === "agentApp") {
+                        this.__showTypingSignal(signal.sender || "Agent");
+                    }
+                    return;
+                }
+
+                if (data[0].isDraftMessage && msg.sender !== this.session.nickname) {
+                    this.__showDraftPreview(msg.sender, msg.text);
                     return;
                 }
 
@@ -483,7 +512,7 @@ class ChatApp {
                 this.chatroomEl.innerHTML = "";
 
                 history.forEach(msg =>
-                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent)
+                    this.__addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent)
                 );
 
                 if (!history.length) return;
@@ -534,7 +563,7 @@ class ChatApp {
         });
     }
 
-    addMessage(text, author, timestamp, isAIMessage = false, agent = null) {
+    __addMessage(text, author, timestamp, isAIMessage = false, agent = null) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
 
