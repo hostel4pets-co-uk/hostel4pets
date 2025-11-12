@@ -271,6 +271,7 @@ class ChatApp {
         const el = this.chatroomEl.querySelector(".handoff-notice");
         if (el) el.remove();
     }
+    
 
     _sendTypingSignal() {
         if (!this.session?.sessionId) return;
@@ -282,7 +283,7 @@ class ChatApp {
         this._lastTyping = now;
 
         const source = (new URLSearchParams(window.location.search)).get("source") || null;
-        
+
         if (!window.__isAgentApp) {
             const raw = this.messageEl?.innerText ?? "";
             const draft = raw
@@ -295,7 +296,7 @@ class ChatApp {
                 sessionId: this.session.sessionId,
                 timestamp: now,
                 isTypingSignal: true,
-                source = 
+                source: source || "guestApp"
             };
 
             fetch(`${this.backendUrl}/chat/send`, {
@@ -304,8 +305,6 @@ class ChatApp {
                 body: JSON.stringify(payload)
             }).catch(err => console.warn("Typing signal failed:", err));
         }
-
-
 
         const payload = {
             text: `${this.session.nickname} is typing`,
