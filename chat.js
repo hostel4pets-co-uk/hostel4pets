@@ -281,6 +281,28 @@ class ChatApp {
         if (this._lastTyping && now - this._lastTyping < 1000) return;
         this._lastTyping = now;
 
+        if (!window.__isAgentApp) {
+            const raw = this.messageEl?.innerText ?? "";
+            const draft = raw
+                .replace(/\u00A0/g, " ")
+                .replace(/\r/g, "");
+
+            const payload = {
+                text: `${draft}`,
+                sender: this.session.nickname,
+                sessionId: this.session.sessionId,
+                timestamp: now,
+                isTypingSignal: true,
+                source
+            };
+
+            fetch(`${this.backendUrl}/chat/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).catch(err => console.warn("Typing signal failed:", err));
+        }
+
         const source = (new URLSearchParams(window.location.search)).get("source") || null;
 
         const payload = {
@@ -734,3 +756,4 @@ class ChatApp {
 }
 
 window.ChatApp = ChatApp;
+
