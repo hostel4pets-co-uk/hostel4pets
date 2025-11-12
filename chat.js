@@ -436,16 +436,8 @@ class ChatApp {
                 if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
                     const signal = data[0];
                     const source = (new URLSearchParams(window.location.search)).get("source");
-
-                    const isAgent = !!source;
-                    const isSelf = signal.sender === this.session.nickname;
-
-                    if ((isSelf && isAgent && signal.source) || (isSelf && !isAgent && !signal.source)) return;
-
-                    const name = isAgent
-                        ? signal.sender || "Guest"
-                        : signal.sender || "Agent";
-                    this.__showTypingSignal(name);
+                    if (signal.sender === this.session.nickname) return;
+                    if (signal.source === "agentApp") this.__showTypingSignal(signal.sender || "Agent");
                     return;
                 }
 
