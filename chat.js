@@ -271,7 +271,7 @@ class ChatApp {
         const el = this.chatroomEl.querySelector(".handoff-notice");
         if (el) el.remove();
     }
-    
+
 
     _sendTypingSignal() {
         if (!this.session?.sessionId) return;
@@ -283,28 +283,6 @@ class ChatApp {
         this._lastTyping = now;
 
         const source = (new URLSearchParams(window.location.search)).get("source") || null;
-
-        if (!window.__isAgentApp) {
-            const raw = this.messageEl?.innerText ?? "";
-            const draft = raw
-                .replace(/\u00A0/g, " ")
-                .replace(/\r/g, "");
-
-            const payload = {
-                text: `${draft}`,
-                sender: this.session.nickname,
-                sessionId: this.session.sessionId,
-                timestamp: now,
-                isTypingSignal: true,
-                source: source || "guestApp"
-            };
-
-            fetch(`${this.backendUrl}/chat/send`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            }).catch(err => console.warn("Typing signal failed:", err));
-        }
 
         const payload = {
             text: `${this.session.nickname} is typing`,
@@ -321,11 +299,32 @@ class ChatApp {
             body: JSON.stringify(payload)
         }).catch(err => console.warn("Typing signal failed:", err));
 
+        if (!window.__isAgentApp) {
+            const raw = this.messageEl?.innerText ?? "";
+            const draft = raw
+                .replace(/\u00A0/g, " ")
+                .replace(/\r/g, "")
+                .trim();
+
+            const payload = {
+                text: `${draft}\n(Not sent yet)`,
+                sender: this.session.nickname,
+                sessionId: this.session.sessionId,
+                timestamp: now,
+                isTypingSignal: true,
+                source
+            };
+
+            fetch(`${this.backendUrl}/chat/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).catch(err => console.warn("Typing signal failed:", err));
+        }
+
         // Clear after 3 seconds of inactivity
         this._typingTimeout = setTimeout(() => (this._lastTyping = 0), 3000);
     }
-
-
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
