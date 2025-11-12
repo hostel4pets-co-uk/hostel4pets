@@ -18,8 +18,8 @@ html {
 #pageTitle {
   text-align: center; /* Centers the title text */
   font-size: 4vw; /* Example of making the font size responsive to the viewport width */
-  max-font-size: 24px; /* Optional: Prevents the font size from getting too large on wide screens */
-  min-font-size: 16px; /* Optional: Ensures readability on smaller screens */
+  /* max-font-size: 24px; 
+  min-font-size: 16px;  */
   white-space: nowrap; /* Prevents the title from wrapping into multiple lines */
   overflow: hidden; /* Hides overflow text if it gets too long for the container */
   text-overflow: ellipsis; /* Adds an ellipsis to indicate text overflow (optional) */
@@ -186,6 +186,16 @@ button:hover {
   vertical-align: middle;
 }
 
+.dot {
+  transition: transform 0.15s ease-in-out;
+  transform-origin: center;
+}
+
+.dot:hover {
+  transform: scale(1.4);
+  z-index: 10;
+}
+
 .guest-num {
   font-weight: bold;
   font-size: 1em;
@@ -214,6 +224,10 @@ button:hover {
 .detail.breed {
   margin-left: 3em;
   font-weight: 500;
+}
+
+#booking-form {
+  display: contents;
 }
 
 .modal-content .close {
@@ -251,6 +265,14 @@ button:hover {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow-x: hidden; /* stop sideways scroll, let children wrap instead */
+}
+
+#calendar-container {
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  user-select: none; /* Standard */
+  -webkit-touch-callout: none; /* iOS: disables "copy/share" popup */
 }
 
 .calendar-title {
@@ -408,3 +430,443 @@ button:hover {
   width: 100%;
   box-sizing: border-box;
 }
+
+/* === Chat Modal Styles (fixed layout) === */
+
+.chat-modal {
+  background: var(--white);
+  border-radius: 20px;
+  /* box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); */
+  width: 95%;
+  max-width: 600px;
+  height: auto; /* let it size naturally */
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-clip: padding-box;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  animation: fadeIn 0.3s ease-in-out;
+  margin: 0 auto;
+
+  transition: max-height 0.35s ease;
+}
+
+/* Consistent sizing and override global 80% cap inside the modal */
+.chat-modal,
+.chat-modal * {
+  box-sizing: border-box;
+}
+.chat-modal button,
+.chat-modal input,
+.chat-modal select,
+.chat-modal textarea,
+.chat-modal label {
+  max-width: 100%;
+}
+
+/* Header */
+.chat-header {
+  display: flex;
+  justify-content: space-between; /* keeps title on left, controls on right */
+  align-items: center;
+  background: var(--h4pgreen);
+  color: var(--white);
+  font-weight: bold;
+  padding: 15px;
+  font-size: 1.2em;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* Body: grid locks two rows with a fixed gap. No scrolling here. */
+.chat-body {
+  --body-pad: 15px;
+  --row-gap: 12px;
+  --message-h: 120px;
+
+  flex: 1;
+  padding: var(--body-pad);
+  background: #f9f9f9;
+  border-top: 2px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+
+  display: grid;
+  grid-template-rows: 1fr var(--message-h);
+  row-gap: var(--row-gap);
+
+  overflow: hidden;
+  margin: 0;
+
+  max-height: 500px;
+}
+
+.chat-body,
+.chat-footer {
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+}
+
+.chat-body.collapsed,
+.chat-footer.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  max-height: 200px;
+}
+
+/* .chat-modal.collapsed .chat-body,
+.chat-modal.collapsed .chat-footer {
+  opacity: 0;
+  pointer-events: none;
+} */
+
+.chat-modal.collapsed {
+  max-height: 60px;
+  height: auto;
+}
+
+/* Message history box */
+#chatroom {
+  height: 100%;
+  min-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  padding-right: 6px;
+  background: var(--white);
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Input area */
+#message {
+  display: block;
+  width: 100%;
+  height: 100px;
+  min-height: 100px;
+  max-height: 120px;
+  resize: none;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font-size: 0.95em;
+  font-family: Arial, sans-serif;
+  background: #fdfdfd;
+}
+
+#message:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+}
+
+/* Footer */
+.chat-footer {
+  --footer-pad-y: 10px;
+  --footer-pad-x: 15px;
+
+  padding: var(--footer-pad-y) var(--footer-pad-x);
+  background: var(--white);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+/* Send button */
+#send-button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  background: var(--h4pgreen);
+  color: var(--white);
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+#send-button:hover {
+  background: #02c634;
+}
+#send-button:active {
+  transform: scale(0.97);
+}
+
+/* === Messages === */
+
+/* Wrapper aligns bubble + timestamp */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.message-wrapper.guest {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message-wrapper.host {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.message-wrapper.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Bubble */
+.message {
+  border-radius: 16px;
+  color: var(--white);
+  font-size: 0.65em;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.message.guest {
+  background-color: var(--h4pgreen);
+  border-bottom-right-radius: 4px;
+}
+
+.message.guest::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  bottom: 1px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid var(--h4pgreen);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+.robin-icon {
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.message.host {
+  background-color: var(--h4pblue);
+  border-bottom-left-radius: 4px;
+}
+
+.message.host .message-text {
+  position: relative;
+  padding-right: 22px;
+}
+
+.message.host::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 1px;
+  width: 0;
+  height: 0;
+  border-right: 8px solid var(--h4pblue);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+/* Nickname strip flush */
+.nickname-strip {
+  font-size: 0.7em;
+  font-weight: bold;
+  opacity: 0.85;
+  margin-bottom: 4px;
+  padding: 2px 4px 0px;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Guest label */
+.message.guest .nickname-strip {
+  color: #e0ffe0;
+  background: #028f28;
+}
+
+/* Host label */
+.message.host .nickname-strip {
+  color: #e0f0ff;
+  background: #024a8f;
+}
+
+/* Message text */
+.message-text {
+  padding: 6px 10px;
+}
+
+/* Timestamp outside bubble */
+.timestamp {
+  font-size: 0.45em;
+  color: #555;
+  margin-top: 2px;
+}
+
+.timestamp.guest {
+  align-self: flex-start;
+}
+
+.timestamp.host {
+  align-self: flex-end;
+}
+
+#chat-controls {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.emoji-btn {
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.emoji-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Scrollbars inside history */
+#chatroom::-webkit-scrollbar {
+  width: 8px;
+}
+#chatroom::-webkit-scrollbar-thumb {
+  background: var(--h4pblue);
+  border-radius: 4px;
+}
+#chatroom::-webkit-scrollbar-track {
+  background: #eaeaea;
+  border-radius: 4px;
+}
+
+@keyframes blink-border {
+  0% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: var(--h4pgreen, #04dc3b);
+  }
+  100% {
+    border-color: transparent;
+  }
+}
+
+.chat-modal.blink {
+  animation: blink-border 0.5s ease-in-out infinite;
+  border-width: 2px;
+  border-style: solid;
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .chat-modal {
+    width: 98%;
+  }
+}
+
+.typing-indicator {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 1em;
+  color: inherit;
+}
+
+.typing-indicator .dot {
+  width: 0.35em;
+  height: 0.35em;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  transform: translateY(0);
+  opacity: 0.5;
+  animation: dot-hop 1.2s ease-in-out infinite;
+}
+
+.typing-indicator .dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator .dot:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes dot-hop {
+  0%, 60%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.35em) scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .typing-indicator .dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.unavailable-api {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.unavailable-api.show {
+  opacity: 1;
+}
+
+/* Handoff notice: full-width, slim breaking bar */
+#chatroom .system-notice.handoff-notice {
+  display: block;
+  font-family: inherit;         /* same font as chat */
+  font-size: 12px;              /* small text */
+  line-height: 1.2;             /* tight height, close to text height */
+  color: #222;                  /* slightly lighter than pure black */
+  background: #f2f3f5;          /* slightly darker than white grey */
+
+  /* Make it span the whole chat room visually (account for #chatroom padding) */
+  width: calc(100% + 18px);     /* 12px left pad + 6px right pad in #chatroom */
+  margin-left: -12px;           /* match #chatroom left padding */
+  margin-right: -6px;           /* match #chatroom right padding */
+
+  /* No vertical padding so it’s only as tall as the text */
+  padding-left: 12px;           /* keep text aligned with other messages */
+  padding-right: 6px;
+
+  /* Sit flush in the flex column */
+  align-self: stretch;
+}
+
+/* Optional: if you want ultra-subtle separators, uncomment these
+#chatroom .system-notice.handoff-notice {
+  border-top: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+*/

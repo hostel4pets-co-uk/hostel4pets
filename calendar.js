@@ -3,7 +3,7 @@ export const dotColours = Object.freeze({
     PURPLE: 'purple', ORANGE: 'orange', HOT_PINK: '#ff69b4', MAROON: 'maroon',
     GOLD: 'gold', DARK_GREEN: '#006400', MAGENTA: 'magenta', NAVY: 'navy',
     BROWN: '#8b4513', INDIGO: 'indigo', OLIVE: 'olive', CRIMSON: 'crimson',
-    BLACK: 'black', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
+    AQUAMARINE: '#7fffd4', DARK_ORANGE: '#ff8c00', CORAL: 'coral', GREY: 'grey'
 });
 
 export const backgroundColours = Object.freeze({
@@ -26,6 +26,13 @@ class Calendar {
 
     constructor(containerId) {
         this.container = document.getElementById(containerId);
+        this.container = document.getElementById(containerId);
+        this.guestColourMap = window.guestColourMap || {};
+        this.colourHistory = window.colourHistory || [];
+        this.allPets = [];
+
+        this.createPetTooltip();
+
         this.date = new Date(); // default current date
 
         this.onResize = this.updateDayHeaders.bind(this);
@@ -68,6 +75,24 @@ class Calendar {
         });
 
     }
+
+    createPetTooltip() {
+        this.petTooltip = document.createElement('div');
+        this.petTooltip.id = 'pet-tooltip';
+        Object.assign(this.petTooltip.style, {
+            position: 'fixed',
+            background: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            pointerEvents: 'none',
+            zIndex: '1000',
+            display: 'none'
+        });
+        document.body.appendChild(this.petTooltip);
+    }
+
 
     // Render the entire calendar UI
     async render() {
@@ -248,6 +273,15 @@ class Calendar {
                 this.openDayModal(dateStr);
             });
 
+            // if (window.md && (window.md.mobile() || window.md.tablet())) {
+            //     cell.addEventListener('touchstart', e => {
+            //         // If tapping directly a dot, prevent modal
+            //         if (e.target.classList.contains('dot')) return;
+            //         const dateStr = `${cellDate.getFullYear()}${String(cellDate.getMonth() + 1).padStart(2, '0')}${String(cellDate.getDate()).padStart(2, '0')}`;
+            //         this.openDayModal(dateStr);
+            //     });
+            // }
+            
             if (cell.dataset.locked !== 'bank') {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
@@ -384,9 +418,36 @@ class Calendar {
         cell.dataset.locked = 'bank';
     }
 
+    // addMobileTooltip(dot, petId) {
+    //     const showInfo = e => {
+    //         e.stopPropagation(); // prevent triggering the dayView modal
+    //         const pet = this.allPets?.find(p => p.petId === petId);
+    //         if (!pet) return;
+
+    //         this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+    //         this.petTooltip.style.display = 'block';
+    //         const touch = e.touches ? e.touches[0] : e;
+    //         this.petTooltip.style.left = touch.pageX + 10 + 'px';
+    //         this.petTooltip.style.top = touch.pageY + 10 + 'px';
+    //     };
+
+    //     const hideInfo = () => {
+    //         this.petTooltip.style.display = 'none';
+    //     };
+
+    //     // On mobile, just tap (no hold)
+    //     dot.addEventListener('touchstart', e => {
+    //         showInfo(e);
+    //         setTimeout(hideInfo, 2000); // auto-hide after 2s
+    //     });
+
+    //     dot.addEventListener('touchend', hideInfo);
+    //     dot.addEventListener('touchcancel', hideInfo);
+    // }
+
 
     // Add a coloured dot to a date
-    addDot(date, colour) {
+    addDot(date, colour, petId = null) {
         // Normalise the date to ensure consistent format (strip time)
         const dotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -448,6 +509,9 @@ class Calendar {
         dot.style.bottom = `${padding + rowIndex * (dotSize + padding)}px`;
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
+        if (petId) dot.id = petId;
+        //if (petId && window.md && (window.md.mobile() || window.md.tablet())) this.addMobileTooltip(dot, petId);
+
         cell.appendChild(dot);
 
         // Update the cell's background dynamically
@@ -465,6 +529,25 @@ class Calendar {
             // Only update normal backgrounds when not locked
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         }
+
+        if (petId) {
+            dot.addEventListener('mouseenter', e => {
+                const pet = this.allPets?.find(p => p.petId === petId);
+                if (!pet) return;
+                this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
+                this.petTooltip.style.display = 'block';
+            });
+
+            dot.addEventListener('mousemove', e => {
+                this.petTooltip.style.left = e.pageX + 10 + 'px';
+                this.petTooltip.style.top = e.pageY + 10 + 'px';
+            });
+
+            dot.addEventListener('mouseleave', () => {
+                this.petTooltip.style.display = 'none';
+            });
+        }
+
     }
 
     // Add a legend to the calendar
@@ -536,92 +619,119 @@ class Calendar {
 
     // Load bookings from bookings.json and add dots to the calendar
     async loadBookings() {
-      if (this.abortController) this.abortController.abort();
-      this.abortController = new AbortController();
-      const signal = this.abortController.signal;
-    
-      const loadId = ++this.loadId;
-    
-      const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); // local midnight
-    
-      try {
-        const response = await fetch('https://kittycrypto.ddns.net:5493/calendar.json', { signal });
-        if (!response.ok) throw new Error('Failed to fetch calendar.json');
-        const events = await response.json();
-    
-        if (loadId !== this.loadId) return;
-    
-        // First pass: handle "Not available" blocks (normalise dates)
-        for (const ev of events) {
-          if (!ev.petId || ev.petId === "Unknown") continue;
-    
-          const types = Array.isArray(ev.type) ? ev.type : [ev.type];
-          if (!types.includes("Not available")) continue;
-    
-          const startDay = toDay(new Date(ev.start));
-          const endDay   = toDay(new Date(ev.end));
-    
-          for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+        if (this.abortController) this.abortController.abort();
+        this.abortController = new AbortController();
+        const signal = this.abortController.signal;
+
+        const loadId = ++this.loadId;
+        const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+
+        try {
+            const response = await fetch('https://api.kittycrypto.gg:5493/calendar.json', { signal });
+            if (!response.ok) throw new Error('Failed to fetch calendar.json');
+            const events = await response.json();
+
+            this.allPets = events.filter(ev => ev.petId && ev.petId !== "Unknown");
+
             if (loadId !== this.loadId) return;
-            if (d.getMonth() !== this.date.getMonth()) continue;
-            if (d.getFullYear() !== this.date.getFullYear()) continue;
-    
-            const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
-            const cellIndex = firstDay + d.getDate() - 1;
-            const row = Math.floor(cellIndex / 7);
-            const column = cellIndex % 7;
-            const table = document.getElementById('Calendar');
-            const tbody = table.querySelector('tbody');
-            const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
-            if (!cell) continue;
-    
-            cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
-            cell.dataset.locked = 'na';
-          }
-        }
-    
-        // Second pass: normal stays (support multiple stays per pet) — normalise
-        const staysByPet = {};
-    
-        events
-          .filter(ev => ev.petId && ev.petId !== "Unknown")
-          .sort((a, b) => new Date(a.start) - new Date(b.start))
-          .forEach(ev => {
-            const types = Array.isArray(ev.type) ? ev.type : [ev.type];
-            if (types.includes("Not available")) return;
-    
-            const petId = ev.petId;
-            if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [] };
-    
-            if (types.includes("Check-in")) {
-              staysByPet[petId].open = toDay(new Date(ev.start));
-            }
-            if (types.includes("Check-out")) {
-              const open = staysByPet[petId].open;
-              if (open) {
+
+            // First pass: "Not available" blocks
+            for (const ev of events) {
+                if (!ev.petId || ev.petId === "Unknown") continue;
+                const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                if (!types.includes("Not available")) continue;
+
+                const startDay = toDay(new Date(ev.start));
                 const endDay = toDay(new Date(ev.end));
-                staysByPet[petId].ranges.push([open, endDay]);
-                staysByPet[petId].open = null;
-              }
+
+                for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+                    if (loadId !== this.loadId) return;
+                    if (d.getMonth() !== this.date.getMonth()) continue;
+                    if (d.getFullYear() !== this.date.getFullYear()) continue;
+
+                    const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
+                    const cellIndex = firstDay + d.getDate() - 1;
+                    const row = Math.floor(cellIndex / 7);
+                    const column = cellIndex % 7;
+                    const table = document.getElementById('Calendar');
+                    const tbody = table.querySelector('tbody');
+                    const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+                    if (!cell) continue;
+
+                    cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
+                    cell.dataset.locked = 'na';
+                }
             }
-          });
-    
-        // Draw all ranges (dates already normalised)
-        for (const petId in staysByPet) {
-          for (const [startDay, endDay] of staysByPet[petId].ranges) {
-            for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
-              if (loadId !== this.loadId) return;
-              this.addDot(new Date(d));
+
+            // Second pass: normal stays
+            const staysByPet = {};
+            events
+                .filter(ev => ev.petId && ev.petId !== "Unknown")
+                .sort((a, b) => new Date(a.start) - new Date(b.start))
+                .forEach(ev => {
+                    const types = Array.isArray(ev.type) ? ev.type : [ev.type];
+                    if (types.includes("Not available")) return;
+
+                    const petId = ev.petId;
+                    if (!staysByPet[petId]) staysByPet[petId] = { open: null, ranges: [] };
+
+                    if (types.includes("Check-in")) {
+                        staysByPet[petId].open = toDay(new Date(ev.start));
+                        return;
+                    }
+
+                    if (!types.includes("Check-out")) return;
+                    if (!staysByPet[petId].open) return;
+
+                    const endDay = toDay(new Date(ev.end));
+                    staysByPet[petId].ranges.push([staysByPet[petId].open, endDay]);
+                    staysByPet[petId].open = null;
+                });
+
+            // Colour assignment logic
+            const allColours = Object.values(this.dotColours);
+            const activePetIds = new Set(Object.keys(staysByPet));
+
+            for (const petId in staysByPet) {
+                let assignedColour = this.guestColourMap[petId];
+
+                if (!assignedColour) {
+                    const usedColours = Object.entries(this.guestColourMap)
+                        .filter(([id]) => activePetIds.has(id))
+                        .map(([, colour]) => colour);
+
+                    const availableColours = allColours.filter(c => !usedColours.includes(c));
+                    const unused = allColours.find(c => !this.colourHistory.includes(c));
+
+                    assignedColour = availableColours[0] || unused || allColours[allColours.length - 1];
+                    this.guestColourMap[petId] = assignedColour;
+                }
+
+                // Update recency order
+                this.colourHistory = this.colourHistory.filter(c => c !== assignedColour);
+                this.colourHistory.push(assignedColour);
+
+                // Draw the dots for each stay
+                for (const [startDay, endDay] of staysByPet[petId].ranges) {
+                    for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+                        if (loadId !== this.loadId) return;
+                        this.addDot(new Date(d), assignedColour, petId);
+                    }
+                }
             }
-          }
+
+            // Remove colours of pets no longer active
+            Object.keys(this.guestColourMap).forEach(petId => {
+                if (!activePetIds.has(petId)) delete this.guestColourMap[petId];
+            });
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.log('Fetch aborted');
+            } else {
+                console.error('Error loading bookings:', error);
+            }
         }
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          console.log('Fetch aborted');
-        } else {
-          console.error('Error loading bookings:', error);
-        }
-      }
     }
 
     // Change the current month
@@ -649,6 +759,10 @@ class Calendar {
 
         // prevent page scroll while open (matches your other project)
         document.body.classList.add("no-scroll");
+
+        // Ensure dayView.js can use the live colour state from this Calendar instance
+        window.guestColourMap = this.guestColourMap;
+        window.colourHistory = this.colourHistory;
 
         // Fetch backbone HTML
         let html = "";

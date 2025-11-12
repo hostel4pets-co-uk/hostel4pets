@@ -1,15 +1,15 @@
-class BookingCalculator {
-  constructor(hourlyRate, maxDailyRate, latePickupCharge, openingTime, closingTime, lateClosingTime, extraChargeNonNeutered, extraChargeCub) {
-    this.hourlyRate = hourlyRate;
-    this.maxDailyRate = maxDailyRate;
-    this.latePickupCharge = latePickupCharge;
-    this.openingTime = openingTime;
-    this.closingTime = closingTime;
-    this.lateClosingTime = lateClosingTime;
-    this.extraChargeNonNeutered = extraChargeNonNeutered;
-    this.extraChargeCub = extraChargeCub;
-    this.extraPetDiscountRate = 0.10; // 10% discount per extra pet
-    this.depositRateOfTotal = 0.25;   // 25% of final total
+export class BookingCalculator {
+  constructor(config) {
+    this.hourlyRate = config.hourlyRate;
+    this.maxDailyRate = config.maxDailyRate;
+    this.latePickupCharge = config.latePickupCharge;
+    this.openingTime = config.openingTime;
+    this.closingTime = config.closingTime;
+    this.lateClosingTime = config.lateClosingTime;
+    this.extraChargeNonNeutered = config.extraChargeNonNeutered;
+    this.extraChargeCub = config.extraChargeCub;
+    this.extraPetDiscountRate = config.extraPetDiscountRate ?? 0.10;
+    this.depositRateOfTotal = config.depositRateOfTotal ?? 0.25;
   }
 
   _timeBaseForOnePet(checkIn, checkOut) {
@@ -37,8 +37,14 @@ class BookingCalculator {
     let cubSurcharge = 0;
     let nonNeuteredSurcharge = 0;
     for (let i = 0; i < numOfPets; i++) {
-      if (cubStatus[i] === 'yes') cubSurcharge += this.extraChargeCub * baseOnePet;
-      if (neuteredStatus[i] === 'no') nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
+      const isCub = cubStatus[i] === 'yes';
+      const isNeutered = neuteredStatus[i] === 'yes';
+
+      if (isCub) {
+        cubSurcharge += this.extraChargeCub * baseOnePet;
+      } else if (!isNeutered) {
+        nonNeuteredSurcharge += this.extraChargeNonNeutered * baseOnePet;
+      }
     }
 
     const checkoutHour = checkOut.getHours();
@@ -92,6 +98,17 @@ const combineLocal = (dateStr, timeStr) => {
   return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
 };
 
+export const bookingConfig = {
+  hourlyRate: 2.25,
+  maxDailyRate: 27,
+  latePickupCharge: 8,
+  openingTime: 7,
+  closingTime: 20,
+  lateClosingTime: 22,
+  extraChargeNonNeutered: 0.2,
+  extraChargeCub: 0.2,
+};
+
 function calculateTotal() {
   const checkIn = combineLocal(
     document.getElementById('checkInDate').value,
@@ -113,7 +130,7 @@ function calculateTotal() {
   const neuteredStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('neutered' + (i + 1)).value);
   const cubStatus = Array.from({ length: numOfPets }, (_, i) => document.getElementById('cub' + (i + 1)).value);
 
-  const calculator = new BookingCalculator(2.25, 27, 8, 7, 20, 22, 0.2, 0.2);
+  const calculator = new BookingCalculator(bookingConfig);
 
   const { totalCharge, depositAmount, breakdown } =
     calculator.calculatePrice(checkIn, checkOut, numOfPets, neuteredStatus, cubStatus);
@@ -124,10 +141,13 @@ function calculateTotal() {
 }
 
 function updatePetOptions() {
-  const numOfPets = parseInt(document.getElementById('numOfPets').value);
-  let petOptionsHTML = '';
+  const numOfPets = parseInt(document.getElementById('numOfPets').value, 10);
+  const container = document.getElementById('petOptions');
+
+  // rebuild HTML
+  let html = '';
   for (let i = 0; i < numOfPets; i++) {
-    petOptionsHTML += `
+    html += `
       <label for="neutered${i + 1}">Pet ${i + 1} Neutered/Spayed:</label>
       <select id="neutered${i + 1}">
         <option value="yes">Yes</option>
@@ -140,15 +160,48 @@ function updatePetOptions() {
       </select><br>
     `;
   }
-  document.getElementById('petOptions').innerHTML = petOptionsHTML;
+  container.innerHTML = html;
+
+  // restore saved values if present
+  for (let i = 0; i < numOfPets; i++) {
+    const neuteredEl = document.getElementById('neutered' + (i + 1));
+    const cubEl = document.getElementById('cub' + (i + 1));
+
+    const neuteredSaved = localStorage.getItem('neutered' + (i + 1));
+    const cubSaved = localStorage.getItem('cub' + (i + 1));
+
+    if (neuteredSaved) neuteredEl.value = neuteredSaved;
+    if (cubSaved) cubEl.value = cubSaved;
+
+    // add listeners to persist changes
+    neuteredEl.addEventListener('change', e => {
+      localStorage.setItem('neutered' + (i + 1), e.target.value);
+    });
+    cubEl.addEventListener('change', e => {
+      localStorage.setItem('cub' + (i + 1), e.target.value);
+    });
+  }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
+  // restore numOfPets first
+  const savedNum = localStorage.getItem('numOfPets');
+  if (savedNum) {
+    document.getElementById('numOfPets').value = savedNum;
+  }
+
   updatePetOptions();
+
+  // save numOfPets changes
+  document.getElementById('numOfPets').addEventListener('change', e => {
+    localStorage.setItem('numOfPets', e.target.value);
+    updatePetOptions();
+  });
+
   document.getElementById('calculateButton').addEventListener('click', calculateTotal);
 
   const cssFiles = document.querySelectorAll('link[rel="stylesheet"]');
-  cssFiles.forEach(function (file) {
+  cssFiles.forEach(file => {
     file.href += '?v=' + new Date().getTime();
   });
 
