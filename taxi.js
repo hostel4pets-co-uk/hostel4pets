@@ -1,57 +1,101 @@
-document.addEventListener('DOMContentLoaded', initialise);
+document.addEventListener('DOMContentLoaded', () => {
+    const pickupSelect = document.getElementById('pickupLocation');
+    const dropoffSelect = document.getElementById('dropoffLocation');
+    const dropoffEnabled = document.getElementById('dropoffEnabled');
+    const sameLocation = document.getElementById('sameLocation');
 
-async function initialise() {
-    const modal = document.getElementById('taxi-modal');
-    if (!modal) return;
-
-    const pickupSelect = modal.querySelector('#pickupLocation');
-    const dropoffSelect = modal.querySelector('#dropoffLocation');
-    const sameLocation = modal.querySelector('#sameLocation');
-    const dropoffEnabled = modal.querySelector('#dropoffEnabled');
-    const dropoffLabel = modal.querySelector('label[for="dropoffLocation"]');
-
-    await loadLocations(pickupSelect, dropoffSelect);
-    wireEvents();
-    applyVisibility();
-
-    async function loadLocations(pickup, dropoff) {
-        const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json');
-        const json = await res.json();
-
-        const locations = Object.keys(json);
-
-        const fill = (select, list) => {
-            select.innerHTML = '';
-            for (const loc of list) {
-                const opt = document.createElement('option');
-                opt.value = opt.textContent = loc;
-                select.appendChild(opt);
-            }
-        };
-
-        fill(pickup, locations);
-        fill(dropoff, locations);
+    if (!pickupSelect || !dropoffSelect || !dropoffEnabled || !sameLocation) {
+        return;
     }
 
-    function wireEvents() {
-        sameLocation.addEventListener('change', applyVisibility);
-        dropoffEnabled.addEventListener('change', applyVisibility);
-    }
+    const dropoffGroup = dropoffSelect.parentElement;
 
-    function applyVisibility() {
+    const setDropoffFieldsVisible = (visible) => {
+        if (!dropoffGroup) {
+            return;
+        }
+
+        dropoffGroup.style.display = visible ? '' : 'none';
+        dropoffSelect.disabled = !visible;
+    };
+
+    const syncDifferentLocationState = () => {
         if (!dropoffEnabled.checked) {
-            sameLocation.checked = false;
             sameLocation.disabled = true;
+            sameLocation.checked = true;   // checked => fields hidden
+            setDropoffFieldsVisible(false);
+            return;
         }
 
-        if (dropoffEnabled.checked) {
-            sameLocation.disabled = false;
+        sameLocation.disabled = false;
+
+        // when "different location" checkbox is checked, hide fields
+        const shouldShowFields = !sameLocation.checked;
+        setDropoffFieldsVisible(shouldShowFields);
+    };
+
+    const populateSelect = (selectEl, towns) => {
+        selectEl.innerHTML = '';
+        towns.forEach((town) => {
+            const opt = document.createElement('option');
+            opt.value = town;
+            opt.textContent = town;
+            selectEl.appendChild(opt);
+        });
+    };
+
+    const loadCoverage = async () => {
+        try {
+            const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!res.ok) {
+                console.error('Failed to fetch taxi coverage', res.status, res.statusText);
+                return;
+            }
+
+            const data = await res.json();
+
+            if (!Array.isArray(data)) {
+                console.error('Unexpected coverage payload, expected array');
+                return;
+            }
+
+            const townsSet = new Set();
+
+            data.forEach((item) => {
+                if (!item || typeof item.town !== 'string') {
+                    return;
+                }
+                const trimmed = item.town.trim();
+                if (!trimmed) {
+                    return;
+                }
+                townsSet.add(trimmed);
+            });
+
+            const towns = Array.from(townsSet).sort((a, b) => a.localeCompare(b));
+
+            if (towns.length === 0) {
+                console.warn('No towns found in coverage payload');
+                return;
+            }
+
+            populateSelect(pickupSelect, towns);
+            populateSelect(dropoffSelect, towns);
+        } catch (err) {
+            console.error('Error loading taxi coverage', err);
         }
+    };
 
-        const different = dropoffEnabled.checked && !sameLocation.checked;
+    dropoffEnabled.addEventListener('change', syncDifferentLocationState);
+    sameLocation.addEventListener('change', syncDifferentLocationState);
 
-        dropoffSelect.disabled = !different;
-        dropoffLabel.style.display = different ? 'block' : 'none';
-        dropoffSelect.style.display = different ? 'block' : 'none';
-    }
-}
+    // initial state: respect current checkboxes
+    syncDifferentLocationState();
+    loadCoverage();
+});
