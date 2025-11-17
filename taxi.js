@@ -35,10 +35,12 @@ function hideDropoffFields(dropoffGroup, dropoff) {
     dropoff.disabled = true;
 }
 
+
 function updateDropoffVisibility({ dropoffEnabled, different, dropoffGroup, dropoff }) {
+
     if (!dropoffEnabled.checked) {
         different.disabled = true;
-        different.checked = false;
+        different.checked = false;    // false = hidden
         hideDropoffFields(dropoffGroup, dropoff);
         return;
     }
@@ -57,12 +59,12 @@ function wireTaxiEvents(elems) {
     elems.different.addEventListener('change', handler);
 }
 
-// Single entry point
+// Single entry point, called at file load
 async function initTaxiForm() {
     const pickup = document.getElementById('pickupLocation');
     const dropoff = document.getElementById('dropoffLocation');
     const dropoffEnabled = document.getElementById('dropoffEnabled');
-    const different = document.getElementById('sameLocation');
+    const different = document.getElementById('sameLocation'); // checked = hide
     const dropoffGroup = dropoff ? dropoff.closest('.form-group') : null;
 
     if (!pickup || !dropoff || !dropoffEnabled || !different || !dropoffGroup) return;
@@ -74,31 +76,10 @@ async function initTaxiForm() {
     const elems = { dropoffEnabled, different, dropoffGroup, dropoff };
     updateDropoffVisibility(elems);
     wireTaxiEvents(elems);
-
-    const form = document.getElementById('taxi-form');
-    if (form) {
-        form.addEventListener('submit', async (ev) => {
-            ev.preventDefault();
-
-            try {
-                console.log('[debug] Form submitted');
-                const price = await calculateTaxiFromForm({
-                    pickup,
-                    dropoff,
-                    dropoffEnabled,
-                    different
-                });
-
-                console.log('[debug] Final taxi price = £' + price.toFixed(2));
-            } catch (err) {
-                console.error('Price calculation failed:', err);
-            }
-        });
-    }
 }
 
-async function loadDistanceMiles(pickupTown, dropoffTown) {
-    console.log(`[debug] Looking up distance for ${pickupTown} → ${dropoffTown}`);
+async function loadTownDistance(town) {
+    console.log(`[debug] Looking up distance for town: ${town}`);
 
     const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json', {
         headers: { Accept: 'application/json' }
@@ -111,26 +92,23 @@ async function loadDistanceMiles(pickupTown, dropoffTown) {
     for (const item of arr) {
         if (!item) continue;
 
-        if (item.pickup === pickupTown && item.dropoff === dropoffTown) {
+        if (typeof item.distance_miles !== 'number') {
+            console.error('[debug] Invalid distance_miles in matched entry');
+            return null;
+        }
+
+        if (item.town === town) {
             console.log('[debug] Matched entry:', item);
-            if (typeof item.distance_miles !== 'number') {
-                console.error('[debug] Invalid distance_miles in matched entry');
-                return null;
-            }
             console.log(`[debug] Distance found: ${item.distance_miles} miles`);
             return item.distance_miles;
         }
     }
 
-    throw new Error(`No distance entry for ${pickupTown} → ${dropoffTown}`);
+    throw new Error(`No distance entry for town ${town}`);
 }
 
-async function getTaxiPrice(distanceMiles, isReturn) {
-    console.log('[debug] Requesting price from backend', {
-        distanceMiles,
-        isReturn
-    });
 
+async function getTaxiPrice(distanceMiles, isReturn) {
     const url =
         `/taxi?distance=${encodeURIComponent(distanceMiles)}&isReturn=${isReturn ? 'true' : 'false'}`;
 
@@ -138,23 +116,21 @@ async function getTaxiPrice(distanceMiles, isReturn) {
     if (!res.ok) throw new Error(`Taxi endpoint failed: ${res.status} ${res.statusText}`);
 
     const body = await res.json();
-    console.log('[debug] Raw response from backend:', body);
 
     if (typeof body.price !== 'string' && typeof body.price !== 'number') {
         throw new Error('Taxi endpoint returned invalid price');
     }
 
     window.taxiPrice = Number(body.price);
-    console.log('[debug] Stored window.taxiPrice =', window.taxiPrice);
 
     return window.taxiPrice;
 }
 
 async function calculateTaxiFromForm({ pickup, dropoff, dropoffEnabled, different }) {
     const pickupTown = pickup.value;
-    let dropoffTown = pickupTown;
-
     console.log('[debug] Pickup town:', pickupTown);
+
+    let dropoffTown = pickupTown;
 
     if (dropoffEnabled.checked && different.checked) {
         dropoffTown = dropoff.value;
@@ -163,16 +139,22 @@ async function calculateTaxiFromForm({ pickup, dropoff, dropoffEnabled, differen
         console.log('[debug] Dropoff same as pickup:', dropoffTown);
     }
 
-    const distanceMiles = await loadDistanceMiles(pickupTown, dropoffTown);
-    const isReturn = dropoffEnabled.checked;
+    const pickupDistance = await loadTownDistance(pickupTown);
 
-    console.log('[debug] Calculating price with:', {
-        distanceMiles,
-        isReturn
+    let dropoffDistance = dropoffEnabled.checked ? await loadTownDistance(dropoffTown) : 0;
+
+    console.log('[debug] Distances:', {
+        pickupDistance,
+        dropoffDistance
     });
 
-    return getTaxiPrice(distanceMiles, isReturn);
+    const totalDistance = pickupDistance + dropoffDistance;
+
+    console.log('[debug] Total distance to price:', totalDistance);
+
+    return getTaxiPrice(totalDistance, dropoffEnabled.checked);
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     initTaxiForm().catch(err => console.error('Taxi form init failed:', err));
