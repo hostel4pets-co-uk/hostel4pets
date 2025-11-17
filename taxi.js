@@ -1,101 +1,83 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const pickupSelect = document.getElementById('pickupLocation');
-    const dropoffSelect = document.getElementById('dropoffLocation');
-    const dropoffEnabled = document.getElementById('dropoffEnabled');
-    const sameLocation = document.getElementById('sameLocation');
+async function loadCoverage() {
+    const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json', {
+        headers: { Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
-    if (!pickupSelect || !dropoffSelect || !dropoffEnabled || !sameLocation) {
+    const arr = await res.json();
+    if (!Array.isArray(arr)) throw new Error('Coverage payload is not an array');
+
+    const towns = new Set();
+    for (const item of arr) {
+        const t = item && typeof item.town === 'string' ? item.town.trim() : '';
+        if (t) towns.add(t);
+    }
+    return Array.from(towns).sort((a, b) => a.localeCompare(b));
+}
+
+function populateSelect(selectEl, towns) {
+    selectEl.innerHTML = '';
+    for (const t of towns) {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        selectEl.appendChild(opt);
+    }
+}
+
+function showDropoffFields(dropoffGroup, dropoff) {
+    dropoffGroup.style.display = '';
+    dropoff.disabled = false;
+}
+
+function hideDropoffFields(dropoffGroup, dropoff) {
+    dropoffGroup.style.display = 'none';
+    dropoff.disabled = true;
+}
+
+
+function updateDropoffVisibility({ dropoffEnabled, different, dropoffGroup, dropoff }) {
+
+    if (!dropoffEnabled.checked) {
+        different.disabled = true;
+        different.checked = false;    // false = hidden
+        hideDropoffFields(dropoffGroup, dropoff);
         return;
     }
+    different.disabled = false;
 
-    const dropoffGroup = dropoffSelect.parentElement;
+    if (different.checked) {
+        showDropoffFields(dropoffGroup, dropoff);
+    } else {
+        hideDropoffFields(dropoffGroup, dropoff);
+    }
+}
 
-    const setDropoffFieldsVisible = (visible) => {
-        if (!dropoffGroup) {
-            return;
-        }
+function wireTaxiEvents(elems) {
+    const handler = () => updateDropoffVisibility(elems);
+    elems.dropoffEnabled.addEventListener('change', handler);
+    elems.different.addEventListener('change', handler);
+}
 
-        dropoffGroup.style.display = visible ? '' : 'none';
-        dropoffSelect.disabled = !visible;
-    };
+// Single entry point, called at file load
+async function initTaxiForm() {
+    const pickup = document.getElementById('pickupLocation');
+    const dropoff = document.getElementById('dropoffLocation');
+    const dropoffEnabled = document.getElementById('dropoffEnabled');
+    const different = document.getElementById('sameLocation'); // checked = hide
+    const dropoffGroup = dropoff ? dropoff.closest('.form-group') : null;
 
-    const syncDifferentLocationState = () => {
-        if (!dropoffEnabled.checked) {
-            sameLocation.disabled = true;
-            sameLocation.checked = true;   // checked => fields hidden
-            setDropoffFieldsVisible(false);
-            return;
-        }
+    if (!pickup || !dropoff || !dropoffEnabled || !different || !dropoffGroup) return;
 
-        sameLocation.disabled = false;
+    const towns = await loadCoverage();
+    populateSelect(pickup, towns);
+    populateSelect(dropoff, towns);
 
-        // when "different location" checkbox is checked, hide fields
-        const shouldShowFields = !sameLocation.checked;
-        setDropoffFieldsVisible(shouldShowFields);
-    };
+    const elems = { dropoffEnabled, different, dropoffGroup, dropoff };
+    updateDropoffVisibility(elems);
+    wireTaxiEvents(elems);
+}
 
-    const populateSelect = (selectEl, towns) => {
-        selectEl.innerHTML = '';
-        towns.forEach((town) => {
-            const opt = document.createElement('option');
-            opt.value = town;
-            opt.textContent = town;
-            selectEl.appendChild(opt);
-        });
-    };
-
-    const loadCoverage = async () => {
-        try {
-            const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!res.ok) {
-                console.error('Failed to fetch taxi coverage', res.status, res.statusText);
-                return;
-            }
-
-            const data = await res.json();
-
-            if (!Array.isArray(data)) {
-                console.error('Unexpected coverage payload, expected array');
-                return;
-            }
-
-            const townsSet = new Set();
-
-            data.forEach((item) => {
-                if (!item || typeof item.town !== 'string') {
-                    return;
-                }
-                const trimmed = item.town.trim();
-                if (!trimmed) {
-                    return;
-                }
-                townsSet.add(trimmed);
-            });
-
-            const towns = Array.from(townsSet).sort((a, b) => a.localeCompare(b));
-
-            if (towns.length === 0) {
-                console.warn('No towns found in coverage payload');
-                return;
-            }
-
-            populateSelect(pickupSelect, towns);
-            populateSelect(dropoffSelect, towns);
-        } catch (err) {
-            console.error('Error loading taxi coverage', err);
-        }
-    };
-
-    dropoffEnabled.addEventListener('change', syncDifferentLocationState);
-    sameLocation.addEventListener('change', syncDifferentLocationState);
-
-    // initial state: respect current checkboxes
-    syncDifferentLocationState();
-    loadCoverage();
+document.addEventListener('DOMContentLoaded', () => {
+    initTaxiForm().catch(err => console.error('Taxi form init failed:', err));
 });
