@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Pet Taxi Booking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Reuse site styles for consistent look and feel -->
+    <link rel="stylesheet" href="./styles.css" />
+    <!-- Structure only for now; behaviour will live in taxi.js -->
+    <script type="module" src="./taxi.js"></script>
+</head>
+
+<body>
+    <!-- Modal shell (kept self-contained so it can be injected like dayView) -->
+    <div id="taxi-modal" class="modal" style="display:block;">
+        <div class="modal-content">
+            <h2>Pet Taxi Booking</h2>
+
+            <form id="taxi-form">
+                <!-- What legs are needed -->
+                <div class="form-group">
+                    <label class="subtitle" style="display:inline-block; margin-bottom:10px;">Journey Options</label>
+                    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+                        <label>
+                            <input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked />
+                            Pickup
+                        </label>
+                        <label>
+                            <input type="checkbox" id="dropoffEnabled" name="dropoffEnabled" checked />
+                            Drop off
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Locations -->
+                <div class="form-group">
+                    <label for="pickupLocation">Pickup location</label>
+                    <!-- options will be populated by REST later -->
+                    <select id="pickupLocation" name="pickupLocation"></select>
+                </div>
+
+                <div class="form-group same-location-row">
+                    <input type="checkbox" id="sameLocation" name="sameLocation" checked />
+                    <label for="sameLocation">Drop off at a different location</label>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="dropoffLocation">Drop off location</label>
+                    <!-- disabled by default while "same location" is checked -->
+                    <select id="dropoffLocation" name="dropoffLocation" disabled></select>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-group">
+                    <button type="submit" id="taxiSubmit">Submit</button>
+                </div>
+            </form>
+
+            <!-- Optional close icon; loader can also inject its own -->
+            <span class="close" aria-label="Close">❌</span>
+        </div>
+    </div>
+</body>
+
+</html>
