@@ -211,8 +211,6 @@ class ChatApp {
 
     __showTypingSignal(agentName = "Agent") {
 
-
-
         this.__shouldInsertHandoff(agentName) ?
             this.__insertHandoffNotice(agentName) :
             this.__removeHandoffNotice();
@@ -272,30 +270,30 @@ class ChatApp {
         if (el) el.remove();
     }
 
-    __showDraftPreview(agentName, text) {
-        const existing = this.chatroomEl.querySelector(".draft-preview");
-        if (existing) existing.remove();
+    // __showDraftPreview(agentName, text) {
+    //     const existing = this.chatroomEl.querySelector(".draft-preview");
+    //     if (existing) existing.remove();
 
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("message-wrapper", "host", "draft-preview");
+    //     const wrapper = document.createElement("div");
+    //     wrapper.classList.add("message-wrapper", "host", "draft-preview");
 
-        const msgEl = document.createElement("div");
-        msgEl.classList.add("message", "host");
+    //     const msgEl = document.createElement("div");
+    //     msgEl.classList.add("message", "host");
 
-        const nickEl = document.createElement("div");
-        nickEl.classList.add("nickname-strip");
-        nickEl.textContent = agentName;
+    //     const nickEl = document.createElement("div");
+    //     nickEl.classList.add("nickname-strip");
+    //     nickEl.textContent = agentName;
 
-        const textEl = document.createElement("div");
-        textEl.classList.add("message-text");
-        textEl.textContent = text || "(empty draft)";
+    //     const textEl = document.createElement("div");
+    //     textEl.classList.add("message-text");
+    //     textEl.textContent = text || "(empty draft)";
 
-        msgEl.appendChild(nickEl);
-        msgEl.appendChild(textEl);
-        wrapper.appendChild(msgEl);
-        this.chatroomEl.appendChild(wrapper);
-        this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
-    }
+    //     msgEl.appendChild(nickEl);
+    //     msgEl.appendChild(textEl);
+    //     wrapper.appendChild(msgEl);
+    //     this.chatroomEl.appendChild(wrapper);
+    //     this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
+    // }
 
 
     _sendTypingSignal() {
@@ -503,10 +501,10 @@ class ChatApp {
                     return;
                 }
 
-                if (data[0].isDraftMessage && msg.sender !== this.session.nickname) {
-                    this.__showDraftPreview(msg.sender, msg.text);
-                    return;
-                }
+                // if (data[0].isDraftMessage && msg.sender !== this.session.nickname) {
+                //     this.__showDraftPreview(msg.sender, msg.text);
+                //     return;
+                // }
 
                 const history = data;
                 this.chatroomEl.innerHTML = "";
