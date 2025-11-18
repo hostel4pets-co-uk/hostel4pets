@@ -394,11 +394,11 @@ class ChatApp {
 
         this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
 
-        this.messageEl.addEventListener("keydown", e => {
-            if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
-                this._sendTypingSignal();
-            }
-        });
+        // this.messageEl.addEventListener("keydown", e => {
+        //     if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
+        //         this._sendTypingSignal();
+        //     }
+        // });
 
         // const apply = () => {
         //     const md = new window.MobileDetect(window.navigator.userAgent);
