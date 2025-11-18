@@ -211,6 +211,8 @@ class ChatApp {
 
     __showTypingSignal(agentName = "Agent") {
 
+
+
         this.__shouldInsertHandoff(agentName) ?
             this.__insertHandoffNotice(agentName) :
             this.__removeHandoffNotice();
@@ -269,32 +271,7 @@ class ChatApp {
         const el = this.chatroomEl.querySelector(".handoff-notice");
         if (el) el.remove();
     }
-
-    // __showDraftPreview(agentName, text) {
-    //     const existing = this.chatroomEl.querySelector(".draft-preview");
-    //     if (existing) existing.remove();
-
-    //     const wrapper = document.createElement("div");
-    //     wrapper.classList.add("message-wrapper", "host", "draft-preview");
-
-    //     const msgEl = document.createElement("div");
-    //     msgEl.classList.add("message", "host");
-
-    //     const nickEl = document.createElement("div");
-    //     nickEl.classList.add("nickname-strip");
-    //     nickEl.textContent = agentName;
-
-    //     const textEl = document.createElement("div");
-    //     textEl.classList.add("message-text");
-    //     textEl.textContent = text || "(empty draft)";
-
-    //     msgEl.appendChild(nickEl);
-    //     msgEl.appendChild(textEl);
-    //     wrapper.appendChild(msgEl);
-    //     this.chatroomEl.appendChild(wrapper);
-    //     this.chatroomEl.scrollTop = this.chatroomEl.scrollHeight;
-    // }
-
+    
 
     _sendTypingSignal() {
         if (!this.session?.sessionId) return;
@@ -307,7 +284,29 @@ class ChatApp {
 
         const source = (new URLSearchParams(window.location.search)).get("source") || null;
 
-        const typingPayload = {
+        if (!window.__isAgentApp) {
+            const raw = this.messageEl?.innerText ?? "";
+            const draft = raw
+                .replace(/\u00A0/g, " ")
+                .replace(/\r/g, "");
+
+            const payload = {
+                text: `${draft}`,
+                sender: this.session.nickname,
+                sessionId: this.session.sessionId,
+                timestamp: now,
+                isTypingSignal: true,
+                source: source || "guestApp"
+            };
+
+            fetch(`${this.backendUrl}/chat/send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).catch(err => console.warn("Typing signal failed:", err));
+        }
+
+        const payload = {
             text: `${this.session.nickname} is typing`,
             sender: this.session.nickname,
             sessionId: this.session.sessionId,
@@ -319,32 +318,14 @@ class ChatApp {
         fetch(`${this.backendUrl}/chat/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(typingPayload)
-        }).catch(console.warn);
-
-        if (!window.__isAgentApp) {
-            const raw = this.messageEl?.innerText ?? "";
-            const draft = raw.replace(/\u00A0/g, " ").replace(/\r/g, "").trim();
-
-            const draftPayload = {
-                text: draft,
-                sender: this.session.nickname,
-                sessionId: this.session.sessionId,
-                timestamp: now,
-                isDraftMessage: true,
-                source
-            };
-
-            fetch(`${this.backendUrl}/chat/send`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(draftPayload)
-            }).catch(console.warn);
-        }
+            body: JSON.stringify(payload)
+        }).catch(err => console.warn("Typing signal failed:", err));
 
         // Clear after 3 seconds of inactivity
         this._typingTimeout = setTimeout(() => (this._lastTyping = 0), 3000);
     }
+
+
 
     async setNickname() {
         const nickname = this.nicknameEl.value.trim();
@@ -394,30 +375,11 @@ class ChatApp {
 
         this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
 
-        // this.messageEl.addEventListener("keydown", e => {
-        //     if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
-        //         this._sendTypingSignal();
-        //     }
-        // });
-
-        // const apply = () => {
-        //     const md = new window.MobileDetect(window.navigator.userAgent);
-        //     this.isMobile = !!(md.mobile() || md.tablet());
-        //     if (!this.messageEl) return;
-        //     this.messageEl.onkeydown = null;
-        //     this.isMobile ? this._bindEnterOnMobile() : this._bindEnterKey();
-        // };
-
-        // if (window.MobileDetect) return apply();
-
-        // const existing = document.querySelector('script[src*="mobile-detect"]');
-        // if (existing) return existing.addEventListener("load", apply);
-
-        // const script = document.createElement("script");
-        // script.src = "https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js";
-        // script.async = true;
-        // script.onload = apply;
-        // document.head.appendChild(script);
+        this.messageEl.addEventListener("keydown", e => {
+            if (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete") {
+                this._sendTypingSignal();
+            }
+        });
     }
 
 
@@ -490,27 +452,20 @@ class ChatApp {
         evtSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                const signal = data[0];
 
                 if (Array.isArray(data) && data.length === 1 && data[0].isTypingSignal) {
+                    const signal = data[0];
                     const source = (new URLSearchParams(window.location.search)).get("source");
                     if (signal.sender === this.session.nickname) return;
-                    if (msg.sender !== this.session.nickname && signal.source === "agentApp") {
-                        this.__showTypingSignal(signal.sender || "Agent");
-                    }
+                    if (signal.source === "agentApp") this.__showTypingSignal(signal.sender || "Agent");
                     return;
                 }
-
-                // if (data[0].isDraftMessage && msg.sender !== this.session.nickname) {
-                //     this.__showDraftPreview(msg.sender, msg.text);
-                //     return;
-                // }
 
                 const history = data;
                 this.chatroomEl.innerHTML = "";
 
                 history.forEach(msg =>
-                    this.__addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent)
+                    this.addMessage(msg.text, msg.sender, msg.timestamp, msg.isAIMessage, msg.agent)
                 );
 
                 if (!history.length) return;
@@ -561,7 +516,7 @@ class ChatApp {
         });
     }
 
-    __addMessage(text, author, timestamp, isAIMessage = false, agent = null) {
+    addMessage(text, author, timestamp, isAIMessage = false, agent = null) {
         const wrapper = document.createElement("div");
         wrapper.classList.add("message-wrapper");
 
@@ -783,4 +738,3 @@ class ChatApp {
 }
 
 window.ChatApp = ChatApp;
-
