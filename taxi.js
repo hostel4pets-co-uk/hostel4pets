@@ -37,7 +37,14 @@ function hideDropoffFields(dropoffGroup, dropoff) {
     dropoff.disabled = true;
 }
 
-function updateDropoffVisibility({ dropoffEnabled, different, dropoffGroup, dropoff }) {
+function updateDropoffVisibility({ pickupEnabled, dropoffEnabled, different, dropoffGroup, dropoff }) {
+    if (!pickupEnabled.checked || !dropoffEnabled.checked) {
+        different.disabled = true;
+        different.checked = false;
+        hideDropoffFields(dropoffGroup, dropoff);
+        return;
+    }
+
     if (!dropoffEnabled.checked) {
         different.disabled = true;
         different.checked = false;
@@ -71,7 +78,7 @@ async function initTaxiForm() {
     populateSelect(pickup, towns);
     populateSelect(dropoff, towns);
 
-    const elems = { dropoffEnabled, different, dropoffGroup, dropoff };
+    const elems = { pickupEnabled, dropoffEnabled, different, dropoffGroup, dropoff };
     updateDropoffVisibility(elems);
     wireTaxiEvents(elems);
 
