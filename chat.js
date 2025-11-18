@@ -271,7 +271,7 @@ class ChatApp {
         const el = this.chatroomEl.querySelector(".handoff-notice");
         if (el) el.remove();
     }
-    
+
 
     _sendTypingSignal() {
         if (!this.session?.sessionId) return;
@@ -444,7 +444,10 @@ class ChatApp {
     }
 
     startStream() {
-        if (this.evtSource) this.evtSource.close();
+        if (this.evtSource) {
+            this.evtSource.close();
+            this.evtSource = null;
+        }
 
         const url = `${this.backendUrl}/chat/stream?sessionId=${this.session.sessionId}`;
         const evtSource = new EventSource(url);
