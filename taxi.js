@@ -1,6 +1,6 @@
 // Fetch and prepare towns
 async function loadCoverage() {
-    const res = await fetch('https://api.kittycrypto.gg:5493/taxiCoverage.json', {
+    const res = await fetch('https://h4p.api.kittycrypto.gg/taxiCoverage.json', {
         headers: { Accept: 'application/json' }
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
@@ -100,7 +100,7 @@ async function initTaxiForm() {
                 if (data.dropoffTown) query.append('dropoffTown', data.dropoffTown);
                 query.append('isReturn', data.isReturn ? 'true' : 'false');
 
-                const res = await fetch(`https://api.kittycrypto.gg:5493/taxi?${query.toString()}`, {
+                const res = await fetch(`https://h4p.api.kittycrypto.gg/taxi?${query.toString()}`, {
                     headers: { Accept: 'application/json' }
                 });
 
