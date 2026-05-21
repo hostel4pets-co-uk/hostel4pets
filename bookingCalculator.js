@@ -10,6 +10,7 @@ export class BookingCalculator {
     this.extraChargeCub = config.extraChargeCub;
     this.extraPetDiscountRate = config.extraPetDiscountRate ?? 0.10;
     this.depositRateOfTotal = config.depositRateOfTotal ?? 0.25;
+    this.sessionId = localStorage.getItem("sessionId") || null;
   }
 
   _timeBaseForOnePet(checkIn, checkOut) {
@@ -25,6 +26,18 @@ export class BookingCalculator {
       cursor = nextBoundary;
     }
     return base;
+  }
+
+  async __getSessionID() {
+    if (this.sessionId) return this.sessionId;
+
+    while(!this.sessionId) {
+      this.sessionId = localStorage.getItem("sessionId");
+      if (this.sessionId) break;
+      await new Promise(requestAnimationFrame);
+    }
+
+    return this.sessionId;
   }
 
   calculatePrice(checkIn, checkOut, numOfPets, neuteredStatus, cubStatus) {
