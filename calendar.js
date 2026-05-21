@@ -15,7 +15,7 @@ const FULLDAYNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SHORTDAYNAMES = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
 const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
 
-const API_BASE = 'https://h4p.kittycrypto.gg';
+const API_BASE = 'https://h4p.kittycrow.dev';
 const CAL_URL = `${API_BASE}/calendar.json`;
 const CAL_DB_URL = `${API_BASE}/database/calendar`;
 
