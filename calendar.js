@@ -747,6 +747,8 @@ class Calendar {
 
         try {
             const events = await this.getEvents(signal);
+            this.events = events;
+            window.h4pCalendarEvents = events;
 
             this.allPets = events.filter(ev => ev.petId && ev.petId !== "Unknown");
 
