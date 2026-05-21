@@ -15,6 +15,16 @@ const FULLDAYNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SHORTDAYNAMES = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
 const VERYSHORTDAYNAMES = ['S', 'm', 't', 'w', 'T', 'f', 's'];
 
+const API_BASE = 'https://h4p.kittycrypto.gg';
+const CAL_URL = `${API_BASE}/calendar.json`;
+const CAL_DB_URL = `${API_BASE}/database/calendar`;
+
+const CAL_SHA_KEY = 'h4p.calendar.sha256.v1';
+const IDB_NAME = 'h4p-browser-cache';
+const IDB_VERSION = 1;
+const IDB_STORE = 'calendar';
+const IDB_CALENDAR_ID = 'calendar';
+
 (() => {
     const root = document.documentElement;
     Object.entries(backgroundColours).forEach(([key, value]) => {
@@ -30,10 +40,11 @@ class Calendar {
         this.guestColourMap = window.guestColourMap || {};
         this.colourHistory = window.colourHistory || [];
         this.allPets = [];
+        this.idb = null;
 
         this.createPetTooltip();
 
-        this.date = new Date(); // default current date
+        this.date = new Date();
 
         this.onResize = this.updateDayHeaders.bind(this);
 
@@ -47,7 +58,6 @@ class Calendar {
         }
 
         this.dotColours = dotColours;
-
         this.backgroundColours = backgroundColours;
 
         this.dots = [];
@@ -55,7 +65,6 @@ class Calendar {
         this.bankHolidays = {};
 
         this.thEls = [];
-
         this.loadId = 0;
 
         this.render();
@@ -73,7 +82,6 @@ class Calendar {
             this.selectedCheckOut = end;
             this.highlightSelected(this.selectedCheckIn, this.selectedCheckOut);
         });
-
     }
 
     createPetTooltip() {
@@ -93,8 +101,178 @@ class Calendar {
         document.body.appendChild(this.petTooltip);
     }
 
+    openCacheDb() {
+        if (this.idb) return Promise.resolve(this.idb);
 
-    // Render the entire calendar UI
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(IDB_NAME, IDB_VERSION);
+
+            request.onupgradeneeded = () => {
+                const db = request.result;
+
+                if (!db.objectStoreNames.contains(IDB_STORE)) {
+                    db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = () => {
+                this.idb = request.result;
+                resolve(this.idb);
+            };
+
+            request.onerror = () => reject(request.error);
+            request.onblocked = () => reject(new Error('IndexedDB upgrade was blocked'));
+        });
+    }
+
+    async getCalCache() {
+        try {
+            const db = await this.openCacheDb();
+
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readonly');
+                const store = tx.objectStore(IDB_STORE);
+                const request = store.get(IDB_CALENDAR_ID);
+
+                request.onsuccess = () => {
+                    const record = request.result;
+                    const events = record?.events;
+
+                    resolve(Array.isArray(events) ? events : null);
+                };
+
+                request.onerror = () => reject(request.error);
+            });
+        } catch (err) {
+            console.warn('Could not read calendar cache from IndexedDB:', err);
+            return null;
+        }
+    }
+
+    async setCalCache(events) {
+        try {
+            const db = await this.openCacheDb();
+
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                const store = tx.objectStore(IDB_STORE);
+
+                store.put({
+                    id: IDB_CALENDAR_ID,
+                    events,
+                    savedAt: Date.now()
+                });
+
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error);
+            });
+        } catch (err) {
+            console.warn('Could not save calendar cache to IndexedDB:', err);
+        }
+    }
+
+    getCalSha() {
+        try {
+            return localStorage.getItem(CAL_SHA_KEY);
+        } catch {
+            return null;
+        }
+    }
+
+    setCalSha(sha) {
+        try {
+            if (sha) {
+                localStorage.setItem(CAL_SHA_KEY, sha);
+                return;
+            }
+
+            localStorage.removeItem(CAL_SHA_KEY);
+        } catch (err) {
+            console.warn('Could not save calendar SHA:', err);
+        }
+    }
+
+    async fetchCal(signal) {
+        const response = await fetch(CAL_URL, { signal });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch calendar.json');
+        }
+
+        const events = await response.json();
+
+        if (!Array.isArray(events)) {
+            throw new Error('calendar.json did not return an array');
+        }
+
+        return events;
+    }
+
+    async fetchCalSha(signal) {
+        const response = await fetch(CAL_DB_URL, {
+            signal,
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch calendar database metadata');
+        }
+
+        const meta = await response.json();
+
+        if (!meta || typeof meta.sha256 !== 'string') {
+            throw new Error('Calendar database metadata did not include sha256');
+        }
+
+        return meta.sha256;
+    }
+
+    async getEvents(signal) {
+        const cached = await this.getCalCache();
+        const cachedSha = this.getCalSha();
+
+        if (!cached || !cachedSha) {
+            const events = await this.fetchCal(signal);
+
+            try {
+                const sha = await this.fetchCalSha(signal);
+                await this.setCalCache(events);
+                this.setCalSha(sha);
+            } catch (err) {
+                await this.setCalCache(events);
+                this.setCalSha(null);
+                console.warn('Calendar loaded, but SHA cache could not be updated:', err);
+            }
+
+            return events;
+        }
+
+        let liveSha;
+
+        try {
+            liveSha = await this.fetchCalSha(signal);
+        } catch (err) {
+            console.warn('Could not check calendar SHA. Using IndexedDB calendar:', err);
+            return cached;
+        }
+
+        if (liveSha === cachedSha) {
+            return cached;
+        }
+
+        try {
+            const events = await this.fetchCal(signal);
+            await this.setCalCache(events);
+            this.setCalSha(liveSha);
+
+            return events;
+        } catch (err) {
+            console.warn('Could not refresh calendar. Using IndexedDB calendar:', err);
+            return cached;
+        }
+    }
+
     async render() {
         this.container.innerHTML = '';
         this.texts = {};
@@ -109,7 +287,6 @@ class Calendar {
         await this.loadBookings();
     }
 
-    // Create the header with navigation buttons and a month picker
     createHeader() {
         const header = document.createElement('div');
         header.style.display = 'flex';
@@ -125,7 +302,6 @@ class Calendar {
         forwardButton.innerText = '>';
         forwardButton.addEventListener('click', () => this.changeMonth(1));
 
-        // Always visible month picker
         const monthPicker = document.createElement('input');
         monthPicker.type = 'month';
         monthPicker.value = `${this.date.getFullYear()}-${String(this.date.getMonth() + 1).padStart(2, '0')}`;
@@ -135,15 +311,13 @@ class Calendar {
             this.date.setFullYear(year);
             this.date.setMonth(month - 1);
 
-            // Update query string with ?m=YYYYMM
             const newM = `${year}${String(month).padStart(2, '0')}`;
             const url = new URL(window.location.href);
             url.searchParams.set("m", newM);
-            window.history.replaceState({}, "", url); // Update URL without reload
+            window.history.replaceState({}, "", url);
 
-            this.render(); // Re-render the calendar
+            this.render();
         });
-
 
         header.appendChild(backButton);
         header.appendChild(monthPicker);
@@ -152,17 +326,16 @@ class Calendar {
         this.container.appendChild(header);
     }
 
-    // Create the calendar table
     createTable() {
-        this.thEls = []; // Reset thEls to avoid duplicates
+        this.thEls = [];
         const table = document.createElement('table');
         table.id = 'Calendar';
         table.style.borderCollapse = 'collapse';
         table.style.width = '100%';
 
-        // Create table header for days of the week
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
+
         for (const day of FULLDAYNAMES) {
             const th = document.createElement('th');
             th.innerText = day;
@@ -172,16 +345,15 @@ class Calendar {
             th.style.textAlign = 'center';
             headerRow.appendChild(th);
         }
+
         thead.appendChild(headerRow);
         table.appendChild(thead);
         this.updateDayHeaders();
         window.removeEventListener('resize', this.onResize);
         window.addEventListener('resize', this.onResize);
 
-        // Create table body for the calendar dates
         const tbody = document.createElement('tbody');
 
-        // Dynamically calculate the number of weeks (rows)
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
         const daysInMonth = new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
         const totalCells = firstDay + daysInMonth;
@@ -200,7 +372,6 @@ class Calendar {
             rows[Math.floor(index / 7)].appendChild(td);
         });
 
-        // Append rows to tbody
         rows.forEach(row => tbody.appendChild(row));
 
         table.appendChild(tbody);
@@ -209,24 +380,24 @@ class Calendar {
 
     updateDayHeaders() {
         if (!this.thEls) return;
+
         const narrow = this.container.offsetWidth < 400;
         const veryNarrow = this.container.offsetWidth < 350;
+
         this.thEls.forEach((th, i) => {
-            th.innerText = veryNarrow ?
-                VERYSHORTDAYNAMES[i] :
-                narrow ?
-                    SHORTDAYNAMES[i] :
-                    FULLDAYNAMES[i];
+            th.innerText = veryNarrow
+                ? VERYSHORTDAYNAMES[i]
+                : narrow
+                    ? SHORTDAYNAMES[i]
+                    : FULLDAYNAMES[i];
         });
     }
 
-    // Update the calendar table with the current month
     updateTable() {
         const table = document.getElementById('Calendar');
         const tbody = table.querySelector('tbody');
         const cells = tbody.querySelectorAll('td');
 
-        // reset cells but preserve bank holidays
         cells.forEach(cell => {
             if (cell.dataset.locked === 'bank') {
                 cell.textContent = '';
@@ -235,7 +406,6 @@ class Calendar {
                 cell.style.position = '';
                 delete cell.dataset.date;
             } else {
-                // full reset
                 cell.textContent = '';
                 cell.className = '';
                 cell.style.backgroundColor = '';
@@ -255,6 +425,7 @@ class Calendar {
             const row = Math.floor(cellIndex / 7);
             const column = cellIndex % 7;
             const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+
             if (!cell) continue;
 
             const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
@@ -273,15 +444,6 @@ class Calendar {
                 this.openDayModal(dateStr);
             });
 
-            // if (window.md && (window.md.mobile() || window.md.tablet())) {
-            //     cell.addEventListener('touchstart', e => {
-            //         // If tapping directly a dot, prevent modal
-            //         if (e.target.classList.contains('dot')) return;
-            //         const dateStr = `${cellDate.getFullYear()}${String(cellDate.getMonth() + 1).padStart(2, '0')}${String(cellDate.getDate()).padStart(2, '0')}`;
-            //         this.openDayModal(dateStr);
-            //     });
-            // }
-            
             if (cell.dataset.locked !== 'bank') {
                 this.updateCellBackground(cell, isToday, isPast, dotsCount);
             }
@@ -293,8 +455,6 @@ class Calendar {
         this.highlightSelected(this.selectedCheckIn, this.selectedCheckOut);
     }
 
-
-    // Helper to update background colour of a single cell
     async updateCellBackground(cell, isToday, isPast, dots, isBankHoliday = false) {
         if (isPast) {
             cell.style.backgroundColor = this.backgroundColours.PAST;
@@ -309,7 +469,7 @@ class Calendar {
         } else if (dots >= 4 && dots <= 5) {
             cell.style.backgroundColor = this.backgroundColours.BUSY;
         } else {
-            cell.style.backgroundColor = ''; // Default
+            cell.style.backgroundColor = '';
         }
     }
 
@@ -323,7 +483,7 @@ class Calendar {
         const cells = this.container.querySelectorAll("td[data-date]");
         cells.forEach(cell => {
             const [year, month, day] = cell.getAttribute("data-date").split("-").map(Number);
-            const cellDate = new Date(year, month - 1, day, 0, 0, 0, 0); // local midnight
+            const cellDate = new Date(year, month - 1, day, 0, 0, 0, 0);
 
             if (cellDate >= checkIn && cellDate <= checkOut) {
                 cell.classList.add("selected");
@@ -331,12 +491,11 @@ class Calendar {
         });
     }
 
-    // Fetch and return bank holidays for Scotland, England, and Wales
     async fetchBankHolidays() {
-        // If we already have them, do not refetch
         if (Object.keys(this.bankHolidays).length) {
             return this.bankHolidays;
         }
+
         try {
             const response = await fetch('https://www.gov.uk/bank-holidays.json');
             const data = await response.json();
@@ -347,11 +506,11 @@ class Calendar {
                     const year = holidayDate.getFullYear();
                     const currentYear = new Date().getFullYear();
 
-                    // Discard holidays more than one year ago
                     const holidayKey = year >= currentYear - 1 ? `${holiday.title} (${year})` : null;
                     if (holidayKey && !acc[holidayKey]) {
                         acc[holidayKey] = { date: holidayDate };
                     }
+
                     return acc;
                 }, {});
             };
@@ -367,8 +526,6 @@ class Calendar {
         }
     }
 
-    // Convert bank holidays into texts, but check for duplicates
-    // Updated bankHolidaysToTexts to strip year from holiday titles using regex
     async bankHolidaysToTexts() {
         const bankHolidays = await this.fetchBankHolidays();
         if (!bankHolidays) return;
@@ -377,18 +534,16 @@ class Calendar {
             const holidayDate = bankHolidays[holiday].date;
             const dateKey = this.getDateKey(holidayDate);
 
-            // Remove year from holiday title using regex
             const holidayName = holiday.replace(/\s*\(\d{4}\)$/, '').trim();
 
-            // Only add holiday text if it's not already present
             if (!this.texts[dateKey]) {
                 this.texts[dateKey] = [];
             }
+
             if (!this.texts[dateKey].includes(holidayName)) {
                 this.texts[dateKey].push(holidayName);
             }
 
-            // Restore the call that highlights the cell for the current month
             await this.updateCellForHoliday(holidayDate);
         }
     }
@@ -399,6 +554,7 @@ class Calendar {
 
         const sameYear = date.getFullYear() === this.date.getFullYear();
         const sameMonth = date.getMonth() === this.date.getMonth();
+
         if (!sameYear || !sameMonth) return;
 
         const day = date.getDate();
@@ -418,40 +574,9 @@ class Calendar {
         cell.dataset.locked = 'bank';
     }
 
-    // addMobileTooltip(dot, petId) {
-    //     const showInfo = e => {
-    //         e.stopPropagation(); // prevent triggering the dayView modal
-    //         const pet = this.allPets?.find(p => p.petId === petId);
-    //         if (!pet) return;
-
-    //         this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
-    //         this.petTooltip.style.display = 'block';
-    //         const touch = e.touches ? e.touches[0] : e;
-    //         this.petTooltip.style.left = touch.pageX + 10 + 'px';
-    //         this.petTooltip.style.top = touch.pageY + 10 + 'px';
-    //     };
-
-    //     const hideInfo = () => {
-    //         this.petTooltip.style.display = 'none';
-    //     };
-
-    //     // On mobile, just tap (no hold)
-    //     dot.addEventListener('touchstart', e => {
-    //         showInfo(e);
-    //         setTimeout(hideInfo, 2000); // auto-hide after 2s
-    //     });
-
-    //     dot.addEventListener('touchend', hideInfo);
-    //     dot.addEventListener('touchcancel', hideInfo);
-    // }
-
-
-    // Add a coloured dot to a date
     addDot(date, colour, petId = null) {
-        // Normalise the date to ensure consistent format (strip time)
         const dotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-        // Ensure the colour is provided or determine an available colour
         if (!colour) {
             const usedColours = this.dots
                 .filter(d => d.date.getTime() === dotDate.getTime())
@@ -460,22 +585,20 @@ class Calendar {
             colour = Object.values(this.dotColours).find(c => !usedColours.includes(c));
         }
 
-        if (!colour) return; // No available colours
-        if (!Object.values(this.dotColours).includes(colour)) return; // Ignore invalid colours
+        if (!colour) return;
+        if (!Object.values(this.dotColours).includes(colour)) return;
 
-        // Add the dot to the dots array (prevent duplicates)
         if (!this.dots.some(d => d.date.getTime() === dotDate.getTime() && d.colour === colour)) {
             this.dots.push({ date: dotDate, colour });
         }
 
-        // Only render the dot if the date belongs to the currently displayed month
         if (dotDate.getMonth() !== this.date.getMonth() || dotDate.getFullYear() !== this.date.getFullYear()) {
             return;
         }
 
-        // Render dot in the current month's table
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
         const daysInMonth = new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
+
         if (dotDate.getDate() < 1 || dotDate.getDate() > daysInMonth) return;
 
         const cellIndex = firstDay + dotDate.getDate() - 1;
@@ -483,6 +606,7 @@ class Calendar {
         const column = cellIndex % 7;
         const table = document.getElementById('Calendar');
         const cell = table.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+
         if (!cell) return;
 
         const dotSize = 8;
@@ -494,7 +618,8 @@ class Calendar {
         const maxDots = maxDotsPerRow * maxRows;
 
         const dotsInCell = cell.querySelectorAll('.dot');
-        if (dotsInCell.length >= maxDots) return; // Prevent adding dots beyond available space
+
+        if (dotsInCell.length >= maxDots) return;
 
         const rowIndex = Math.floor(dotsInCell.length / maxDotsPerRow);
         const columnIndex = dotsInCell.length % maxDotsPerRow;
@@ -509,12 +634,11 @@ class Calendar {
         dot.style.bottom = `${padding + rowIndex * (dotSize + padding)}px`;
         dot.style.left = `${padding + columnIndex * (dotSize + padding)}px`;
         cell.style.position = 'relative';
+
         if (petId) dot.id = petId;
-        //if (petId && window.md && (window.md.mobile() || window.md.tablet())) this.addMobileTooltip(dot, petId);
 
         cell.appendChild(dot);
 
-        // Update the cell's background dynamically
         const isToday = dotDate.toDateString() === new Date().toDateString();
         const isPast = dotDate < new Date() && !isToday;
         const totalDots = this.dots.filter(d => d.date.toDateString() === dotDate.toDateString()).length;
@@ -522,18 +646,17 @@ class Calendar {
         const isLocked = cell.dataset.locked === 'na' || cell.dataset.locked === 'bank';
 
         if (totalDots >= 4) {
-            // Busy/Booked override: clear lock and apply
             delete cell.dataset.locked;
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         } else if (!isLocked) {
-            // Only update normal backgrounds when not locked
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         }
 
         if (petId) {
-            dot.addEventListener('mouseenter', e => {
+            dot.addEventListener('mouseenter', () => {
                 const pet = this.allPets?.find(p => p.petId === petId);
                 if (!pet) return;
+
                 this.petTooltip.textContent = `${pet.name}, ${pet.breed}`;
                 this.petTooltip.style.display = 'block';
             });
@@ -547,10 +670,8 @@ class Calendar {
                 this.petTooltip.style.display = 'none';
             });
         }
-
     }
 
-    // Add a legend to the calendar
     addLegend() {
         const legend = document.createElement('div');
         legend.className = 'calendar-legend';
@@ -564,28 +685,28 @@ class Calendar {
             <div><span class="legend-box notavailable"></span>Not Available</div>
             </div>
         `;
+
         this.container.appendChild(legend);
     }
-
 
     getDateKey(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
+
         return `${year}-${month}-${day}`;
     }
 
-    // Simplified addToTexts
     addToTexts(date, text) {
         const dateKey = this.getDateKey(date);
+
         if (!this.texts[dateKey]) {
             this.texts[dateKey] = [];
         }
+
         this.texts[dateKey].push(text);
     }
 
-
-    // In addTexts, also use getDateKey
     addTexts() {
         const table = document.getElementById('Calendar');
         const tbody = table.querySelector('tbody');
@@ -593,51 +714,47 @@ class Calendar {
 
         cells.forEach(cell => {
             const dayString = cell.innerText.trim();
-            if (!dayString) return; // Skip empty cells
+            if (!dayString) return;
 
             const day = parseInt(dayString, 10);
             const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
             const dateKey = this.getDateKey(cellDate);
 
-            // Remove old text
             const existingText = cell.querySelector('.texts');
             if (existingText) {
                 existingText.remove();
             }
 
-            // Now add text from this.texts if present
             if (this.texts[dateKey] && this.texts[dateKey].length > 0) {
                 const textContainer = document.createElement('p');
                 textContainer.className = 'texts';
                 textContainer.style.margin = '5px 0 0 0';
-                textContainer.style.fontSize = '0.75em'; // Smaller font size
+                textContainer.style.fontSize = '0.75em';
                 textContainer.innerHTML = this.texts[dateKey].join('<br>');
                 cell.appendChild(textContainer);
             }
         });
     }
 
-    // Load bookings from bookings.json and add dots to the calendar
     async loadBookings() {
         if (this.abortController) this.abortController.abort();
-        this.abortController = new AbortController();
-        const signal = this.abortController.signal;
 
+        this.abortController = new AbortController();
+
+        const signal = this.abortController.signal;
         const loadId = ++this.loadId;
         const toDay = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
 
         try {
-            const response = await fetch('https://h4p.kittycrypto.gg/calendar.json', { signal });
-            if (!response.ok) throw new Error('Failed to fetch calendar.json');
-            const events = await response.json();
+            const events = await this.getEvents(signal);
 
             this.allPets = events.filter(ev => ev.petId && ev.petId !== "Unknown");
 
             if (loadId !== this.loadId) return;
 
-            // First pass: "Not available" blocks
             for (const ev of events) {
                 if (!ev.petId || ev.petId === "Unknown") continue;
+
                 const types = Array.isArray(ev.type) ? ev.type : [ev.type];
                 if (!types.includes("Not available")) continue;
 
@@ -656,6 +773,7 @@ class Calendar {
                     const table = document.getElementById('Calendar');
                     const tbody = table.querySelector('tbody');
                     const cell = tbody.querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+
                     if (!cell) continue;
 
                     cell.style.backgroundColor = this.backgroundColours.NOTAVAILABLE;
@@ -663,7 +781,6 @@ class Calendar {
                 }
             }
 
-            // Second pass: normal stays
             const staysByPet = {};
             events
                 .filter(ev => ev.petId && ev.petId !== "Unknown")
@@ -688,7 +805,6 @@ class Calendar {
                     staysByPet[petId].open = null;
                 });
 
-            // Colour assignment logic
             const allColours = Object.values(this.dotColours);
             const activePetIds = new Set(Object.keys(staysByPet));
 
@@ -707,11 +823,9 @@ class Calendar {
                     this.guestColourMap[petId] = assignedColour;
                 }
 
-                // Update recency order
                 this.colourHistory = this.colourHistory.filter(c => c !== assignedColour);
                 this.colourHistory.push(assignedColour);
 
-                // Draw the dots for each stay
                 for (const [startDay, endDay] of staysByPet[petId].ranges) {
                     for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
                         if (loadId !== this.loadId) return;
@@ -720,11 +834,9 @@ class Calendar {
                 }
             }
 
-            // Remove colours of pets no longer active
             Object.keys(this.guestColourMap).forEach(petId => {
                 if (!activePetIds.has(petId)) delete this.guestColourMap[petId];
             });
-
         } catch (error) {
             if (error.name === 'AbortError') {
                 console.log('Fetch aborted');
@@ -734,14 +846,12 @@ class Calendar {
         }
     }
 
-    // Change the current month
     changeMonth(offset) {
         this.date.setMonth(this.date.getMonth() + offset);
         this.render();
     }
 
     async openDayModal(dateStr) {
-        // If already open, bail
         if (document.getElementById("day-modal-overlay")) return;
 
         const overlay = document.createElement("div");
@@ -755,32 +865,31 @@ class Calendar {
         overlay.style.zIndex = "1000";
 
         const modal = document.createElement("div");
-        modal.id = "day-modal-shell"; // simple container; inner HTML will provide the actual structure
+        modal.id = "day-modal-shell";
 
-        // prevent page scroll while open (matches your other project)
         document.body.classList.add("no-scroll");
 
-        // Ensure dayView.js can use the live colour state from this Calendar instance
         window.guestColourMap = this.guestColourMap;
         window.colourHistory = this.colourHistory;
 
-        // Fetch backbone HTML
         let html = "";
+
         try {
             const resp = await fetch("./dayView.html");
+
             if (!resp.ok) throw new Error("Failed to load dayView.html");
+
             html = await resp.text();
         } catch (err) {
             console.error("❌ Error loading modal content:", err);
             html = `<div id="day-modal" class="modal"><div class="modal-content"><h2 id="day-title">Bookings</h2><ul id="pet-list"></ul></div></div>`;
         }
 
-        // Inject only the modal body from the fetched HTML (avoid full <html>/<head> injection)
         const tmp = document.createElement("div");
         tmp.innerHTML = html;
         const backbone = tmp.querySelector("#day-modal") || tmp.firstElementChild;
+
         if (backbone) {
-            // Ensure it's visible (your CSS sets .modal { display:none } by default)
             backbone.style.display = "block";
             modal.appendChild(backbone);
         } else {
@@ -790,44 +899,54 @@ class Calendar {
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Add a real close button inside if the backbone didn't include one
         const content = modal.querySelector(".modal-content") || modal;
         let closeEl = content.querySelector(".close");
+
         if (!closeEl) {
             closeEl = document.createElement("span");
             closeEl.className = "close";
             closeEl.textContent = "❌";
-            // rely on your existing CSS `.modal-content .close { position:absolute; ... }`
             content.style.position = content.style.position || "relative";
             content.appendChild(closeEl);
         }
 
-        // Close helpers
         const prevUrl = window.location.href;
         const prevState = history.state;
+
         const closeModal = () => {
             overlay.remove();
             document.body.classList.remove("no-scroll");
-            try { history.replaceState(prevState, "", prevUrl); } catch { }
+
+            try {
+                history.replaceState(prevState, "", prevUrl);
+            } catch { }
+
             document.removeEventListener("keydown", onEsc);
         };
-        const onEsc = (e) => { if (e.key === "Escape") closeModal(); };
+
+        const onEsc = (e) => {
+            if (e.key === "Escape") closeModal();
+        };
 
         closeEl.addEventListener("click", closeModal);
-        overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) closeModal();
+        });
         document.addEventListener("keydown", onEsc);
 
-        // Make dayView.js see ?d=YYYYMMDD
         try {
             const u = new URL(window.location.href);
             u.searchParams.set("d", dateStr);
             history.replaceState(prevState, "", u);
         } catch { }
 
-        // Ensure dayView.js is present, then run loadDayView()
         const runLoader = () => {
             if (typeof window.loadDayView === "function") {
-                try { window.loadDayView(); } catch (e) { console.error("loadDayView() error:", e); }
+                try {
+                    window.loadDayView();
+                } catch (e) {
+                    console.error("loadDayView() error:", e);
+                }
             } else {
                 console.error("dayView.js loaded but loadDayView() not found.");
             }
@@ -846,7 +965,6 @@ class Calendar {
     }
 }
 
-// Usage
 document.addEventListener('DOMContentLoaded', () => {
     const calendar = new Calendar('calendar-container');
 });
