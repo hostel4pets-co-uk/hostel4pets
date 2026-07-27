@@ -1,0 +1,16 @@
+/*
+ * Hostel4Pets stylesheet entry point.
+ *
+ * The cascade is ordered explicitly so shared rules remain predictable while
+ * each site feature owns its own selectors. Browsers load this file only;
+ * the imports below assemble the complete interface.
+ */
+@layer tokens, base, components, features;
+
+@import url("./tokens.css") layer(tokens);
+@import url("./site.css") layer(base);
+@import url("./forms.css") layer(components);
+@import url("./modals.css") layer(components);
+@import url("./calendar.css") layer(features);
+@import url("./chat.css") layer(features);
+@import url("./taxi.css") layer(features);

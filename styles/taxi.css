@@ -1,0 +1,68 @@
+/* Pet taxi modal and journey-specific form layout. */
+#taxi-modal {
+  &.modal {
+    display: flex;
+    inline-size: 100%;
+    max-inline-size: 25rem;
+    block-size: max(100dvh, 100%);
+    margin: 0;
+  }
+
+  & .modal-content {
+    inline-size: min(100vw, 25rem);
+    block-size: auto;
+    max-block-size: 100dvh;
+    margin-inline: auto;
+    padding: 1.5625rem 1.875rem;
+    overflow-y: auto;
+    border-radius: var(--radius-xl);
+  }
+}
+
+.journey-options-heading {
+  margin-block-end: 0.625rem;
+}
+
+.journey-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.875rem;
+
+  & > label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0;
+  }
+}
+
+.form-group.same-location-row {
+  flex-direction: row;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-block-end: 0.625rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  & > label {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  & input[type="checkbox"] {
+    inline-size: auto;
+    max-inline-size: none;
+    translate: 0 0.0625rem;
+  }
+}
+
+.taxi-dropoff-group {
+  &.is-hidden {
+    display: none;
+  }
+}

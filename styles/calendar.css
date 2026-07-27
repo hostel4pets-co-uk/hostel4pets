@@ -1,0 +1,146 @@
+/* Availability calendar, legend and generated booking markers. */
+.calendar-container {
+  inline-size: 100%;
+  margin: var(--space-5) auto;
+  padding: 0.625rem;
+  overflow-x: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+
+  & table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  & :is(th, td) {
+    min-inline-size: 0;
+    block-size: 3.125rem;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+  }
+
+  & .today {
+    font-weight: 700;
+  }
+
+  & .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3125rem;
+    margin-block-end: 0.625rem;
+  }
+
+  & button {
+    padding: 0.3125rem 0.625rem;
+    background: #4caf50;
+
+    @media (hover: hover) {
+      &:hover {
+        background: #45a049;
+      }
+    }
+  }
+
+  & input[type="month"] {
+    min-inline-size: 7.5rem;
+    flex: 1;
+    font-size: 0.85em;
+    text-align: center;
+  }
+
+  & td.selected {
+    background: var(--selected);
+  }
+}
+
+#calendar-container {
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.calendar-title {
+  margin-block-end: 0.9375rem;
+  text-align: center;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem 0.75rem;
+  margin-block-start: 0.9375rem;
+  font-size: 0.85em;
+}
+
+.calendar-legend-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem 0.9375rem;
+  margin-block-start: 0.625rem;
+
+  & > div {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  @media (18.8125rem < width <= 28.125rem) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (width <= 18.75rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.legend-box {
+  display: inline-block;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-inline-end: 0.3125rem;
+  border-radius: 0.1875rem;
+
+  &.past { background: var(--past); }
+  &.today { background: var(--today); }
+  &.busy { background: var(--busy); }
+  &.booked { background: var(--booked); }
+  &.bankholiday { background: var(--bankholiday); }
+  &.notavailable { background: var(--notavailable); }
+  &.selected { background: var(--selected); }
+}
+
+.dot {
+  transform-origin: center;
+  transition: scale var(--transition-fast);
+
+  @media (hover: hover) {
+    &:hover {
+      z-index: 10;
+      scale: 1.4;
+    }
+  }
+}
+
+.texts {
+  margin-block: 0.125rem 0;
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
+#pet-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 80%);
+  color: var(--white);
+  font-size: 0.75rem;
+  pointer-events: none;
+}

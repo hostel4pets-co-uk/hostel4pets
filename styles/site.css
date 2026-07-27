@@ -1,0 +1,114 @@
+/* Document reset, page layout and shared site chrome. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-block-size: 100%;
+  background: var(--h4pblue);
+  font-family: Arial, sans-serif;
+}
+
+body {
+  min-block-size: 100%;
+  margin: 0;
+  background: var(--h4pblue);
+  color: var(--text);
+
+  &.no-scroll {
+    overflow: hidden;
+  }
+}
+
+img {
+  display: block;
+  max-inline-size: 100%;
+}
+
+#pageTitle {
+  inline-size: 100%;
+  max-inline-size: var(--content-width);
+  block-size: auto;
+  margin-inline: auto;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-wrapper {
+  display: flex;
+  inline-size: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.625rem;
+
+  @media (width >= 56.25rem) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.container {
+  display: flex;
+  inline-size: auto;
+  min-inline-size: min(90%, 25rem);
+  max-inline-size: min(95%, var(--content-width));
+  flex-direction: column;
+  align-items: center;
+  margin: 0.625rem 2.5%;
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  font-family: Arial, sans-serif;
+
+  &.mobile {
+    min-inline-size: 80%;
+    max-inline-size: 90%;
+    margin-inline: auto;
+  }
+}
+
+.subtitle {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--h4pgreen);
+  color: var(--white);
+  font-family: "Bangers", Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#booking-form {
+  display: contents;
+}
+
+@keyframes h4p-fade-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.9375rem;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

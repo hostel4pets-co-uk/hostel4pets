@@ -1,0 +1,85 @@
+/* Shared form controls used by the booking calculator and taxi form. */
+:where(.form-group, button, input:not([type="checkbox"]), select, textarea) {
+  inline-size: 100%;
+  max-inline-size: 80%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-block-end: var(--space-5);
+
+  & > label {
+    display: block;
+    margin-block-end: 0.3125rem;
+    text-align: center;
+  }
+}
+
+:where(input[type="text"], input[type="date"], input[type="time"], select, textarea) {
+  padding: var(--space-2);
+  border: 1px solid #cccccc;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+
+  &:focus-visible {
+    border-color: var(--h4pblue);
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+}
+
+textarea {
+  resize: vertical;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--h4pgreen);
+}
+
+button {
+  padding: 0.625rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--h4pgreen);
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    scale var(--transition-fast);
+
+  &:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  &:active {
+    scale: 0.98;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: var(--h4pblue);
+    }
+  }
+}
+
+.container.mobile {
+  :is(button, input, select, textarea, label) {
+    font-size: 1.25em;
+  }
+}
