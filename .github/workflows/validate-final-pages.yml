@@ -78,6 +78,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           git restore package-lock.json
+          git restore --source=3df3c7adcca6acbe865b397343751ca5bcdb2486 .github/workflows/pages.yml
           rm -rf generated chat calendar
           cp -R dist/generated generated
           cp -R dist/chat chat
