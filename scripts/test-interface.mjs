@@ -82,6 +82,50 @@ try {
   assert.equal(await page.locator('.trust-list').count(), 0, 'Removed marketing labels must not remain on the booking page');
   assert.equal(await page.locator('.site-nav a[href="/chat"]').count(), 1, 'Primary navigation must include the clean chat route');
 
+  const mobileHeader = await page.locator('.site-header').boundingBox();
+  const mobileNav = await page.locator('.site-nav').boundingBox();
+  const mobileNavLinks = await page.locator('.site-nav a').evaluateAll(links => links.map(link => {
+    const box = link.getBoundingClientRect();
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  }));
+  assert(mobileHeader && mobileNav, 'Mobile header and navigation must have layout boxes');
+  assert.equal(mobileNavLinks.length, 4, 'Mobile navigation must contain four links');
+  assert(mobileNav.y >= mobileHeader.y - 1, 'Mobile navigation must remain inside the sticky header');
+  assert(mobileNav.y + mobileNav.height <= mobileHeader.y + mobileHeader.height + 1, 'Mobile navigation must fit inside the sticky header');
+  const navRowY = mobileNavLinks[0]?.y;
+  assert(navRowY !== undefined, 'Mobile navigation links must be visible');
+  for (const link of mobileNavLinks) {
+    assert(Math.abs(link.y - navRowY) <= 1, 'All mobile navigation links must remain on one row');
+    assert(link.x >= mobileNav.x - 1, 'Mobile navigation link must remain inside the navigation left edge');
+    assert(link.x + link.width <= mobileNav.x + mobileNav.width + 1, 'Mobile navigation link must remain inside the navigation right edge');
+  }
+
+  await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.id = 'chat-panel-shell';
+    probe.innerHTML = '<div class="chat-modal collapsed"><header class="chat-header"><span class="chat-header__avatar"></span><span class="title">New Message!</span><div id="chat-controls"><button id="collapse-btn" class="emoji-btn" type="button">+</button></div></header></div>';
+    document.body.append(probe);
+  });
+  const launcherBox = await page.locator('#chat-panel-shell').boundingBox();
+  const launcherZ = await page.locator('#chat-panel-shell').evaluate(element => Number.parseInt(getComputedStyle(element).zIndex, 10));
+  const headerZ = await page.locator('.site-header').evaluate(element => Number.parseInt(getComputedStyle(element).zIndex, 10));
+  assert(launcherBox, 'Collapsed chat launcher must have a layout box');
+  const overlapsNavigation = !(
+    launcherBox.y + launcherBox.height <= mobileNav.y
+    || mobileNav.y + mobileNav.height <= launcherBox.y
+    || launcherBox.x + launcherBox.width <= mobileNav.x
+    || mobileNav.x + mobileNav.width <= launcherBox.x
+  );
+  assert.equal(overlapsNavigation, false, 'Collapsed chat launcher must not overlap mobile navigation');
+  assert(headerZ > launcherZ, 'Sticky mobile header must remain above the floating chat launcher');
+  await page.locator('#chat-panel-shell').evaluate(element => element.remove());
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+  await page.waitForTimeout(100);
+  const pinnedHeader = await page.locator('.site-header').boundingBox();
+  assert(pinnedHeader && pinnedHeader.y <= 1, 'Mobile navigation header must stay pinned to the top while scrolling');
+  await page.evaluate(() => window.scrollTo(0, 0));
+
   // Exercise chat on its direct page. The booking page loads the same chat modal
   // asynchronously from chat.html, so this avoids coupling layout assertions to
   // the transport timing of that fetch while testing the identical component.

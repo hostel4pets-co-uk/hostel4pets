@@ -654,39 +654,48 @@ h3 {
 
 @media (width <= 45rem) {
   :root {
-    --header-height: 4.25rem;
+    --header-height: 7.5rem;
+  }
+
+  .site-header {
+    z-index: 2100;
+    padding-block: 0.35rem 0.45rem;
   }
 
   .site-header__inner {
     inline-size: min(calc(100% - 1rem), var(--content-width));
+    min-block-size: auto;
     grid-template-columns: 1fr auto;
-    gap: var(--space-3);
+    gap: 0.35rem var(--space-3);
   }
 
   .site-brand__logo {
-    inline-size: 7rem !important;
+    inline-size: 6.75rem !important;
   }
 
   .site-nav {
-    position: fixed;
-    inset-block-end: var(--space-3);
-    inset-inline: var(--space-3);
-    z-index: 950;
+    position: static;
+    grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    padding: 0.35rem;
+    inline-size: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.2rem;
+    padding: 0.25rem;
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     background: var(--header-bg);
-    box-shadow: var(--shadow-modal);
-    backdrop-filter: blur(1.25rem);
+    box-shadow: 0 0.35rem 1rem rgb(25 31 84 / 8%);
 
     & a {
       display: grid;
-      min-block-size: 2.75rem;
+      min-inline-size: 0;
+      min-block-size: 2.5rem;
       place-items: center;
-      padding: 0.45rem 0.25rem;
+      padding: 0.4rem 0.1rem;
+      font-size: clamp(0.64rem, 2.7vw, 0.78rem);
+      line-height: 1;
       text-align: center;
+      white-space: nowrap;
     }
   }
 
@@ -786,9 +795,7 @@ h3 {
 
 @media (width <= 45rem) {
   .site-header {
-    /* A backdrop filter creates a containing block for fixed descendants.
-     * Removing it here lets the mobile navigation dock to the viewport. */
-    backdrop-filter: none;
+    backdrop-filter: blur(1rem) saturate(1.2);
   }
 }
 
