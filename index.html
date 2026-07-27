@@ -129,32 +129,35 @@
             <div class="booking-extra__body">
               <p class="form-section__hint">Choose the journeys and locations you need. The taxi price is added to the stay total and deposit.</p>
               <form id="taxi-form">
-                <fieldset class="taxi-subsection">
-                  <legend>Journey</legend>
+                <section class="taxi-subsection" role="group" aria-labelledby="taxi-journey-title">
+                  <h3 id="taxi-journey-title" class="taxi-subsection__title">Journey</h3>
                   <div class="journey-options">
                     <label class="choice-card"><input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked><span><strong>Pickup</strong><small>Collect your pet</small></span></label>
                     <label class="choice-card"><input type="checkbox" id="dropoffEnabled" name="dropoffEnabled" checked><span><strong>Drop off</strong><small>Bring your pet home</small></span></label>
                   </div>
-                </fieldset>
-                <fieldset class="taxi-subsection">
-                  <legend>Locations</legend>
-                  <div class="form-grid">
+                </section>
+                <section class="taxi-subsection" role="group" aria-labelledby="taxi-locations-title">
+                  <h3 id="taxi-locations-title" class="taxi-subsection__title">Locations</h3>
+                  <div class="taxi-locations">
                     <div class="form-group">
                       <label for="pickupLocation">Pickup location</label>
                       <select id="pickupLocation" name="pickupLocation"><option>Loading coverage…</option></select>
                     </div>
+                    <label class="same-location-row" for="sameLocation">
+                      <input type="checkbox" id="sameLocation" name="sameLocation">
+                      <span>
+                        <strong>Drop-off location different from pickup location</strong>
+                        <small>Choose a separate location for the return journey.</small>
+                      </span>
+                    </label>
                     <div class="form-group taxi-dropoff-group is-hidden">
                       <label for="dropoffLocation">Drop-off location</label>
                       <select id="dropoffLocation" name="dropoffLocation" disabled><option>Loading coverage…</option></select>
                     </div>
                   </div>
-                  <div class="form-group same-location-row">
-                    <input type="checkbox" id="sameLocation" name="sameLocation">
-                    <label for="sameLocation">Use a different drop-off location</label>
-                  </div>
-                </fieldset>
+                </section>
                 <div class="taxi-actions">
-                  <button type="submit" id="taxiSubmit" class="button button--secondary taxi-add-button">Add taxi to estimate</button>
+                  <button type="submit" id="taxiSubmit" class="button button--primary taxi-add-button">Add taxi to estimate</button>
                   <button type="button" id="taxiRemove" class="button button--secondary taxi-remove-button" hidden>Remove taxi</button>
                 </div>
                 <p id="taxi-result" class="taxi-result" role="status" aria-live="polite"></p>

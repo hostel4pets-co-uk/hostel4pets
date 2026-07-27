@@ -120,26 +120,60 @@
   }
 }
 
-.form-group.same-location-row {
-  display: flex;
-  flex-direction: row;
+.same-location-row {
+  display: grid;
+  min-inline-size: 0;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-
-  & > label {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
+  gap: var(--space-3);
+  padding: var(--space-3);
+  overflow: visible;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 
   & input[type="checkbox"] {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
     flex: 0 0 auto;
+    margin: 0;
+  }
+
+  & span {
+    display: grid;
+    min-inline-size: 0;
+    gap: 0.12rem;
+  }
+
+  & strong {
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+
+  & small {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
+  }
+
+  &:has(input:checked) {
+    border-color: color-mix(in srgb, var(--h4pgreen) 58%, var(--border));
+    background: var(--h4pgreen-soft);
+  }
+
+  &:focus-within {
+    border-color: var(--h4pblue);
+    box-shadow: 0 0 0 0.22rem var(--focus-ring);
   }
 }
+
 
 .taxi-dropoff-group {
   &.is-hidden {
@@ -276,20 +310,33 @@
 }
 
 .taxi-subsection {
+  display: grid;
   min-inline-size: 0;
+  gap: var(--space-3);
   margin: 0;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-muted);
+  padding: 0;
+  border: 0;
+  background: transparent;
 
-  & legend {
-    padding-inline-end: var(--space-2);
-    color: var(--text);
-    font-size: 0.82rem;
-    font-weight: 900;
+  & + & {
+    padding-block-start: var(--space-5);
+    border-block-start: 1px solid var(--border);
   }
 }
+
+.taxi-subsection__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.taxi-locations {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-3);
+}
+
 
 .taxi-add-button {
   inline-size: 100%;
@@ -331,6 +378,10 @@
   min-inline-size: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+
+  &:has(#taxiRemove[hidden]) {
+    grid-template-columns: 1fr;
+  }
 
   & > .button {
     inline-size: 100%;

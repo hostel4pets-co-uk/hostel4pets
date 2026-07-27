@@ -388,7 +388,7 @@ button {
 .form-group {
   overflow: hidden;
 
-  & > :is(input, select, textarea) {
+  & > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
     display: block;
     inline-size: 100%;
     min-inline-size: 0;

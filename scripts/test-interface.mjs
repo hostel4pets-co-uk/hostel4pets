@@ -278,6 +278,15 @@ try {
   await page.locator('#pet-taxi > summary').click();
   await page.waitForTimeout(150);
   assert.equal(await taxiSection.evaluate(element => element instanceof HTMLDetailsElement && element.open), true, 'Pet taxi must expand within the booking flow');
+  const differentLocation = page.locator('label[for="sameLocation"]');
+  assert.equal(await differentLocation.isVisible(), true, 'Different drop-off location control must show its label');
+  assert.match(await differentLocation.innerText(), /Drop-off location different from pickup location/, 'Different drop-off location label must be explicit');
+  const differentLocationBox = await differentLocation.boundingBox();
+  const differentLocationCheckboxBox = await page.locator('#sameLocation').boundingBox();
+  assert(differentLocationBox && differentLocationCheckboxBox
+    && differentLocationCheckboxBox.x >= differentLocationBox.x
+    && differentLocationCheckboxBox.x + differentLocationCheckboxBox.width <= differentLocationBox.x + differentLocationBox.width,
+  'Different drop-off checkbox must remain inside its labelled row');
   const taxiBox = await taxiSection.boundingBox();
   const bookingBox = await page.locator('#booking-form').boundingBox();
   assert(taxiBox && bookingBox && taxiBox.x >= bookingBox.x - 1 && taxiBox.x + taxiBox.width <= bookingBox.x + bookingBox.width + 1, 'Expanded taxi form must remain inside the booking calculator');
