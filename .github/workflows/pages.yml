@@ -56,3 +56,33 @@ jobs:
       - name: Deploy website
         id: deployment
         uses: actions/deploy-pages@v4
+
+  report:
+    if: always() && github.ref == 'refs/heads/main'
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Report deployment status
+        uses: actions/github-script@v8
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+        with:
+          script: |
+            const succeeded = process.env.BUILD_RESULT === 'success'
+              && process.env.DEPLOY_RESULT === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: succeeded ? 'success' : 'failure',
+              context: 'pages/typescript-deployment',
+              description: succeeded
+                ? 'TypeScript build and Pages deployment succeeded'
+                : 'TypeScript build or Pages deployment failed'
+            });
+            if (!succeeded) {
+              core.setFailed('TypeScript build or Pages deployment failed');
+            }
