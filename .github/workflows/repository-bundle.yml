@@ -1,0 +1,32 @@
+name: Export repository bundle
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch every branch and tag
+        run: git fetch --all --tags --prune
+
+      - name: Create Git bundle
+        run: git bundle create hostel4pets.bundle --all
+
+      - name: Upload Git bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostel4pets-git-bundle
+          path: hostel4pets.bundle
+          if-no-files-found: error
+          retention-days: 1
