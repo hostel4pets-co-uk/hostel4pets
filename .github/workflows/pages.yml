@@ -30,7 +30,17 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Compile strict TypeScript
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-build-log
+          path: build.log
+          if-no-files-found: error
 
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
