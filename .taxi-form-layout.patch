@@ -1,0 +1,218 @@
+diff --git a/index.html b/index.html
+index 1ed9cd3..b48fc68 100644
+--- a/index.html
++++ b/index.html
+@@ -129,32 +129,35 @@
+             <div class="booking-extra__body">
+               <p class="form-section__hint">Choose the journeys and locations you need. The taxi price is added to the stay total and deposit.</p>
+               <form id="taxi-form">
+-                <fieldset class="taxi-subsection">
+-                  <legend>Journey</legend>
++                <section class="taxi-subsection" role="group" aria-labelledby="taxi-journey-title">
++                  <h3 id="taxi-journey-title" class="taxi-subsection__title">Journey</h3>
+                   <div class="journey-options">
+                     <label class="choice-card"><input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked><span><strong>Pickup</strong><small>Collect your pet</small></span></label>
+                     <label class="choice-card"><input type="checkbox" id="dropoffEnabled" name="dropoffEnabled" checked><span><strong>Drop off</strong><small>Bring your pet home</small></span></label>
+                   </div>
+-                </fieldset>
+-                <fieldset class="taxi-subsection">
+-                  <legend>Locations</legend>
+-                  <div class="form-grid">
++                </section>
++                <section class="taxi-subsection" role="group" aria-labelledby="taxi-locations-title">
++                  <h3 id="taxi-locations-title" class="taxi-subsection__title">Locations</h3>
++                  <div class="taxi-locations">
+                     <div class="form-group">
+                       <label for="pickupLocation">Pickup location</label>
+                       <select id="pickupLocation" name="pickupLocation"><option>Loading coverage…</option></select>
+                     </div>
++                    <label class="same-location-row" for="sameLocation">
++                      <input type="checkbox" id="sameLocation" name="sameLocation">
++                      <span>
++                        <strong>Drop-off location different from pickup location</strong>
++                        <small>Choose a separate location for the return journey.</small>
++                      </span>
++                    </label>
+                     <div class="form-group taxi-dropoff-group is-hidden">
+                       <label for="dropoffLocation">Drop-off location</label>
+                       <select id="dropoffLocation" name="dropoffLocation" disabled><option>Loading coverage…</option></select>
+                     </div>
+                   </div>
+-                  <div class="form-group same-location-row">
+-                    <input type="checkbox" id="sameLocation" name="sameLocation">
+-                    <label for="sameLocation">Use a different drop-off location</label>
+-                  </div>
+-                </fieldset>
++                </section>
+                 <div class="taxi-actions">
+-                  <button type="submit" id="taxiSubmit" class="button button--secondary taxi-add-button">Add taxi to estimate</button>
++                  <button type="submit" id="taxiSubmit" class="button button--primary taxi-add-button">Add taxi to estimate</button>
+                   <button type="button" id="taxiRemove" class="button button--secondary taxi-remove-button" hidden>Remove taxi</button>
+                 </div>
+                 <p id="taxi-result" class="taxi-result" role="status" aria-live="polite"></p>
+diff --git a/scripts/test-interface.mjs b/scripts/test-interface.mjs
+index 6f201e4..f6d0187 100644
+--- a/scripts/test-interface.mjs
++++ b/scripts/test-interface.mjs
+@@ -278,6 +278,15 @@ try {
+   await page.locator('#pet-taxi > summary').click();
+   await page.waitForTimeout(150);
+   assert.equal(await taxiSection.evaluate(element => element instanceof HTMLDetailsElement && element.open), true, 'Pet taxi must expand within the booking flow');
++  const differentLocation = page.locator('label[for="sameLocation"]');
++  assert.equal(await differentLocation.isVisible(), true, 'Different drop-off location control must show its label');
++  assert.match(await differentLocation.innerText(), /Drop-off location different from pickup location/, 'Different drop-off location label must be explicit');
++  const differentLocationBox = await differentLocation.boundingBox();
++  const differentLocationCheckboxBox = await page.locator('#sameLocation').boundingBox();
++  assert(differentLocationBox && differentLocationCheckboxBox
++    && differentLocationCheckboxBox.x >= differentLocationBox.x
++    && differentLocationCheckboxBox.x + differentLocationCheckboxBox.width <= differentLocationBox.x + differentLocationBox.width,
++  'Different drop-off checkbox must remain inside its labelled row');
+   const taxiBox = await taxiSection.boundingBox();
+   const bookingBox = await page.locator('#booking-form').boundingBox();
+   assert(taxiBox && bookingBox && taxiBox.x >= bookingBox.x - 1 && taxiBox.x + taxiBox.width <= bookingBox.x + bookingBox.width + 1, 'Expanded taxi form must remain inside the booking calculator');
+diff --git a/styles/forms.css b/styles/forms.css
+index ea04a6e..ba95d74 100644
+--- a/styles/forms.css
++++ b/styles/forms.css
+@@ -388,7 +388,7 @@ button {
+ .form-group {
+   overflow: hidden;
+ 
+-  & > :is(input, select, textarea) {
++  & > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+     display: block;
+     inline-size: 100%;
+     min-inline-size: 0;
+diff --git a/styles/taxi.css b/styles/taxi.css
+index 52b0360..c1eae79 100644
+--- a/styles/taxi.css
++++ b/styles/taxi.css
+@@ -120,27 +120,61 @@
+   }
+ }
+ 
+-.form-group.same-location-row {
+-  display: flex;
+-  flex-direction: row;
++.same-location-row {
++  display: grid;
++  min-inline-size: 0;
++  grid-template-columns: auto minmax(0, 1fr);
+   align-items: center;
+-  justify-content: flex-start;
+-  gap: var(--space-2);
+-  padding: var(--space-2) 0;
++  gap: var(--space-3);
++  padding: var(--space-3);
++  overflow: visible;
++  border: 1px solid var(--border);
++  border-radius: var(--radius-md);
++  background: var(--surface-muted);
++  color: var(--text);
++  cursor: pointer;
++  transition:
++    border-color var(--transition-fast),
++    background-color var(--transition-fast);
+ 
+-  & > label {
++  & input[type="checkbox"] {
++    inline-size: 1.1rem;
++    block-size: 1.1rem;
++    flex: 0 0 auto;
+     margin: 0;
+-    color: var(--text-muted);
++  }
++
++  & span {
++    display: grid;
++    min-inline-size: 0;
++    gap: 0.12rem;
++  }
++
++  & strong {
++    color: var(--text);
+     font-size: 0.82rem;
+-    font-weight: 700;
+-    cursor: pointer;
++    font-weight: 850;
++    overflow-wrap: anywhere;
+   }
+ 
+-  & input[type="checkbox"] {
+-    flex: 0 0 auto;
++  & small {
++    color: var(--text-muted);
++    font-size: 0.72rem;
++    overflow-wrap: anywhere;
++  }
++
++  &:has(input:checked) {
++    border-color: color-mix(in srgb, var(--h4pgreen) 58%, var(--border));
++    background: var(--h4pgreen-soft);
++  }
++
++  &:focus-within {
++    border-color: var(--h4pblue);
++    box-shadow: 0 0 0 0.22rem var(--focus-ring);
+   }
+ }
+ 
++
+ .taxi-dropoff-group {
+   &.is-hidden {
+     display: none;
+@@ -276,21 +310,34 @@
+ }
+ 
+ .taxi-subsection {
++  display: grid;
+   min-inline-size: 0;
++  gap: var(--space-3);
+   margin: 0;
+-  padding: var(--space-4);
+-  border: 1px solid var(--border);
+-  border-radius: var(--radius-lg);
+-  background: var(--surface-muted);
++  padding: 0;
++  border: 0;
++  background: transparent;
+ 
+-  & legend {
+-    padding-inline-end: var(--space-2);
+-    color: var(--text);
+-    font-size: 0.82rem;
+-    font-weight: 900;
++  & + & {
++    padding-block-start: var(--space-5);
++    border-block-start: 1px solid var(--border);
+   }
+ }
+ 
++.taxi-subsection__title {
++  margin: 0;
++  color: var(--text);
++  font-size: 0.86rem;
++  font-weight: 900;
++}
++
++.taxi-locations {
++  display: grid;
++  min-inline-size: 0;
++  gap: var(--space-3);
++}
++
++
+ .taxi-add-button {
+   inline-size: 100%;
+   justify-content: center;
+@@ -332,6 +379,10 @@
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: var(--space-3);
+ 
++  &:has(#taxiRemove[hidden]) {
++    grid-template-columns: 1fr;
++  }
++
+   & > .button {
+     inline-size: 100%;
+     justify-content: center;
