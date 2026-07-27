@@ -46,6 +46,7 @@ jobs:
           test -f dist/generated/calendarPage.js
           test -f dist/generated/chat.js
           test -f dist/generated/dayView.js
+          test -f dist/generated/interface.js
           test -f dist/generated/main.js
           test -f dist/generated/taxi.js
 

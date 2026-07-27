@@ -307,3 +307,63 @@ button {
     padding: var(--space-4);
   }
 }
+
+/* Narrow-screen containment and content-driven estimate sizing. */
+.form-section,
+.form-grid,
+.form-group,
+.pet-options {
+  max-inline-size: 100%;
+}
+
+:where(input[type="text"], input[type="date"], input[type="time"], select, textarea, [contenteditable="true"]) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.estimate-breakdown textarea {
+  min-block-size: 5rem;
+  block-size: auto;
+  overflow: hidden;
+  resize: none;
+}
+
+.calculate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+
+  & .button__icon {
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+
+    & rect,
+    & path:first-of-type {
+      fill: rgb(255 255 255 / 10%);
+    }
+  }
+}
+
+@media (width <= 45rem) {
+  .booking-form,
+  .form-section,
+  .form-grid,
+  .form-group {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  :where(input[type="date"], input[type="time"], select, textarea) {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}

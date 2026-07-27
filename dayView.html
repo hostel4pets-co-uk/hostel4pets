@@ -3,18 +3,19 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#363cb8">
   <title>Daily Bookings | Hostel4Pets</title>
   <link rel="stylesheet" href="./styles/styles.css">
   <script type="module" src="./generated/theme.js"></script>
+  <script type="module" src="./generated/interface.js"></script>
 </head>
 
 <body class="site-page inner-page day-view-page">
   <header class="site-header standalone-only">
     <div class="site-header__inner">
       <a class="site-brand" href="./index.html" aria-label="Hostel4Pets home"><img src="./graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo"></a>
-      <nav class="site-nav" aria-label="Primary navigation"><a href="./index.html#booking">Book</a><a href="./calendar.html">Availability</a><a href="./taxi.html">Pet taxi</a></nav>
+      <nav class="site-nav" aria-label="Primary navigation"><a href="./index.html#booking">Book</a><a href="./calendar.html">Availability</a><a href="./index.html#pet-taxi">Pet taxi</a></nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use dark theme" aria-pressed="false"><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span><span data-theme-label>Light</span></button>
     </div>
   </header>
@@ -28,6 +29,15 @@
       <ul id="pet-list"></ul>
     </div>
   </div>
+  <footer class="site-footer">
+    <img src="./graphics/h4p.png" alt="" aria-hidden="true">
+    <div class="site-footer__content">
+      <p><strong>Hostel4Pets</strong> · Their home away from home</p>
+      <p>Copyright © Hostel4Pets 2019–<span data-current-year>2026</span>. Hostel4Pets is a trademark of Krilavej LTD, registered at Companies House under <a href="https://find-and-update.company-information.service.gov.uk/company/SC729900" target="_blank" rel="noopener noreferrer">SC729900</a>.</p>
+      <p>Made by <a href="https://kittycrow.dev" target="_blank" rel="noopener noreferrer">Kitty Crow</a> · <a href="https://github.com/kitty-crow" target="_blank" rel="noopener noreferrer">GitHub portfolio</a></p>
+    </div>
+    <p class="site-footer__version">Website v1.0.0</p>
+  </footer>
   <script type="module" src="./generated/dayView.js"></script>
 </body>
 

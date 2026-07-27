@@ -166,3 +166,59 @@
     font-weight: 700;
   }
 }
+
+/* Daily guest lists use the available viewport before introducing scrolling. */
+#day-modal-shell {
+  inline-size: min(100%, 64rem);
+  max-block-size: calc(100dvh - 2rem);
+}
+
+#day-modal .modal-content {
+  display: flex;
+  max-inline-size: 64rem;
+  max-block-size: calc(100dvh - 2rem);
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#pet-list {
+  min-block-size: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: var(--space-1);
+}
+
+.pet-item {
+  padding: var(--space-3);
+}
+
+.day-view-page > #day-modal {
+  inline-size: min(calc(100% - 1rem), 64rem);
+  margin-block-end: var(--space-7);
+
+  & .modal-content {
+    max-block-size: calc(100dvh - var(--header-height) - 11rem);
+  }
+}
+
+@media (width <= 45rem) {
+  #day-modal-overlay {
+    padding: var(--space-2);
+  }
+
+  #day-modal .modal-content,
+  .day-view-page > #day-modal .modal-content {
+    max-block-size: calc(100dvh - var(--header-height) - 7rem);
+    padding: var(--space-4);
+  }
+
+  #pet-list {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .detail {
+    font-size: 0.8rem;
+  }
+}

@@ -423,3 +423,127 @@
 #chat-panel-shell:has(.chat-modal.collapsed) {
   inline-size: min(15rem, calc(100vw - 2rem));
 }
+
+/* Keep messages, composer and actions in separate flex regions at every height. */
+#chat-panel-shell.has-session .chat-modal:not(.collapsed) {
+  block-size: 100%;
+}
+
+.chat-modal:not(.collapsed) {
+  min-block-size: 0;
+}
+
+.chat-header {
+  flex: 0 0 auto;
+  cursor: pointer;
+
+  & .title {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.chat-body {
+  max-block-size: none;
+  grid-template-rows: minmax(0, 1fr) auto;
+  flex: 1 1 auto;
+}
+
+#chatroom {
+  min-block-size: 0;
+  overscroll-behavior: contain;
+}
+
+#message {
+  min-block-size: 5rem;
+  max-block-size: 7rem;
+  flex: 0 0 auto;
+}
+
+.chat-footer {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+}
+
+#submit-button[hidden],
+#send-button[hidden],
+#nickname[hidden] {
+  display: none !important;
+}
+
+.chat-page > .chat-modal {
+  block-size: min(44rem, calc(100dvh - 10rem));
+  min-block-size: 28rem;
+}
+
+@media (width <= 45rem) {
+  #chat-panel-shell.has-session {
+    block-size: calc(100dvh - 6rem);
+    max-block-size: calc(100dvh - 6rem);
+  }
+
+  .chat-modal:not(.collapsed) {
+    block-size: 100%;
+    max-block-size: 100%;
+  }
+
+  .chat-header {
+    min-block-size: 3.65rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    padding-inline: 0.55rem;
+  }
+
+  #chat-controls {
+    gap: 0.15rem;
+  }
+
+  .emoji-btn {
+    inline-size: 2rem;
+    block-size: 2rem;
+    font-size: 0.9rem;
+  }
+
+  .chat-body {
+    --chat-body-padding: 0.65rem;
+    --chat-row-gap: 0.65rem;
+  }
+
+  .chat-footer {
+    padding: 0.65rem;
+  }
+
+  .chat-page > .chat-modal {
+    block-size: calc(100dvh - var(--header-height) - 6rem);
+    min-block-size: 24rem;
+    margin-block-end: 5rem;
+  }
+}
+
+/* The direct chat page uses the same application without viewport-fixed
+ * positioning; the embedded booking-page version remains floating. */
+#chat-panel-shell.standalone-chat-shell {
+  position: static;
+  inline-size: min(calc(100% - 2rem), 40rem);
+  block-size: min(44rem, calc(100dvh - 10rem));
+  max-block-size: none;
+  margin: 0 auto var(--space-8);
+  filter: none;
+
+  & .chat-modal {
+    block-size: 100%;
+  }
+}
+
+@media (width <= 45rem) {
+  #chat-panel-shell.standalone-chat-shell {
+    inset: auto;
+    inline-size: calc(100% - 1rem);
+    block-size: calc(100dvh - var(--header-height) - 6rem);
+    min-block-size: 24rem;
+    margin-block-end: 5rem;
+  }
+}

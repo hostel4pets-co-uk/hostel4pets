@@ -791,3 +791,60 @@ h3 {
     backdrop-filter: none;
   }
 }
+
+/* Legal and authorship details remain readable without dominating the page. */
+.site-footer__content {
+  display: grid;
+  max-inline-size: 48rem;
+  gap: 0.25rem;
+
+  & a {
+    color: var(--h4pblue);
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+  }
+}
+
+.service-card:is(button) {
+  inline-size: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.service-card__title,
+.service-card__copy {
+  display: block;
+}
+
+.service-card__title {
+  margin-block-end: var(--space-2);
+  font-size: 1.15rem;
+}
+
+.service-card__copy {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+:root[data-theme="dark"] .site-footer__content a {
+  color: #c4c8ff;
+}
+
+@media (width <= 45rem) {
+  .site-footer {
+    align-items: flex-start;
+
+    & img {
+      inline-size: 4.5rem;
+    }
+  }
+
+  .site-footer__content {
+    inline-size: calc(100% - 6rem);
+    font-size: 0.74rem;
+  }
+}

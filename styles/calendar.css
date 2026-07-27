@@ -276,3 +276,36 @@
     }
   }
 }
+
+/* The seven-day grid always contracts to its container on narrow screens. */
+@media (width <= 45rem) {
+  .calendar-container {
+    overflow-x: hidden;
+
+    & table {
+      inline-size: 100% !important;
+      min-inline-size: 0 !important;
+      border-spacing: 0.12rem !important;
+    }
+
+    & :is(th, td) {
+      min-inline-size: 0;
+      block-size: clamp(3.2rem, 14vw, 4.15rem);
+      padding: 0.25rem !important;
+      font-size: clamp(0.62rem, 2.6vw, 0.82rem) !important;
+    }
+
+    & th {
+      padding-block: 0.55rem !important;
+    }
+
+    & .dot {
+      inline-size: clamp(0.28rem, 1.8vw, 0.42rem) !important;
+      block-size: clamp(0.28rem, 1.8vw, 0.42rem) !important;
+    }
+
+    & .texts {
+      display: none;
+    }
+  }
+}
