@@ -93,6 +93,7 @@ function initialiseEstimatePresentation(): void {
 
   const taxiForm = document.getElementById("taxi-form");
   const taxiResult = document.getElementById("taxi-result");
+  const taxiSummaryStatus = document.getElementById("taxi-summary-status");
   if (!(taxiForm instanceof HTMLFormElement)) return;
 
   taxiForm.addEventListener("submit", () => {
@@ -106,6 +107,7 @@ function initialiseEstimatePresentation(): void {
         window.clearInterval(timer);
         state.taxiPrice = price;
         if (taxiResult) taxiResult.textContent = `${formatCurrency(price)} added to the stay estimate.`;
+        if (taxiSummaryStatus) taxiSummaryStatus.textContent = `${formatCurrency(price)} added`;
         render();
         return;
       }
@@ -117,47 +119,23 @@ function initialiseEstimatePresentation(): void {
   }, { capture: true });
 }
 
-function setTaxiPanelState(panel: HTMLElement, expanded: boolean): void {
-  panel.classList.toggle("is-collapsed", !expanded);
-  panel.classList.remove("is-hidden");
-  const minimise = panel.querySelector<HTMLButtonElement>("[data-taxi-minimise]");
-  if (minimise) {
-    minimise.setAttribute("aria-expanded", String(expanded));
-    minimise.setAttribute("aria-label", expanded ? "Minimise pet taxi" : "Open pet taxi");
-    minimise.textContent = expanded ? "−" : "+";
-  }
-  if (expanded) {
-    const chatModal = document.querySelector<HTMLElement>("#chat-panel-shell .chat-modal:not(.collapsed)");
-    chatModal?.querySelector<HTMLButtonElement>("#collapse-btn")?.click();
-    requestAnimationFrame(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
-  }
-}
+function initialiseTaxiFlow(): void {
+  const section = document.getElementById("pet-taxi");
+  if (!(section instanceof HTMLDetailsElement)) return;
 
-function initialiseTaxiPanel(): void {
-  const panel = document.getElementById("taxi-panel-shell");
-  if (!panel) return;
+  const openSection = (): void => {
+    section.open = true;
+    requestAnimationFrame(() => section.scrollIntoView({ behavior: "smooth", block: "center" }));
+  };
 
   document.querySelectorAll<HTMLElement>("[data-taxi-open]").forEach(control => {
     control.addEventListener("click", event => {
       event.preventDefault();
-      setTaxiPanelState(panel, true);
+      openSection();
     });
   });
 
-  panel.querySelector<HTMLElement>(".taxi-panel__header")?.addEventListener("click", event => {
-    if ((event.target as Element).closest("button")) return;
-    setTaxiPanelState(panel, true);
-  });
-
-  panel.querySelector<HTMLButtonElement>("[data-taxi-minimise]")?.addEventListener("click", () => {
-    setTaxiPanelState(panel, panel.classList.contains("is-collapsed"));
-  });
-
-  panel.querySelector<HTMLButtonElement>("[data-taxi-close]")?.addEventListener("click", () => {
-    panel.classList.add("is-hidden");
-  });
-
-  if (window.location.hash === "#pet-taxi") setTaxiPanelState(panel, true);
+  if (window.location.hash === "#pet-taxi") openSection();
 }
 
 function syncChatSessionUi(modal: HTMLElement): void {
@@ -185,10 +163,7 @@ function bindChatPresentation(modal: HTMLElement): void {
     if ((event.target as Element).closest("#chat-controls")) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (modal.classList.contains("collapsed")) {
-      document.getElementById("taxi-panel-shell")?.classList.add("is-collapsed");
-      collapse.click();
-    }
+    if (modal.classList.contains("collapsed")) collapse.click();
     requestAnimationFrame(() => modal.scrollIntoView({ behavior: "smooth", block: "start" }));
   }, { capture: true });
 
@@ -219,7 +194,7 @@ function initialiseChatPresentation(): void {
 function initialiseInterface(): void {
   setFooterYear();
   initialiseEstimatePresentation();
-  initialiseTaxiPanel();
+  initialiseTaxiFlow();
   initialiseChatPresentation();
 }
 

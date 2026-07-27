@@ -188,9 +188,14 @@ try {
   assert.equal(breakdownMetrics.overflow, 'hidden', 'Price breakdown must not show an internal scrollbar');
   assert.equal(breakdownMetrics.resize, 'none', 'Price breakdown must not require manual resizing');
 
-  await page.locator('[data-taxi-open]').first().click();
+  const taxiSection = page.locator('#pet-taxi');
+  assert.equal(await taxiSection.evaluate(element => element instanceof HTMLDetailsElement && !element.open), true, 'Pet taxi should begin as an optional collapsed booking step');
+  await page.locator('#pet-taxi > summary').click();
   await page.waitForTimeout(150);
-  assert.equal(await page.locator('#taxi-panel-shell').evaluate(element => element.classList.contains('is-collapsed')), false, 'Pet taxi must open as a floating panel');
+  assert.equal(await taxiSection.evaluate(element => element instanceof HTMLDetailsElement && element.open), true, 'Pet taxi must expand within the booking flow');
+  const taxiBox = await taxiSection.boundingBox();
+  const bookingBox = await page.locator('#booking-form').boundingBox();
+  assert(taxiBox && bookingBox && taxiBox.x >= bookingBox.x - 1 && taxiBox.x + taxiBox.width <= bookingBox.x + bookingBox.width + 1, 'Expanded taxi form must remain inside the booking calculator');
   await page.selectOption('#pickupLocation', 'Aberdeen');
   await page.click('#taxiSubmit');
   await page.waitForFunction(() => document.querySelector('#taxi-result')?.textContent?.includes('added'));

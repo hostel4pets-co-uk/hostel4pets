@@ -169,114 +169,159 @@
   }
 }
 
-/* Same-page taxi tool. It remains available while users edit the booking and
- * collapses into a compact launcher when it is not needed. */
-.taxi-panel-shell {
-  position: fixed;
-  inset-block-end: var(--space-4);
-  inset-inline-start: var(--space-4);
-  z-index: 1950;
-  display: flex;
-  inline-size: min(29rem, calc(100vw - 2rem));
-  max-block-size: calc(100dvh - 2rem);
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-modal);
+/* Inline booking-flow taxi section. Native details/summary behaviour keeps the
+ * optional journey form discoverable without turning it into a separate tool. */
+.booking-taxi {
+  padding: 0;
+  overflow: clip;
+  background: var(--surface-muted);
 
-  &.is-collapsed {
-    inline-size: min(13rem, calc(100vw - 2rem));
-    border-radius: var(--radius-pill);
+  &[open] {
+    border-color: color-mix(in srgb, var(--h4pgreen) 46%, var(--border));
+    background: var(--surface-raised);
 
-    & .taxi-panel__body {
-      display: none;
+    & .booking-extra__chevron {
+      rotate: 180deg;
+    }
+
+    & .booking-extra__status {
+      background: var(--h4pgreen-soft);
+      color: var(--h4pgreen-strong);
     }
   }
-
-  &.is-hidden {
-    display: none;
-  }
 }
 
-.taxi-panel__header {
+.booking-extra__summary {
   display: grid;
-  min-block-size: 3.75rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-block-size: 5.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
-  padding: 0.65rem 0.8rem;
-  background: linear-gradient(135deg, var(--h4pgreen-strong), #098b34);
-  color: var(--white);
-  font-weight: 900;
+  padding: var(--space-4) var(--space-5);
   cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--h4pblue-soft) 55%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 0.2rem solid var(--focus-ring);
+    outline-offset: -0.2rem;
+  }
 }
 
-.taxi-panel__icon {
+.booking-extra__number {
   display: grid;
-  inline-size: 2.35rem;
-  block-size: 2.35rem;
+  inline-size: 1.8rem;
+  block-size: 1.8rem;
   place-items: center;
-  border: 2px solid rgb(255 255 255 / 55%);
   border-radius: 50%;
-  background: rgb(255 255 255 / 12%);
+  background: var(--h4pblue);
+  color: var(--white);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
-.taxi-panel__controls {
-  display: flex;
-  gap: var(--space-1);
+.booking-extra__copy {
+  display: grid;
+  gap: 0.18rem;
 
-  & button {
-    display: grid;
-    inline-size: 2.1rem;
-    block-size: 2.1rem;
-    place-items: center;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgb(255 255 255 / 14%);
-    color: var(--white);
-    font-size: 1.15rem;
-    cursor: pointer;
+  & strong {
+    color: var(--text);
+    font-size: 1rem;
   }
-}
 
-.taxi-panel__body {
-  min-block-size: 0;
-  padding: var(--space-4);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-
-  & > p {
+  & small {
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
   }
+}
 
-  & .form-section {
-    padding: var(--space-4);
+.booking-extra__status {
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.booking-extra__chevron {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  transition: rotate var(--transition-fast);
+}
+
+.booking-extra__body {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-block-start: 1px solid var(--border);
+  background: var(--surface-raised);
+
+  & > .form-section__hint {
+    margin: 0;
   }
+}
+
+.taxi-subsection {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+
+  & legend {
+    padding-inline-end: var(--space-2);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 900;
+  }
+}
+
+.taxi-add-button {
+  inline-size: 100%;
+  justify-content: center;
 }
 
 .taxi-result {
-  min-block-size: 1.5rem;
+  min-block-size: 1.2rem;
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 750;
+  color: var(--h4pgreen-strong);
+  font-size: 0.82rem;
+  font-weight: 800;
   text-align: center;
 }
 
-@media (width <= 45rem) {
-  .taxi-panel-shell {
-    inset-block-end: 5.2rem;
-    inset-inline: var(--space-2);
-    inline-size: auto;
-    max-block-size: calc(100dvh - 6rem);
+@media (width <= 32rem) {
+  .booking-extra__summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-inline: var(--space-4);
+
+    & .booking-extra__status {
+      grid-column: 2;
+      justify-self: start;
+    }
+
+    & .booking-extra__chevron {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+    }
   }
 
-  .taxi-panel-shell.is-collapsed {
-    inset-inline-end: auto;
-    inline-size: min(13rem, calc(100vw - 1rem));
+  .booking-extra__body {
+    padding: var(--space-4);
   }
 }

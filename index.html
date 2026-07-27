@@ -114,6 +114,51 @@
             <div id="petOptions" class="pet-options" aria-live="polite"></div>
           </fieldset>
 
+          <details id="pet-taxi" class="form-section booking-extra booking-taxi">
+            <summary class="booking-extra__summary">
+              <span class="booking-extra__number" aria-hidden="true">3</span>
+              <span class="booking-extra__copy">
+                <strong>Do you need pet taxi?</strong>
+                <small>Add pickup, drop-off, or both to this booking estimate.</small>
+              </span>
+              <span id="taxi-summary-status" class="booking-extra__status">Optional</span>
+              <svg class="booking-extra__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 9 5 5 5-5"></path>
+              </svg>
+            </summary>
+            <div class="booking-extra__body">
+              <p class="form-section__hint">Choose the journeys and locations you need. The taxi price is added to the stay total and deposit.</p>
+              <form id="taxi-form">
+                <fieldset class="taxi-subsection">
+                  <legend>Journey</legend>
+                  <div class="journey-options">
+                    <label class="choice-card"><input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked><span><strong>Pickup</strong><small>Collect your pet</small></span></label>
+                    <label class="choice-card"><input type="checkbox" id="dropoffEnabled" name="dropoffEnabled" checked><span><strong>Drop off</strong><small>Bring your pet home</small></span></label>
+                  </div>
+                </fieldset>
+                <fieldset class="taxi-subsection">
+                  <legend>Locations</legend>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="pickupLocation">Pickup location</label>
+                      <select id="pickupLocation" name="pickupLocation"><option>Loading coverage…</option></select>
+                    </div>
+                    <div class="form-group taxi-dropoff-group is-hidden">
+                      <label for="dropoffLocation">Drop-off location</label>
+                      <select id="dropoffLocation" name="dropoffLocation" disabled><option>Loading coverage…</option></select>
+                    </div>
+                  </div>
+                  <div class="form-group same-location-row">
+                    <input type="checkbox" id="sameLocation" name="sameLocation">
+                    <label for="sameLocation">Use a different drop-off location</label>
+                  </div>
+                </fieldset>
+                <button type="submit" id="taxiSubmit" class="button button--secondary taxi-add-button">Add taxi to estimate</button>
+                <p id="taxi-result" class="taxi-result" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </details>
+
           <button id="calculateButton" class="button button--primary calculate-button" type="button">
             <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="4" y="2.5" width="16" height="19" rx="2.5"></rect>
@@ -174,11 +219,6 @@
         </div>
       </header>
       <div class="service-grid">
-        <button class="service-card service-card--taxi" type="button" data-taxi-open>
-          <span class="service-card__icon" aria-hidden="true">↔</span>
-          <span><strong class="service-card__title">Pet taxi</strong><span class="service-card__copy">Add collection and drop-off to this estimate.</span></span>
-          <span aria-hidden="true">→</span>
-        </button>
         <a class="service-card service-card--calendar" href="./calendar.html">
           <span class="service-card__icon" aria-hidden="true">□</span>
           <div><h3>Full calendar</h3><p>Explore availability in a focused, full-page view.</p></div>
@@ -193,46 +233,6 @@
     </section>
   </main>
 
-
-  <aside id="taxi-panel-shell" class="taxi-panel-shell is-collapsed" aria-labelledby="taxi-panel-title">
-    <header class="taxi-panel__header">
-      <span class="taxi-panel__icon" aria-hidden="true">↔</span>
-      <span id="taxi-panel-title">Pet taxi</span>
-      <div class="taxi-panel__controls">
-        <button type="button" data-taxi-minimise aria-expanded="false" aria-label="Open pet taxi">+</button>
-        <button type="button" data-taxi-close aria-label="Close pet taxi">×</button>
-      </div>
-    </header>
-    <div class="taxi-panel__body">
-      <p>Choose collection and drop-off locations. The taxi price will be added to the stay estimate.</p>
-      <form id="taxi-form">
-        <fieldset class="form-section">
-          <legend><span>1</span> Journey</legend>
-          <div class="journey-options">
-            <label class="choice-card"><input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked><span><strong>Pickup</strong><small>Collect your pet</small></span></label>
-            <label class="choice-card"><input type="checkbox" id="dropoffEnabled" name="dropoffEnabled" checked><span><strong>Drop off</strong><small>Bring your pet home</small></span></label>
-          </div>
-        </fieldset>
-        <fieldset class="form-section">
-          <legend><span>2</span> Locations</legend>
-          <div class="form-group">
-            <label for="pickupLocation">Pickup location</label>
-            <select id="pickupLocation" name="pickupLocation"><option>Loading coverage…</option></select>
-          </div>
-          <div class="form-group same-location-row">
-            <input type="checkbox" id="sameLocation" name="sameLocation">
-            <label for="sameLocation">Use a different drop-off location</label>
-          </div>
-          <div class="form-group taxi-dropoff-group is-hidden">
-            <label for="dropoffLocation">Drop-off location</label>
-            <select id="dropoffLocation" name="dropoffLocation" disabled><option>Loading coverage…</option></select>
-          </div>
-        </fieldset>
-        <button type="submit" id="taxiSubmit" class="button button--primary">Add taxi estimate</button>
-        <p id="taxi-result" class="taxi-result" role="status" aria-live="polite"></p>
-      </form>
-    </div>
-  </aside>
 
   <footer class="site-footer">
     <img src="./graphics/h4p.png" alt="" aria-hidden="true">

@@ -77,6 +77,7 @@ function initialiseEstimatePresentation() {
     fitBreakdown(breakdown);
     const taxiForm = document.getElementById("taxi-form");
     const taxiResult = document.getElementById("taxi-result");
+    const taxiSummaryStatus = document.getElementById("taxi-summary-status");
     if (!(taxiForm instanceof HTMLFormElement))
         return;
     taxiForm.addEventListener("submit", () => {
@@ -91,6 +92,8 @@ function initialiseEstimatePresentation() {
                 state.taxiPrice = price;
                 if (taxiResult)
                     taxiResult.textContent = `${formatCurrency(price)} added to the stay estimate.`;
+                if (taxiSummaryStatus)
+                    taxiSummaryStatus.textContent = `${formatCurrency(price)} added`;
                 render();
                 return;
             }
@@ -102,44 +105,22 @@ function initialiseEstimatePresentation() {
         }, 120);
     }, { capture: true });
 }
-function setTaxiPanelState(panel, expanded) {
-    panel.classList.toggle("is-collapsed", !expanded);
-    panel.classList.remove("is-hidden");
-    const minimise = panel.querySelector("[data-taxi-minimise]");
-    if (minimise) {
-        minimise.setAttribute("aria-expanded", String(expanded));
-        minimise.setAttribute("aria-label", expanded ? "Minimise pet taxi" : "Open pet taxi");
-        minimise.textContent = expanded ? "−" : "+";
-    }
-    if (expanded) {
-        const chatModal = document.querySelector("#chat-panel-shell .chat-modal:not(.collapsed)");
-        chatModal?.querySelector("#collapse-btn")?.click();
-        requestAnimationFrame(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
-    }
-}
-function initialiseTaxiPanel() {
-    const panel = document.getElementById("taxi-panel-shell");
-    if (!panel)
+function initialiseTaxiFlow() {
+    const section = document.getElementById("pet-taxi");
+    if (!(section instanceof HTMLDetailsElement))
         return;
+    const openSection = () => {
+        section.open = true;
+        requestAnimationFrame(() => section.scrollIntoView({ behavior: "smooth", block: "center" }));
+    };
     document.querySelectorAll("[data-taxi-open]").forEach(control => {
         control.addEventListener("click", event => {
             event.preventDefault();
-            setTaxiPanelState(panel, true);
+            openSection();
         });
     });
-    panel.querySelector(".taxi-panel__header")?.addEventListener("click", event => {
-        if (event.target.closest("button"))
-            return;
-        setTaxiPanelState(panel, true);
-    });
-    panel.querySelector("[data-taxi-minimise]")?.addEventListener("click", () => {
-        setTaxiPanelState(panel, panel.classList.contains("is-collapsed"));
-    });
-    panel.querySelector("[data-taxi-close]")?.addEventListener("click", () => {
-        panel.classList.add("is-hidden");
-    });
     if (window.location.hash === "#pet-taxi")
-        setTaxiPanelState(panel, true);
+        openSection();
 }
 function syncChatSessionUi(modal) {
     const shell = modal.closest("#chat-panel-shell");
@@ -170,10 +151,8 @@ function bindChatPresentation(modal) {
             return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        if (modal.classList.contains("collapsed")) {
-            document.getElementById("taxi-panel-shell")?.classList.add("is-collapsed");
+        if (modal.classList.contains("collapsed"))
             collapse.click();
-        }
         requestAnimationFrame(() => modal.scrollIntoView({ behavior: "smooth", block: "start" }));
     }, { capture: true });
     const observer = new MutationObserver(() => syncChatSessionUi(modal));
@@ -201,7 +180,7 @@ function initialiseChatPresentation() {
 function initialiseInterface() {
     setFooterYear();
     initialiseEstimatePresentation();
-    initialiseTaxiPanel();
+    initialiseTaxiFlow();
     initialiseChatPresentation();
 }
 if (document.readyState === "loading") {
