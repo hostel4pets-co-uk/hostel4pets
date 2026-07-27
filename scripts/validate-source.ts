@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
 const root = process.cwd();
-const forbiddenDirectories = new Set([".git", "dist", "node_modules"]);
+const forbiddenDirectories = new Set([".git", "dist", "generated", "node_modules"]);
 const sourceDirectories = [join(root, "src"), join(root, "scripts")];
 const forbiddenTypeNames = [
   ["a", "n", "y"].join(""),
