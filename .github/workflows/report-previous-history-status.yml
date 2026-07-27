@@ -1,0 +1,28 @@
+name: Report previous history diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  statuses: read
+  pull-requests: write
+
+jobs:
+  report:
+    if: github.head_ref == 'history-fixing'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ddd03ac6783ec0330ee7d1730f0ac922ae19fc8e
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Post completed diagnostic
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TARGET_SHA}/status")
+          description=$(jq -r '.statuses[] | select(.context == "history/rewrite-hashes") | .description' <<<"$status" | head -n1)
+          test -n "$description"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -f body="Previous clean-tree diagnostic: \`${description}\`" >/dev/null
