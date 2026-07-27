@@ -405,18 +405,18 @@
 
 @media (width <= 45rem) {
   #chat-panel-shell {
-    inset-block-end: 5.2rem;
+    inset-block-end: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
     inset-inline: var(--space-2);
     inline-size: auto;
   }
 
   .chat-modal {
-    max-block-size: calc(100dvh - 6rem);
+    max-block-size: calc(100dvh - var(--header-height) - var(--space-4));
   }
 
   .chat-page > .chat-modal {
     inline-size: calc(100% - 1rem);
-    margin-block-end: 6rem;
+    margin-block-end: var(--space-4);
   }
 }
 
@@ -481,8 +481,8 @@
 
 @media (width <= 45rem) {
   #chat-panel-shell.is-expanded {
-    block-size: calc(100dvh - 6rem);
-    max-block-size: calc(100dvh - 6rem);
+    block-size: calc(100dvh - var(--header-height) - var(--space-4));
+    max-block-size: calc(100dvh - var(--header-height) - var(--space-4));
   }
 
   .chat-modal:not(.collapsed) {
@@ -517,9 +517,9 @@
   }
 
   .chat-page > .chat-modal {
-    block-size: calc(100dvh - var(--header-height) - 6rem);
+    block-size: calc(100dvh - var(--header-height) - var(--space-4));
     min-block-size: 24rem;
-    margin-block-end: 5rem;
+    margin-block-end: var(--space-4);
   }
 }
 
@@ -551,7 +551,7 @@
     margin-block-end: 5rem;
 
     &.is-expanded {
-      block-size: calc(100dvh - var(--header-height) - 6rem);
+      block-size: calc(100dvh - var(--header-height) - var(--space-4));
       min-block-size: 24rem;
     }
   }
@@ -573,7 +573,7 @@
 
 @media (width <= 45rem) {
   #chat-panel-shell[data-chat-fixed-open] {
-    block-size: calc(100dvh - var(--header-height) - 6rem);
+    block-size: calc(100dvh - var(--header-height) - var(--space-4));
     min-block-size: 24rem;
   }
 }
