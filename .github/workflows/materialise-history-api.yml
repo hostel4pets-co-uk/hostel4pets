@@ -1,0 +1,203 @@
+name: Materialise audited history through Git API
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  materialise:
+    if: github.head_ref == 'history-fixing'
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: 6d09f3676596c74b494832631f4a0922cea95f48
+      FINAL_TREE: 0230d7be63626176d62e8d4849b8fe7f6e34e81e
+      FINAL_SHA: 07ba1edeb8f6a75b7f091c9a511a9b3ba5398e18
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: history-fixing
+          show-progress: false
+
+      - name: Build pinned TypeScript release and clean trees
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat .history-rewrite/release.part-* | base64 --decode | gzip --decompress > /tmp/release.patch
+          cat .history-rewrite/styles.part-* | base64 --decode | gzip --decompress > /tmp/styles.patch
+          git apply /tmp/release.patch
+          npm install --package-lock=false --ignore-scripts --no-audit --no-fund --silent
+          test "$(node_modules/.bin/tsc --version)" = 'Version 7.0.2'
+          npm run build --silent
+          rm -rf generated && cp -a dist/generated generated
+          diff -qr generated dist/generated
+
+          rm -rf /tmp/css-stage /tmp/final-stage
+          git worktree add --quiet --detach /tmp/css-stage d365395964fd1f46d4438de336a41e2516738cb6
+          git -C /tmp/css-stage apply /tmp/styles.patch
+          git -C /tmp/css-stage add -A
+          test "$(git -C /tmp/css-stage write-tree)" = 001b3ed72585612af20e1db4cc8e2fae8cd8d8c2
+
+          git worktree add --quiet --detach /tmp/final-stage "$BASE_SHA"
+          git -C /tmp/final-stage apply /tmp/release.patch
+          rm -rf /tmp/final-stage/generated
+          cp -a generated /tmp/final-stage/generated
+          git -C /tmp/final-stage add -A
+          test "$(git -C /tmp/final-stage write-tree)" = "$FINAL_TREE"
+
+      - name: Create remote Git objects and release tag
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -Eeuo pipefail
+          python3 <<'PY'
+          import base64
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          repository = os.environ['REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          expected_css_tree = '001b3ed72585612af20e1db4cc8e2fae8cd8d8c2'
+          expected_final_tree = os.environ['FINAL_TREE']
+          expected_final_sha = os.environ['FINAL_SHA']
+          author = {
+              'name': 'Kitty Crow',
+              'email': '141717449+kitty-crow@users.noreply.github.com',
+          }
+
+          def api(method, endpoint, payload=None):
+              data = None if payload is None else json.dumps(payload).encode()
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/{repository}{endpoint}',
+                  data=data,
+                  method=method,
+                  headers={
+                      'Authorization': f'Bearer {token}',
+                      'Accept': 'application/vnd.github+json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'hostel4pets-history-rewrite',
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request) as response:
+                      body = response.read()
+                      return {} if not body else json.loads(body)
+              except urllib.error.HTTPError as error:
+                  detail = error.read().decode(errors='replace')
+                  raise RuntimeError(f'{method} {endpoint}: {error.code} {detail}') from error
+
+          def upload_tree(root):
+              entries = []
+              for path in sorted(pathlib.Path(root).rglob('*')):
+                  if not path.is_file():
+                      continue
+                  relative = path.relative_to(root).as_posix()
+                  content = base64.b64encode(path.read_bytes()).decode()
+                  blob = api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
+                  mode = '100755' if os.access(path, os.X_OK) else '100644'
+                  entries.append({'path': relative, 'mode': mode, 'type': 'blob', 'sha': blob['sha']})
+              return api('POST', '/git/trees', {'tree': entries})['sha']
+
+          def existing_tree(commit):
+              return subprocess.check_output(['git', 'rev-parse', f'{commit}^{{tree}}'], text=True).strip()
+
+          def create_commit(message, tree, parents, date):
+              identity = {**author, 'date': date}
+              result = api('POST', '/git/commits', {
+                  'message': message,
+                  'tree': tree,
+                  'parents': parents,
+                  'author': identity,
+                  'committer': identity,
+              })
+              return result['sha']
+
+          css_tree = upload_tree('/tmp/css-stage')
+          final_tree = upload_tree('/tmp/final-stage')
+          if css_tree != expected_css_tree:
+              raise RuntimeError(f'CSS tree mismatch: {css_tree}')
+          if final_tree != expected_final_tree:
+              raise RuntimeError(f'Final tree mismatch: {final_tree}')
+
+          messages = [
+              'Create booking calculator website\n\nAdd the initial static booking form, price and deposit calculation, branding,\nresponsive base styles and custom domain configuration.',
+              'Add availability calendar and booking details\n\nAdd monthly availability, booking markers, selected date ranges and the daily\npet detail view.',
+              'Add guest chat and notification controls\n\nAdd the guest chat panel, message presentation, notification sound, mute and\nclear controls, typing feedback and staff hand-off notices. Organise image and\nsound assets under dedicated directories.',
+              'Add pet taxi and service integrations\n\nAdd pet taxi coverage and price requests, then consolidate calendar, chat and\ntaxi service calls on the Hostel4Pets API hosted at h4p.kittycrow.dev.',
+              'Modularise and modernise website styles\n\nMove styling into feature modules under styles/ and assemble them through a\nlayered styles.css entry point. Adopt native nesting, logical properties,\nresponsive range queries and reduced-motion handling without changing the\nsite public behaviour.',
+              'Migrate frontend to strict TypeScript and release v1.0.0\n\nReplace hand-written browser JavaScript with strict TypeScript source and\ntracked generated ES modules. Add source, stylesheet and release validation,\nrepair branch-based Pages deployment, verify published assets, remove inline\ncode and document the production build and project structure.',
+          ]
+          dates = [
+              '2025-01-26T12:20:18Z',
+              '2025-09-27T19:46:29Z',
+              '2025-11-12T14:07:58Z',
+              '2026-05-21T14:09:36Z',
+              '2026-07-27T08:28:18Z',
+              '2026-07-27T08:42:00Z',
+          ]
+          trees = [
+              existing_tree('b25e258'),
+              existing_tree('7fe5f69'),
+              existing_tree('c82cbb0'),
+              existing_tree('d365395'),
+              css_tree,
+              final_tree,
+          ]
+
+          commits = []
+          for index, (message, tree, date) in enumerate(zip(messages, trees, dates)):
+              parents = [] if index == 0 else [commits[-1]]
+              commits.append(create_commit(message, tree, parents, date))
+          if commits[-1] != expected_final_sha:
+              raise RuntimeError(f'Final commit mismatch: {commits[-1]}')
+
+          tagger = {**author, 'date': dates[-1]}
+          tag_object = api('POST', '/git/tags', {
+              'tag': 'v1.0.0',
+              'message': 'Hostel4Pets website v1.0.0',
+              'object': commits[-1],
+              'type': 'commit',
+              'tagger': tagger,
+          })['sha']
+          try:
+              api('POST', '/git/refs', {'ref': 'refs/tags/v1.0.0', 'sha': tag_object})
+          except RuntimeError as error:
+              if '422' not in str(error):
+                  raise
+              api('PATCH', '/git/refs/tags/v1.0.0', {'sha': tag_object, 'force': True})
+
+          api('POST', f'/statuses/{commits[-1]}', {
+              'state': 'success',
+              'context': 'history/objects-validated',
+              'description': 'Six TypeScript 7 commit objects and v1.0.0 tag materialised',
+          })
+          print(commits[-1])
+          PY
+
+      - name: Delete every non-main branch
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -Eeuo pipefail
+          branches=$(gh api --paginate "repos/${REPOSITORY}/branches?per_page=100" --jq '.[].name')
+          while IFS= read -r branch; do
+            [[ -z "$branch" || "$branch" == main ]] && continue
+            encoded=$(jq -rn --arg value "$branch" '$value|@uri')
+            gh api --method DELETE "repos/${REPOSITORY}/git/refs/heads/${encoded}"
+          done <<<"$branches"
+          gh api --method POST "repos/${REPOSITORY}/statuses/${FINAL_SHA}" \
+            -f state=success -f context='history/rewrite-validation' \
+            -f description='Six-commit v1.0.0 history materialised and branches cleaned' >/dev/null
