@@ -3,6 +3,8 @@ name: Validate and apply rewritten history
 on:
   push:
     branches: [history-fixing]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -14,7 +16,9 @@ concurrency:
 
 jobs:
   apply:
-    if: contains(github.event.head_commit.message, '[apply-history]')
+    if: >-
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[apply-history]')) ||
+      (github.event_name == 'pull_request' && github.head_ref == 'history-fixing')
     runs-on: ubuntu-latest
     env:
       EXPECTED_FINAL_SHA: 5e142f51415616afc0f21e2a1c552aa68857afcb
