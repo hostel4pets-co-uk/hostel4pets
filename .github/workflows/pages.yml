@@ -1,17 +1,18 @@
-name: Build and deploy website
+name: Build website assets
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, migration-broken-backup]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  statuses: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: website-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,6 +21,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -29,60 +32,67 @@ jobs:
       - name: Install build dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Compile strict TypeScript
+      - name: Validate and compile strict TypeScript
         run: npm run build
 
-      - name: Configure GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v5
+      - name: Verify browser entry points
+        run: |
+          test -f dist/generated/bookingCalculator.js
+          test -f dist/generated/calendar.js
+          test -f dist/generated/calendarPage.js
+          test -f dist/generated/chat.js
+          test -f dist/generated/dayView.js
+          test -f dist/generated/main.js
+          test -f dist/generated/taxi.js
 
-      - name: Upload GitHub Pages artifact
-        if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist
+      - name: Publish generated browser assets to the Pages source branch
+        if: github.event_name == 'push'
+        run: |
+          rm -rf generated
+          cp -R dist/generated generated
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A generated
+          if git diff --cached --quiet; then
+            echo "Generated assets are current."
+          else
+            git commit -m "Build browser assets"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
 
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy website
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Verify production assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          for asset in bookingCalculator.js calendar.js main.js; do
+            available=false
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent --show-error "https://hostel4pets.co.uk/generated/${asset}?build=${GITHUB_SHA}" > /dev/null; then
+                available=true
+                break
+              fi
+              sleep 10
+            done
+            if [ "$available" != true ]; then
+              echo "Production asset generated/${asset} did not become available" >&2
+              exit 1
+            fi
+          done
 
-  report:
-    if: always() && github.ref == 'refs/heads/main'
-    needs: [build, deploy]
-    runs-on: ubuntu-latest
-    permissions:
-      statuses: write
-    steps:
-      - name: Report deployment status
+      - name: Report build status
+        if: always()
         uses: actions/github-script@v8
         env:
-          BUILD_RESULT: ${{ needs.build.result }}
-          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          JOB_STATUS: ${{ job.status }}
         with:
           script: |
-            const succeeded = process.env.BUILD_RESULT === 'success'
-              && process.env.DEPLOY_RESULT === 'success';
+            const succeeded = process.env.JOB_STATUS === 'success';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
               state: succeeded ? 'success' : 'failure',
-              context: 'pages/typescript-deployment',
+              context: 'pages/typescript-build',
               description: succeeded
-                ? 'TypeScript build and Pages deployment succeeded'
-                : 'TypeScript build or Pages deployment failed'
+                ? 'Strict TypeScript build and browser assets succeeded'
+                : 'TypeScript build or browser asset verification failed'
             });
-            if (!succeeded) {
-              core.setFailed('TypeScript build or Pages deployment failed');
-            }
