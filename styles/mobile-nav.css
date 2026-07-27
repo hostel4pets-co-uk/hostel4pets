@@ -1,0 +1,81 @@
+/* Narrow-screen header and floating-chat placement.
+ * The primary navigation remains inside the sticky header instead of docking
+ * to the bottom of the viewport, where it could be obscured by chat alerts. */
+@media (width <= 45rem) {
+  :root {
+    --header-height: 7.5rem;
+  }
+
+  .site-header {
+    z-index: 2100;
+    backdrop-filter: blur(1.25rem) saturate(1.3);
+  }
+
+  .site-header__inner {
+    min-block-size: var(--header-height);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 0.35rem var(--space-3);
+    padding-block: 0.4rem 0.5rem;
+  }
+
+  .site-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .theme-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .site-nav {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: grid;
+    inline-size: 100%;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border-radius: var(--radius-pill);
+    box-shadow: none;
+    backdrop-filter: none;
+
+    & a {
+      min-inline-size: 0;
+      min-block-size: 2.3rem;
+      padding: 0.4rem 0.1rem;
+      overflow: visible;
+      font-size: clamp(0.62rem, 2.45vw, 0.78rem);
+      letter-spacing: -0.015em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+  }
+
+  #chat-panel-shell {
+    inset-block-end: var(--space-2);
+  }
+
+  #chat-panel-shell.is-expanded {
+    block-size: calc(100dvh - var(--header-height) - var(--space-3));
+    max-block-size: calc(100dvh - var(--header-height) - var(--space-3));
+  }
+
+  #chat-panel-shell:not(.standalone-chat-shell) .chat-modal:not(.collapsed) {
+    max-block-size: calc(100dvh - var(--header-height) - var(--space-3));
+  }
+
+  .site-footer {
+    margin-block-end: 0;
+  }
+
+  .chat-page > .chat-modal,
+  #chat-panel-shell.standalone-chat-shell {
+    margin-block-end: var(--space-8);
+  }
+}
