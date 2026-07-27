@@ -1,0 +1,41 @@
+name: Consolidate UI work branches
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete temporary UI branches
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branches = [
+              'agent/chat-workflow-fix-staging',
+              'agent/chat-workflow-fix-validated',
+              'agent/queued-ui-fixes-staging',
+              'agent/queued-ui-fixes-validated',
+              'agent/design-overhaul-inline-staging'
+            ];
+            for (const branch of branches) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `heads/${branch}`
+                });
+                core.info(`Deleted ${branch}`);
+              } catch (error) {
+                if (error.status === 404 || error.status === 422) {
+                  core.info(`${branch} was already absent or could not be deleted because it is the active ref`);
+                  continue;
+                }
+                throw error;
+              }
+            }
