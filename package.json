@@ -5,6 +5,10 @@
   "type": "module",
   "exports": {
     "./chat": "./src/contracts/chatContract.ts",
+    "./chat/runtime": {
+      "types": "./src/contracts/chatRuntime.d.ts",
+      "default": "./generated/chat.js"
+    },
     "./chat/template": "./chat.html",
     "./chat/styles": "./styles/styles.css",
     "./chat/chat.css": "./styles/chat.css",
