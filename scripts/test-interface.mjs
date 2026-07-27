@@ -130,10 +130,15 @@ try {
   assert.equal(await startChat.evaluate(element => getComputedStyle(element).display), 'none', 'Hidden Start chat must not occupy layout space');
 
   const chatModal = chatPage.locator('.chat-modal');
+  const chatShell = chatPage.locator('#chat-panel-shell');
   assert((await chatModal.getAttribute('class') ?? '').includes('collapsed'), 'Chat should begin collapsed from saved preference');
   await chatPage.locator('.chat-header').click({ position: { x: 120, y: 20 } });
   await chatPage.waitForTimeout(250);
   assert(!(await chatModal.getAttribute('class') ?? '').includes('collapsed'), 'Clicking the chat header must expand the panel');
+  assert((await chatShell.getAttribute('class') ?? '').includes('is-expanded'), 'Expanded chat must update the shell state');
+  const expandedBody = await chatPage.locator('.chat-body').boundingBox();
+  const expandedHeader = await chatPage.locator('.chat-header').boundingBox();
+  assert(expandedBody && expandedHeader && expandedBody.height > expandedHeader.height, 'Expanded chat must reveal its body, not only widen the launcher');
 
   await chatPage.evaluate(() => {
     const room = document.querySelector('#chatroom');
@@ -151,6 +156,68 @@ try {
   const footerBox = await chatPage.locator('.chat-footer').boundingBox();
   assert(belowOrEqual(chatroomBox, messageBox), 'Chat messages must end before the composer begins');
   assert(belowOrEqual(messageBox, footerBox), 'Composer must end before chat actions begin');
+
+  // Starting a new chat must reveal the session immediately even when the welcome
+  // request is slow. This also exercises the complete standalone interface module,
+  // which previously entered a silent MutationObserver loop after session creation.
+  const startContext = await browser.newContext({
+    viewport,
+    colorScheme: 'dark',
+    locale: 'en-GB',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148',
+  });
+  await startContext.addInitScript(() => {
+    localStorage.setItem('h4p.theme', 'dark');
+    localStorage.setItem('chatCollapsed', 'false');
+    localStorage.removeItem('chatSession');
+  });
+  const startPage = await startContext.newPage();
+  await startPage.route('https://cdn.jsdelivr.net/**', async route => {
+    if (route.request().url().includes('mobile-detect')) {
+      await route.fulfill({
+        contentType: 'application/javascript',
+        body: "class MobileDetect{constructor(userAgent){this.userAgent=userAgent}mobile(){return 'mobile'}tablet(){return null}}",
+      });
+      return;
+    }
+    await route.fulfill({
+      contentType: 'application/javascript',
+      body: 'window.DOMPurify={sanitize:value=>value};',
+    });
+  });
+  await startPage.route('https://h4p.kittycrow.dev/**', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith('/chat/send')) {
+      await new Promise(resolve => setTimeout(resolve, 3_000));
+      await route.fulfill({ json: {} });
+      return;
+    }
+    if (url.pathname.endsWith('/chat/stream')) {
+      await route.fulfill({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+        body: 'data: []\n\n',
+      });
+      return;
+    }
+    await route.fulfill({ status: 404, body: '' });
+  });
+  startPage.setDefaultTimeout(5_000);
+  await startPage.goto(new URL('/chat.html', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  await startPage.locator('#nickname').fill('Javier');
+  await startPage.locator('#submit-button').click();
+  await startPage.waitForFunction(() => {
+    const send = document.querySelector('#send-button');
+    const submit = document.querySelector('#submit-button');
+    return Boolean(localStorage.getItem('chatSession'))
+      && send instanceof HTMLElement
+      && getComputedStyle(send).display !== 'none'
+      && submit instanceof HTMLElement
+      && submit.hidden;
+  }, undefined, { timeout: 1_500 });
+  assert((await startPage.locator('#chat-panel-shell').getAttribute('class') ?? '').includes('has-session'), 'Starting chat must synchronise the shell session state');
+  assert.equal(await startPage.evaluate(() => document.readyState), 'complete', 'Starting chat must not freeze the page lifecycle');
+  await startContext.close();
 
   const formSection = await page.locator('.form-section').first().boundingBox();
   assert(formSection, 'Booking form section must be visible');

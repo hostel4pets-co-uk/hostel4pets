@@ -23,6 +23,7 @@ export class ChatApp implements ChatApplication {
   private eventSource: EventSource | null = null;
   private typingTimeout: number | null = null;
   private lastTyping = 0;
+  private isStartingSession = false;
 
   public constructor() {
     this.chatroomEl = requireElement<HTMLDivElement>("chatroom");
@@ -63,10 +64,15 @@ export class ChatApp implements ChatApplication {
     else this.uncollapseChat();
 
     const header = document.querySelector<HTMLElement>(".chat-header");
-    if (header) header.addEventListener(this.isMobile ? "click" : "dblclick", () => this.toggleCollapse());
+    if (header) {
+      header.addEventListener("click", event => {
+        if ((event.target as Element).closest("#chat-controls")) return;
+        if (this.isCollapsed) this.uncollapseChat();
+        requestAnimationFrame(() => this.modalEl.scrollIntoView({ behavior: "smooth", block: "start" }));
+      });
+    }
 
     this.updateMuteButton();
-    window.addEventListener("resize", () => this.reflowToModalHeight(false));
     this.setupNotificationSound();
     this.init();
   }
@@ -101,15 +107,23 @@ export class ChatApp implements ChatApplication {
   private init(): void {
     const stored = localStorage.getItem(this.sessionKey);
     if (stored) {
-      this.session = JSON.parse(stored) as ChatSession;
-      void this.sendWelcomeIfNeeded().finally(() => this.restoreSession());
-      return;
+      try {
+        this.session = JSON.parse(stored) as ChatSession;
+      } catch {
+        localStorage.removeItem(this.sessionKey);
+      }
+      if (this.session) {
+        this.restoreSession();
+        void this.sendWelcomeIfNeeded();
+        return;
+      }
     }
     this.setHeader("New Message!");
     this.prepareNicknameSetup();
   }
 
   private prepareNicknameSetup(): void {
+    this.shellEl.classList.remove("has-session");
     this.chatroomEl.style.display = "none";
     this.messageEl.style.display = "none";
     this.sendBtn.style.display = "none";
@@ -121,7 +135,6 @@ export class ChatApp implements ChatApplication {
       event.preventDefault();
       void this.setNickname();
     };
-    this.reflowToModalHeight(!this.isCollapsed);
   }
 
   private appendRobinIcon(textElement: HTMLElement): void {
@@ -270,12 +283,22 @@ export class ChatApp implements ChatApplication {
 
   private async setNickname(): Promise<void> {
     const nickname = this.nicknameEl.value.trim();
-    if (!nickname) return;
-    const sessionId = await this.generateSessionId(nickname);
-    this.session = { sessionId, nickname };
-    localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
-    await this.sendWelcomeIfNeeded();
-    this.restoreSession();
+    if (!nickname || this.isStartingSession) return;
+
+    this.isStartingSession = true;
+    this.submitBtn.disabled = true;
+    try {
+      const sessionId = await this.generateSessionId(nickname);
+      this.session = { sessionId, nickname };
+      localStorage.setItem(this.sessionKey, JSON.stringify(this.session));
+      this.restoreSession();
+      void this.sendWelcomeIfNeeded();
+    } catch {
+      console.error("Failed to start chat session");
+    } finally {
+      this.isStartingSession = false;
+      this.submitBtn.disabled = false;
+    }
   }
 
   private bindEnterKey(): void {
@@ -310,6 +333,7 @@ export class ChatApp implements ChatApplication {
   }
 
   private restoreSession(): void {
+    this.shellEl.classList.add("has-session");
     this.chatroomEl.style.display = "flex";
     this.messageEl.style.display = "block";
     this.sendBtn.style.display = "block";
@@ -317,10 +341,8 @@ export class ChatApp implements ChatApplication {
     this.submitBtn.hidden = true;
     this.chatroomEl.innerHTML = "";
     this.sendBtn.onclick = () => void this.handleSend();
-    this.reflowToModalHeight(!this.isCollapsed);
     this.startStream();
     this.initialiseEnterBinding();
-    if (window.shell) window.shell.style.height = "450px";
   }
 
   private async handleSend(): Promise<void> {
@@ -444,14 +466,6 @@ export class ChatApp implements ChatApplication {
     if (!isGuest) this.markNewMessage();
   }
 
-  private reflowToModalHeight(captureOriginal = false): void {
-    requestAnimationFrame(() => {
-      const height = this.modalEl.offsetHeight;
-      this.shellEl.style.height = `${height}px`;
-      if (captureOriginal) this.shellEl.dataset.origHeight = `${height}px`;
-    });
-  }
-
   private async sendWelcomeIfNeeded(): Promise<void> {
     const session = this.session;
     if (!session) return;
@@ -509,28 +523,22 @@ export class ChatApp implements ChatApplication {
     this.chatroomEl.innerHTML = "";
     this.setHeader("New Message!");
     this.prepareNicknameSetup();
-    this.reflowToModalHeight(!this.isCollapsed);
   }
 
   private collapseChat(): void {
-    if (!this.shellEl.dataset.origHeight) this.shellEl.dataset.origHeight = getComputedStyle(this.shellEl).height;
     this.modalEl.classList.add("collapsed");
+    this.shellEl.classList.remove("is-expanded");
     this.collapseBtn.textContent = "➕";
     this.isCollapsed = true;
     localStorage.setItem("chatCollapsed", "true");
-    requestAnimationFrame(() => {
-      const header = this.modalEl.querySelector<HTMLElement>(".chat-header");
-      const height = header?.offsetHeight ?? (this.modalEl.offsetHeight || 60);
-      this.shellEl.style.height = `${height}px`;
-    });
   }
 
   private uncollapseChat(): void {
     this.modalEl.classList.remove("collapsed");
+    this.shellEl.classList.add("is-expanded");
     this.collapseBtn.textContent = "➖";
     this.isCollapsed = false;
     localStorage.setItem("chatCollapsed", "false");
-    this.shellEl.style.height = this.shellEl.dataset.origHeight ?? "306px";
   }
 
   private toggleCollapse(): void {

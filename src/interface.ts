@@ -138,64 +138,18 @@ function initialiseTaxiFlow(): void {
   if (window.location.hash === "#pet-taxi") openSection();
 }
 
-function syncChatSessionUi(modal: HTMLElement): void {
-  const shell = modal.closest<HTMLElement>("#chat-panel-shell");
-  const submit = modal.querySelector<HTMLButtonElement>("#submit-button");
-  const nickname = modal.querySelector<HTMLInputElement>("#nickname");
-  const send = modal.querySelector<HTMLButtonElement>("#send-button");
-  const hasSession = Boolean(localStorage.getItem("chatSession"));
-
-  shell?.classList.toggle("has-session", hasSession);
-  if (!hasSession) return;
-  if (submit) submit.hidden = true;
-  if (nickname) nickname.hidden = true;
-  if (send) send.hidden = false;
-}
-
-function bindChatPresentation(modal: HTMLElement): void {
-  if (modal.dataset.presentationBound === "true") return;
-  modal.dataset.presentationBound = "true";
-  const header = modal.querySelector<HTMLElement>(".chat-header");
-  const collapse = modal.querySelector<HTMLButtonElement>("#collapse-btn");
-  if (!header || !collapse) return;
-
-  header.addEventListener("click", event => {
-    if ((event.target as Element).closest("#chat-controls")) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (modal.classList.contains("collapsed")) collapse.click();
-    requestAnimationFrame(() => modal.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }, { capture: true });
-
-  const observer = new MutationObserver(() => syncChatSessionUi(modal));
-  observer.observe(modal, {
-    attributes: true,
-    subtree: true,
-    attributeFilter: ["class", "hidden", "style"]
-  });
-  syncChatSessionUi(modal);
-}
-
-function initialiseChatPresentation(): void {
-  const bindAvailable = (): void => {
-    const modals = document.querySelectorAll<HTMLElement>(".chat-modal");
-    modals.forEach(bindChatPresentation);
-    const standalone = document.querySelector<HTMLElement>(".standalone-chat-shell .chat-modal");
-    if (standalone && !window.chatApp) {
-      window.ChatApp = ChatApp;
-      window.chatApp = new ChatApp();
-    }
-  };
-  bindAvailable();
-  const observer = new MutationObserver(bindAvailable);
-  observer.observe(document.body, { childList: true, subtree: true });
+function initialiseStandaloneChat(): void {
+  const shell = document.querySelector<HTMLElement>("#chat-panel-shell.standalone-chat-shell");
+  if (!shell || window.chatApp) return;
+  window.ChatApp = ChatApp;
+  window.chatApp = new ChatApp();
 }
 
 function initialiseInterface(): void {
   setFooterYear();
   initialiseEstimatePresentation();
   initialiseTaxiFlow();
-  initialiseChatPresentation();
+  initialiseStandaloneChat();
 }
 
 if (document.readyState === "loading") {

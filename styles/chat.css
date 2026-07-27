@@ -13,7 +13,7 @@
   background: transparent;
   filter: drop-shadow(0 1rem 2rem rgb(10 13 48 / 24%));
 
-  &.has-session {
+  &.is-expanded {
     block-size: min(36rem, calc(100dvh - 2rem));
   }
 
@@ -425,7 +425,7 @@
 }
 
 /* Keep messages, composer and actions in separate flex regions at every height. */
-#chat-panel-shell.has-session .chat-modal:not(.collapsed) {
+#chat-panel-shell.is-expanded .chat-modal:not(.collapsed) {
   block-size: 100%;
 }
 
@@ -480,7 +480,7 @@
 }
 
 @media (width <= 45rem) {
-  #chat-panel-shell.has-session {
+  #chat-panel-shell.is-expanded {
     block-size: calc(100dvh - 6rem);
     max-block-size: calc(100dvh - 6rem);
   }
@@ -528,10 +528,14 @@
 #chat-panel-shell.standalone-chat-shell {
   position: static;
   inline-size: min(calc(100% - 2rem), 40rem);
-  block-size: min(44rem, calc(100dvh - 10rem));
+  block-size: 3.75rem;
   max-block-size: none;
   margin: 0 auto var(--space-8);
   filter: none;
+
+  &.is-expanded {
+    block-size: min(44rem, calc(100dvh - 10rem));
+  }
 
   & .chat-modal {
     block-size: 100%;
@@ -542,8 +546,13 @@
   #chat-panel-shell.standalone-chat-shell {
     inset: auto;
     inline-size: calc(100% - 1rem);
-    block-size: calc(100dvh - var(--header-height) - 6rem);
-    min-block-size: 24rem;
+    block-size: 3.65rem;
+    min-block-size: 0;
     margin-block-end: 5rem;
+
+    &.is-expanded {
+      block-size: calc(100dvh - var(--header-height) - 6rem);
+      min-block-size: 24rem;
+    }
   }
 }
