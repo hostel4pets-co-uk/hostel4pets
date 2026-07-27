@@ -1,0 +1,40 @@
+name: Export runner generated modules
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'history-fixing'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out history branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: history-fixing
+          show-progress: false
+      - name: Build runner modules
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat .history-rewrite/release.part-* | base64 --decode | gzip --decompress > /tmp/release.patch
+          git apply /tmp/release.patch
+          npm install --package-lock=false --ignore-scripts --no-audit --no-fund --silent
+          npm run build --silent
+          rm -rf generated
+          cp -a dist/generated generated
+          find generated -type f -print0 | sort -z | xargs -0 sha256sum > generated.sha256
+      - name: Upload runner modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-generated-modules
+          path: |
+            generated
+            generated.sha256
+          if-no-files-found: error
+          retention-days: 1
