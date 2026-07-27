@@ -1,0 +1,6 @@
+# Local dependencies and temporary compiler output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# generated/ is intentionally tracked because branch-based GitHub Pages serves it.

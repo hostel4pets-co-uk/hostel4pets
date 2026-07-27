@@ -1,0 +1,110 @@
+name: Build website assets
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install build dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Validate and compile strict TypeScript
+        run: npm run build
+
+      - name: Verify production files
+        run: |
+          test -f dist/styles/styles.css
+          test -f dist/styles/calendar.css
+          test -f dist/styles/chat.css
+          test -f dist/styles/taxi.css
+          test -f dist/generated/bookingCalculator.js
+          test -f dist/generated/calendar.js
+          test -f dist/generated/calendarPage.js
+          test -f dist/generated/chat.js
+          test -f dist/generated/dayView.js
+          test -f dist/generated/main.js
+          test -f dist/generated/taxi.js
+
+      - name: Publish generated browser assets to the Pages source branch
+        if: github.event_name == 'push'
+        run: |
+          rm -rf generated
+          cp -R dist/generated generated
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A generated
+          if git diff --cached --quiet; then
+            echo "Generated assets are current."
+          else
+            git commit -m "Build browser assets"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
+      - name: Verify production deployment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          assets=(
+            generated/bookingCalculator.js
+            generated/calendar.js
+            generated/main.js
+            styles/styles.css
+            styles/calendar.css
+            styles/chat.css
+          )
+          for asset in "${assets[@]}"; do
+            available=false
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent --show-error "https://hostel4pets.co.uk/${asset}?build=${GITHUB_SHA}" > /dev/null; then
+                available=true
+                break
+              fi
+              sleep 10
+            done
+            if [ "$available" != true ]; then
+              echo "Production asset ${asset} did not become available" >&2
+              exit 1
+            fi
+          done
+
+      - name: Report build status
+        if: always()
+        uses: actions/github-script@v8
+        env:
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const succeeded = process.env.JOB_STATUS === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: succeeded ? 'success' : 'failure',
+              context: 'pages/typescript-build',
+              description: succeeded
+                ? 'Strict TypeScript build and production assets succeeded'
+                : 'TypeScript build or production asset verification failed'
+            });

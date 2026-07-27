@@ -7,21 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Reuse site styles for consistent look and feel -->
     <link rel="stylesheet" href="./styles/styles.css" />
-    <!-- Structure only for now; behaviour will live in taxi.js -->
-    <script type="module" src="./taxi.js"></script>
+    <script type="module" src="./generated/taxi.js"></script>
 </head>
 
 <body>
     <!-- Modal shell (kept self-contained so it can be injected like dayView) -->
-    <div id="taxi-modal" class="modal" style="display:block;">
+    <div id="taxi-modal" class="modal">
         <div class="modal-content">
             <h2>Pet Taxi Booking</h2>
 
             <form id="taxi-form">
                 <!-- What legs are needed -->
                 <div class="form-group">
-                    <label class="subtitle" style="display:inline-block; margin-bottom:10px;">Journey Options</label>
-                    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+                    <div class="subtitle journey-options-heading">Journey Options</div>
+                    <div class="journey-options">
                         <label>
                             <input type="checkbox" id="pickupEnabled" name="pickupEnabled" checked />
                             Pickup
@@ -36,7 +35,6 @@
                 <!-- Locations -->
                 <div class="form-group">
                     <label for="pickupLocation">Pickup location</label>
-                    <!-- options will be populated by REST later -->
                     <select id="pickupLocation" name="pickupLocation"></select>
                 </div>
 
@@ -45,18 +43,16 @@
                     <label for="sameLocation">Drop off at a different location</label>
                 </div>
 
-                <div class="form-group" style="display:none;">
+                <div class="form-group taxi-dropoff-group is-hidden">
                     <label for="dropoffLocation">Drop off location</label>
                     <select id="dropoffLocation" name="dropoffLocation" disabled></select>
                 </div>
 
-                <!-- Submit -->
                 <div class="form-group">
                     <button type="submit" id="taxiSubmit">Submit</button>
                 </div>
             </form>
 
-            <!-- Optional close icon; loader can also inject its own -->
             <span class="close" aria-label="Close">❌</span>
         </div>
     </div>
