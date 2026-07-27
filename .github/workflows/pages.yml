@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, typescript-migration]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -30,17 +30,7 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Compile strict TypeScript
-        run: |
-          set -o pipefail
-          npm run build 2>&1 | tee build.log
-
-      - name: Upload build diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: typescript-build-log
-          path: build.log
-          if-no-files-found: error
+        run: npm run build
 
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
