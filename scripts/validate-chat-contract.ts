@@ -3,7 +3,9 @@ import { access, readFile } from "node:fs/promises";
 const requiredFiles = [
   "chat.html",
   "src/chat.ts",
+  "generated/chat.js",
   "src/contracts/chatContract.ts",
+  "src/contracts/chatRuntime.d.ts",
   "styles/styles.css",
   "styles/chat.css",
   "graphics/robin.png",
