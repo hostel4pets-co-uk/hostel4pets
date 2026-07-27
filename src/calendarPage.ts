@@ -1,3 +1,5 @@
+export {};
+
 function addCacheBuster(url: string): string {
   const cacheBuster = `v=${Date.now()}`;
   return url.includes("?") ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
