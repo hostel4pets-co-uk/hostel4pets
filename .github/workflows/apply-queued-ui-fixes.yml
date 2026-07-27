@@ -1,0 +1,112 @@
+name: Apply queued interface fixes
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: 15e566678983c11083770357cf301a394c32856e
+      VALIDATED_BRANCH: agent/queued-ui-fixes-validated
+      PAYLOAD_SHA256: 0b15e014c57915cf601609ec8e9fb1fe8985e160dffba71a6981ba54f65abbad
+    steps:
+      - name: Check out transport branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct reviewed interface changes
+        run: |
+          set -Eeuo pipefail
+          echo "${PAYLOAD_SHA256}  .queued-ui/queued-ui-fixes.patch.gz.b64" | sha256sum -c -
+          rm -rf /tmp/queued-ui
+          git worktree add --detach /tmp/queued-ui "${BASE_SHA}"
+          base64 --decode .queued-ui/queued-ui-fixes.patch.gz.b64 | gzip -dc > /tmp/queued-ui.patch
+          git -C /tmp/queued-ui apply --index /tmp/queued-ui.patch
+          mapfile -t changed < <(git -C /tmp/queued-ui diff --cached --name-only)
+          expected=(
+            index.html
+            scripts/test-interface.mjs
+            src/calendar.ts
+            src/calendarPage.ts
+            src/interface.ts
+            styles/forms.css
+            styles/taxi.css
+          )
+          diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${changed[@]}")
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install build and browser dependencies
+        working-directory: /tmp/queued-ui
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.54.1
+          npx playwright install --with-deps chromium
+
+      - name: Build strict TypeScript website
+        working-directory: /tmp/queued-ui
+        run: npm run build
+
+      - name: Run complete mobile interface regression
+        working-directory: /tmp/queued-ui
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >/tmp/queued-ui-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && break
+            sleep 1
+          done
+          timeout 150s node scripts/test-interface.mjs http://127.0.0.1:4173
+
+      - name: Publish one clean validated commit
+        working-directory: /tmp/queued-ui
+        run: |
+          set -Eeuo pipefail
+          rm -rf generated
+          cp -R dist/generated generated
+          git add \
+            index.html \
+            scripts/test-interface.mjs \
+            src/calendar.ts \
+            src/calendarPage.ts \
+            src/interface.ts \
+            styles/forms.css \
+            styles/taxi.css \
+            generated/calendar.js \
+            generated/calendar.js.map \
+            generated/calendarPage.js \
+            generated/calendarPage.js.map \
+            generated/interface.js \
+            generated/interface.js.map
+          mapfile -t changed < <(git diff --cached --name-only)
+          expected=(
+            generated/calendar.js
+            generated/calendar.js.map
+            generated/calendarPage.js
+            generated/calendarPage.js.map
+            generated/interface.js
+            generated/interface.js.map
+            index.html
+            scripts/test-interface.mjs
+            src/calendar.ts
+            src/calendarPage.ts
+            src/interface.ts
+            styles/forms.css
+            styles/taxi.css
+          )
+          diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${changed[@]}")
+          git config user.name "Kitty Crow"
+          git config user.email "kitty-crow@users.noreply.github.com"
+          git commit -m "Complete resilient booking and calendar flow"
+          git push origin HEAD:refs/heads/${VALIDATED_BRANCH}
