@@ -3,6 +3,8 @@ name: Design audit and preview capture
 on:
   push:
     branches: [agent/design-overhaul-preview]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
