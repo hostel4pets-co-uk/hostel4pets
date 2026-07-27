@@ -1,6 +1,7 @@
 import { ChatApp } from "./chat.js";
 const currencyPattern = /£\s*([0-9]+(?:\.[0-9]{1,2})?)/;
 const taxiSectionPattern = /\n?PET TAXI\n• Journey estimate: £[0-9]+(?:\.[0-9]{2})?\n?/;
+const bookingDraftKey = "h4p.bookingDraft.v1";
 function parseCurrency(value) {
     const match = currencyPattern.exec(value);
     if (!match?.[1])
@@ -20,6 +21,133 @@ function setFooterYear() {
 function fitBreakdown(textarea) {
     textarea.style.blockSize = "auto";
     textarea.style.blockSize = `${textarea.scrollHeight + 2}px`;
+}
+const emptyBookingDraft = {
+    checkInDate: "",
+    checkInTime: "",
+    checkOutDate: "",
+    checkOutTime: "",
+    numberOfPets: "1",
+    pickupEnabled: true,
+    dropoffEnabled: true,
+    differentDropoff: false,
+    pickupLocation: "",
+    dropoffLocation: "",
+    taxiOpen: false
+};
+function readBookingDraft() {
+    try {
+        const raw = localStorage.getItem(bookingDraftKey);
+        if (!raw)
+            return { ...emptyBookingDraft };
+        const saved = JSON.parse(raw);
+        return {
+            checkInDate: typeof saved.checkInDate === "string" ? saved.checkInDate : "",
+            checkInTime: typeof saved.checkInTime === "string" ? saved.checkInTime : "",
+            checkOutDate: typeof saved.checkOutDate === "string" ? saved.checkOutDate : "",
+            checkOutTime: typeof saved.checkOutTime === "string" ? saved.checkOutTime : "",
+            numberOfPets: typeof saved.numberOfPets === "string" ? saved.numberOfPets : "1",
+            pickupEnabled: typeof saved.pickupEnabled === "boolean" ? saved.pickupEnabled : true,
+            dropoffEnabled: typeof saved.dropoffEnabled === "boolean" ? saved.dropoffEnabled : true,
+            differentDropoff: typeof saved.differentDropoff === "boolean" ? saved.differentDropoff : false,
+            pickupLocation: typeof saved.pickupLocation === "string" ? saved.pickupLocation : "",
+            dropoffLocation: typeof saved.dropoffLocation === "string" ? saved.dropoffLocation : "",
+            taxiOpen: typeof saved.taxiOpen === "boolean" ? saved.taxiOpen : false
+        };
+    }
+    catch {
+        return { ...emptyBookingDraft };
+    }
+}
+function inputValue(id) {
+    const input = document.getElementById(id);
+    return input instanceof HTMLInputElement || input instanceof HTMLSelectElement ? input.value : "";
+}
+function checkedValue(id, fallback) {
+    const input = document.getElementById(id);
+    return input instanceof HTMLInputElement ? input.checked : fallback;
+}
+function collectBookingDraft() {
+    const taxi = document.getElementById("pet-taxi");
+    return {
+        checkInDate: inputValue("checkInDate"),
+        checkInTime: inputValue("checkInTime"),
+        checkOutDate: inputValue("checkOutDate"),
+        checkOutTime: inputValue("checkOutTime"),
+        numberOfPets: inputValue("numOfPets") || "1",
+        pickupEnabled: checkedValue("pickupEnabled", true),
+        dropoffEnabled: checkedValue("dropoffEnabled", true),
+        differentDropoff: checkedValue("sameLocation", false),
+        pickupLocation: inputValue("pickupLocation"),
+        dropoffLocation: inputValue("dropoffLocation"),
+        taxiOpen: taxi instanceof HTMLDetailsElement && taxi.open
+    };
+}
+function saveBookingDraft() {
+    try {
+        const draft = collectBookingDraft();
+        localStorage.setItem(bookingDraftKey, JSON.stringify(draft));
+        localStorage.setItem("numOfPets", draft.numberOfPets);
+    }
+    catch {
+        console.warn("Could not save booking selections");
+    }
+}
+function setControlValue(id, value) {
+    const control = document.getElementById(id);
+    if ((control instanceof HTMLInputElement || control instanceof HTMLSelectElement) && value)
+        control.value = value;
+}
+function restoreSelectWhenReady(id, value) {
+    const select = document.getElementById(id);
+    if (!(select instanceof HTMLSelectElement) || !value)
+        return;
+    const apply = () => {
+        const available = Array.from(select.options).some(option => option.value === value);
+        if (!available)
+            return false;
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+    };
+    if (apply())
+        return;
+    const observer = new MutationObserver(() => {
+        if (apply())
+            observer.disconnect();
+    });
+    observer.observe(select, { childList: true });
+    window.setTimeout(() => observer.disconnect(), 15_000);
+}
+function initialiseBookingPersistence() {
+    const bookingForm = document.getElementById("booking-form");
+    if (!bookingForm)
+        return;
+    const draft = readBookingDraft();
+    setControlValue("checkInDate", draft.checkInDate);
+    setControlValue("checkInTime", draft.checkInTime);
+    setControlValue("checkOutDate", draft.checkOutDate);
+    setControlValue("checkOutTime", draft.checkOutTime);
+    setControlValue("numOfPets", draft.numberOfPets);
+    const pickupEnabled = document.getElementById("pickupEnabled");
+    const dropoffEnabled = document.getElementById("dropoffEnabled");
+    const differentDropoff = document.getElementById("sameLocation");
+    if (pickupEnabled instanceof HTMLInputElement)
+        pickupEnabled.checked = draft.pickupEnabled;
+    if (dropoffEnabled instanceof HTMLInputElement)
+        dropoffEnabled.checked = draft.dropoffEnabled;
+    if (differentDropoff instanceof HTMLInputElement)
+        differentDropoff.checked = draft.differentDropoff;
+    const taxi = document.getElementById("pet-taxi");
+    if (taxi instanceof HTMLDetailsElement) {
+        taxi.open = draft.taxiOpen;
+        taxi.addEventListener("toggle", saveBookingDraft);
+    }
+    restoreSelectWhenReady("pickupLocation", draft.pickupLocation);
+    restoreSelectWhenReady("dropoffLocation", draft.dropoffLocation);
+    bookingForm.addEventListener("input", saveBookingDraft);
+    bookingForm.addEventListener("change", saveBookingDraft);
+    window.addEventListener("pagehide", saveBookingDraft);
 }
 function insertTaxiSection(breakdown, taxiPrice) {
     const clean = breakdown.replace(taxiSectionPattern, "\n");
@@ -46,7 +174,9 @@ function initialiseEstimatePresentation() {
         taxiPrice: typeof window.taxiPrice === "number" ? window.taxiPrice : null
     };
     const render = () => {
+        syncTaxiControls();
         if (state.baseTotal === null) {
+            breakdown.value = state.baseBreakdown;
             fitBreakdown(breakdown);
             return;
         }
@@ -78,8 +208,21 @@ function initialiseEstimatePresentation() {
     const taxiForm = document.getElementById("taxi-form");
     const taxiResult = document.getElementById("taxi-result");
     const taxiSummaryStatus = document.getElementById("taxi-summary-status");
+    const taxiSubmit = document.getElementById("taxiSubmit");
+    const taxiRemove = document.getElementById("taxiRemove");
     if (!(taxiForm instanceof HTMLFormElement))
         return;
+    const syncTaxiControls = () => {
+        const hasTaxi = state.taxiPrice !== null;
+        if (taxiRemove instanceof HTMLButtonElement)
+            taxiRemove.hidden = !hasTaxi;
+        if (taxiSubmit instanceof HTMLButtonElement)
+            taxiSubmit.textContent = hasTaxi ? "Update taxi estimate" : "Add taxi to estimate";
+        if (taxiSummaryStatus)
+            taxiSummaryStatus.textContent = hasTaxi && state.taxiPrice !== null
+                ? `${formatCurrency(state.taxiPrice)} added`
+                : "Optional";
+    };
     taxiForm.addEventListener("submit", () => {
         delete window.taxiPrice;
         if (taxiResult)
@@ -92,8 +235,6 @@ function initialiseEstimatePresentation() {
                 state.taxiPrice = price;
                 if (taxiResult)
                     taxiResult.textContent = `${formatCurrency(price)} added to the stay estimate.`;
-                if (taxiSummaryStatus)
-                    taxiSummaryStatus.textContent = `${formatCurrency(price)} added`;
                 render();
                 return;
             }
@@ -104,6 +245,16 @@ function initialiseEstimatePresentation() {
             }
         }, 120);
     }, { capture: true });
+    if (taxiRemove instanceof HTMLButtonElement) {
+        taxiRemove.addEventListener("click", () => {
+            state.taxiPrice = null;
+            delete window.taxiPrice;
+            if (taxiResult)
+                taxiResult.textContent = "Pet taxi removed from this estimate.";
+            render();
+        });
+    }
+    syncTaxiControls();
 }
 function initialiseTaxiFlow() {
     const section = document.getElementById("pet-taxi");
@@ -131,6 +282,7 @@ function initialiseStandaloneChat() {
 }
 function initialiseInterface() {
     setFooterYear();
+    initialiseBookingPersistence();
     initialiseEstimatePresentation();
     initialiseTaxiFlow();
     initialiseStandaloneChat();

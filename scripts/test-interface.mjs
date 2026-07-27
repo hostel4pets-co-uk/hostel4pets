@@ -229,13 +229,31 @@ try {
   }
 
   const calendarPage = await context.newPage();
-  const stylesheetUrl = new URL('/styles/styles.css', baseUrl).href;
-  await calendarPage.setContent(`<!DOCTYPE html><html data-theme="dark"><head><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><link rel="stylesheet" href="${stylesheetUrl}"></head><body><div id="calendar-container" class="calendar-container"><table id="Calendar" class="calendar"><tbody><tr>${Array.from({ length: 7 }, (_, index) => `<td>${index + 1}</td>`).join('')}</tr></tbody></table></div></body></html>`, { waitUntil: 'load' });
-  await calendarPage.waitForTimeout(150);
+  await calendarPage.route('https://h4p.kittycrow.dev/**', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith('/calendar.json')) {
+      await route.fulfill({ json: [] });
+      return;
+    }
+    if (url.pathname.endsWith('/database/calendar')) {
+      await route.fulfill({ json: { sha256: 'full-calendar-test' } });
+      return;
+    }
+    await route.fulfill({ status: 404, body: '' });
+  });
+  await calendarPage.route('https://www.gov.uk/bank-holidays.json**', route => route.fulfill({
+    json: {
+      scotland: { events: [] },
+      'england-and-wales': { events: [] },
+    },
+  }));
+  await calendarPage.goto(new URL('/calendar.html', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  await calendarPage.waitForSelector('#Calendar');
   const calendarBox = await calendarPage.locator('#calendar-container').boundingBox();
   const tableBox = await calendarPage.locator('#Calendar').boundingBox();
-  assert(calendarBox && tableBox, 'Calendar must be visible');
+  assert(calendarBox && tableBox, 'Full calendar page must initialise its calendar');
   assert(tableBox.width <= calendarBox.width + 1, 'Calendar must fit without horizontal scrolling');
+  assert.equal(await calendarPage.locator('#Calendar tbody td[data-date]').count() > 0, true, 'Full calendar page must render dated cells');
   await calendarPage.close();
 
   await page.fill('#checkInDate', '2026-08-01');
@@ -267,6 +285,52 @@ try {
   await page.click('#taxiSubmit');
   await page.waitForFunction(() => document.querySelector('#taxi-result')?.textContent?.includes('added'));
   assert((await page.inputValue('#priceBreakdown')).includes('PET TAXI'), 'Taxi price must be included in the price breakdown');
+  assert.equal(await page.locator('#taxiRemove').isVisible(), true, 'Added taxi charge must expose a remove action');
+  const totalWithTaxi = Number((await page.inputValue('#totalPrice')).replace(/[^0-9.]/g, ''));
+  await page.click('#taxiRemove');
+  await page.waitForFunction(() => document.querySelector('#taxi-result')?.textContent?.includes('removed'));
+  assert(!(await page.inputValue('#priceBreakdown')).includes('PET TAXI'), 'Removing taxi must remove it from the price breakdown');
+  const totalWithoutTaxi = Number((await page.inputValue('#totalPrice')).replace(/[^0-9.]/g, ''));
+  assert.equal(Number((totalWithTaxi - totalWithoutTaxi).toFixed(2)), 12.5, 'Removing taxi must restore the stay-only total');
+  assert.equal(await page.locator('#taxiRemove').isHidden(), true, 'Remove taxi action must hide when no taxi is applied');
+  assert.equal(await page.locator('#taxi-summary-status').textContent(), 'Optional', 'Taxi summary must return to its optional state');
+
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.waitForTimeout(150);
+  const overflowControls = await page.locator('#booking-form').evaluate(form => {
+    const selectors = 'input:not([type="hidden"]), select, textarea, button';
+    return Array.from(form.querySelectorAll(selectors)).flatMap(control => {
+      if (!(control instanceof HTMLElement) || control.offsetParent === null) return [];
+      const boundary = control.closest('.form-section, .booking-extra__body, .taxi-subsection') ?? form;
+      const controlBox = control.getBoundingClientRect();
+      const boundaryBox = boundary.getBoundingClientRect();
+      const fits = controlBox.left >= boundaryBox.left - 1
+        && controlBox.right <= boundaryBox.right + 1;
+      return fits ? [] : [control.id || control.tagName.toLowerCase()];
+    });
+  });
+  assert.deepEqual(overflowControls, [], `Visible booking controls must not overflow their section: ${overflowControls.join(', ')}`);
+  await page.setViewportSize(viewport);
+
+  await page.selectOption('#numOfPets', '2');
+  await page.waitForSelector('#neutered2');
+  await page.selectOption('#neutered1', 'no');
+  await page.check('#sameLocation');
+  await page.selectOption('#pickupLocation', 'Dyce');
+  await page.selectOption('#dropoffLocation', 'Aberdeen');
+  await page.waitForTimeout(150);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelector('#pickupLocation')?.value === 'Dyce');
+  assert.equal(await page.inputValue('#checkInDate'), '2026-08-01', 'Check-in date must survive a page revisit');
+  assert.equal(await page.inputValue('#checkInTime'), '08:00', 'Check-in time must survive a page revisit');
+  assert.equal(await page.inputValue('#checkOutDate'), '2026-08-03', 'Check-out date must survive a page revisit');
+  assert.equal(await page.inputValue('#checkOutTime'), '10:00', 'Check-out time must survive a page revisit');
+  assert.equal(await page.inputValue('#numOfPets'), '2', 'Pet count must survive a page revisit');
+  assert.equal(await page.inputValue('#neutered1'), 'no', 'Dynamic pet selections must survive a page revisit');
+  assert.equal(await page.locator('#pet-taxi').evaluate(element => element instanceof HTMLDetailsElement && element.open), true, 'Expanded taxi step must survive a page revisit');
+  assert.equal(await page.isChecked('#sameLocation'), true, 'Different drop-off selection must survive a page revisit');
+  assert.equal(await page.inputValue('#pickupLocation'), 'Dyce', 'Pickup location must survive a page revisit');
+  assert.equal(await page.inputValue('#dropoffLocation'), 'Aberdeen', 'Drop-off location must survive a page revisit');
 
   assert.equal(await page.locator('[data-current-year]').first().textContent(), String(new Date().getFullYear()), 'Footer year must update automatically');
 

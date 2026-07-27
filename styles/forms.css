@@ -367,3 +367,49 @@ button {
     max-inline-size: 100%;
   }
 }
+
+/* Safari gives date and time controls an intrinsic width that can exceed a
+ * narrow fieldset. Keep every stage of the booking flow constrained to the
+ * available inline size rather than clipping at the page edge. */
+.booking-panel,
+.booking-form,
+.form-section,
+.form-grid,
+.form-group,
+.pet-options,
+.booking-extra,
+.booking-extra__body,
+.taxi-subsection,
+#taxi-form {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.form-group {
+  overflow: hidden;
+
+  & > :is(input, select, textarea) {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}
+
+@media (width <= 45rem) {
+  :where(input[type="date"], input[type="time"]) {
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+  }
+
+  :where(input[type="date"], input[type="time"])::-webkit-date-and-time-value {
+    min-inline-size: 0;
+    text-align: start;
+  }
+
+  select {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

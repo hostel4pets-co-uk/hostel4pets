@@ -682,7 +682,17 @@ export class Calendar {
         await loadDayView();
     }
 }
-document.addEventListener("DOMContentLoaded", () => {
+export function initialiseCalendar() {
+    const container = document.getElementById("calendar-container");
+    if (!container || container.dataset.calendarInitialised === "true")
+        return;
+    container.dataset.calendarInitialised = "true";
     new Calendar("calendar-container");
-});
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialiseCalendar, { once: true });
+}
+else {
+    initialiseCalendar();
+}
 //# sourceMappingURL=calendar.js.map

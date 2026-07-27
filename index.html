@@ -153,7 +153,10 @@
                     <label for="sameLocation">Use a different drop-off location</label>
                   </div>
                 </fieldset>
-                <button type="submit" id="taxiSubmit" class="button button--secondary taxi-add-button">Add taxi to estimate</button>
+                <div class="taxi-actions">
+                  <button type="submit" id="taxiSubmit" class="button button--secondary taxi-add-button">Add taxi to estimate</button>
+                  <button type="button" id="taxiRemove" class="button button--secondary taxi-remove-button" hidden>Remove taxi</button>
+                </div>
                 <p id="taxi-result" class="taxi-result" role="status" aria-live="polite"></p>
               </form>
             </div>
