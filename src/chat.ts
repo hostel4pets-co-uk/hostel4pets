@@ -14,6 +14,7 @@ export class ChatApp implements ChatApplication {
   private readonly shellEl: HTMLElement;
   private readonly titleEl: HTMLElement;
   private readonly isMobile: boolean;
+  private readonly isFixedOpen: boolean;
   private readonly sessionKey = "chatSession";
   private readonly backendUrl = "https://h4p.kittycrow.dev";
   private session: ChatSession | null = null;
@@ -38,6 +39,7 @@ export class ChatApp implements ChatApplication {
     this.shellEl = requireElement<HTMLElement>("chat-panel-shell");
     this.titleEl = document.querySelector<HTMLElement>(".chat-header .title") ?? this.modalEl;
     this.isMobile = Boolean(window.md && (window.md.mobile() || window.md.tablet()));
+    this.isFixedOpen = this.shellEl.hasAttribute("data-chat-fixed-open");
     this.isMuted = localStorage.getItem("mute") === "true";
 
     let savedCollapse = localStorage.getItem("chatCollapsed");
@@ -49,7 +51,7 @@ export class ChatApp implements ChatApplication {
     this.clearBtn.addEventListener("click", () => this.clearChat());
     this.collapseBtn.addEventListener("click", event => {
       event.stopPropagation();
-      this.toggleCollapse();
+      if (!this.isFixedOpen) this.toggleCollapse();
     });
     this.muteBtn.addEventListener("click", () => this.toggleMute());
 
@@ -60,14 +62,15 @@ export class ChatApp implements ChatApplication {
     });
 
     this.setHeader("Chat");
-    if (savedCollapse === "true") this.collapseChat();
+    if (this.isFixedOpen) this.uncollapseChat(false);
+    else if (savedCollapse === "true") this.collapseChat();
     else this.uncollapseChat();
 
     const header = document.querySelector<HTMLElement>(".chat-header");
     if (header) {
       header.addEventListener("click", event => {
         if ((event.target as Element).closest("#chat-controls")) return;
-        if (this.isCollapsed) this.uncollapseChat();
+        if (!this.isFixedOpen && this.isCollapsed) this.uncollapseChat();
         requestAnimationFrame(() => this.modalEl.scrollIntoView({ behavior: "smooth", block: "start" }));
       });
     }
@@ -526,6 +529,7 @@ export class ChatApp implements ChatApplication {
   }
 
   private collapseChat(): void {
+    if (this.isFixedOpen) return;
     this.modalEl.classList.add("collapsed");
     this.shellEl.classList.remove("is-expanded");
     this.collapseBtn.textContent = "➕";
@@ -533,12 +537,12 @@ export class ChatApp implements ChatApplication {
     localStorage.setItem("chatCollapsed", "true");
   }
 
-  private uncollapseChat(): void {
+  private uncollapseChat(save = true): void {
     this.modalEl.classList.remove("collapsed");
     this.shellEl.classList.add("is-expanded");
     this.collapseBtn.textContent = "➖";
     this.isCollapsed = false;
-    localStorage.setItem("chatCollapsed", "false");
+    if (save) localStorage.setItem("chatCollapsed", "false");
   }
 
   private toggleCollapse(): void {

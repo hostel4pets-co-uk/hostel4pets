@@ -556,3 +556,24 @@
     }
   }
 }
+
+/* The dedicated chat route is a full page, not a floating launcher. */
+#chat-panel-shell[data-chat-fixed-open] {
+  block-size: min(44rem, calc(100dvh - 10rem));
+
+  & #collapse-btn {
+    display: none !important;
+  }
+
+  & .chat-modal {
+    block-size: 100%;
+    max-block-size: 100%;
+  }
+}
+
+@media (width <= 45rem) {
+  #chat-panel-shell[data-chat-fixed-open] {
+    block-size: calc(100dvh - var(--header-height) - 6rem);
+    min-block-size: 24rem;
+  }
+}

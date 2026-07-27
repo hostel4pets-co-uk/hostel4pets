@@ -12,6 +12,7 @@ export class ChatApp {
     shellEl;
     titleEl;
     isMobile;
+    isFixedOpen;
     sessionKey = "chatSession";
     backendUrl = "https://h4p.kittycrow.dev";
     session = null;
@@ -35,6 +36,7 @@ export class ChatApp {
         this.shellEl = requireElement("chat-panel-shell");
         this.titleEl = document.querySelector(".chat-header .title") ?? this.modalEl;
         this.isMobile = Boolean(window.md && (window.md.mobile() || window.md.tablet()));
+        this.isFixedOpen = this.shellEl.hasAttribute("data-chat-fixed-open");
         this.isMuted = localStorage.getItem("mute") === "true";
         let savedCollapse = localStorage.getItem("chatCollapsed");
         if (savedCollapse === null) {
@@ -44,7 +46,8 @@ export class ChatApp {
         this.clearBtn.addEventListener("click", () => this.clearChat());
         this.collapseBtn.addEventListener("click", event => {
             event.stopPropagation();
-            this.toggleCollapse();
+            if (!this.isFixedOpen)
+                this.toggleCollapse();
         });
         this.muteBtn.addEventListener("click", () => this.toggleMute());
         [this.modalEl, this.chatroomEl, this.shellEl].forEach(element => {
@@ -53,7 +56,9 @@ export class ChatApp {
             element.addEventListener("touchstart", () => this.clearNewMessage(), { passive: true });
         });
         this.setHeader("Chat");
-        if (savedCollapse === "true")
+        if (this.isFixedOpen)
+            this.uncollapseChat(false);
+        else if (savedCollapse === "true")
             this.collapseChat();
         else
             this.uncollapseChat();
@@ -62,7 +67,7 @@ export class ChatApp {
             header.addEventListener("click", event => {
                 if (event.target.closest("#chat-controls"))
                     return;
-                if (this.isCollapsed)
+                if (!this.isFixedOpen && this.isCollapsed)
                     this.uncollapseChat();
                 requestAnimationFrame(() => this.modalEl.scrollIntoView({ behavior: "smooth", block: "start" }));
             });
@@ -492,18 +497,21 @@ export class ChatApp {
         this.prepareNicknameSetup();
     }
     collapseChat() {
+        if (this.isFixedOpen)
+            return;
         this.modalEl.classList.add("collapsed");
         this.shellEl.classList.remove("is-expanded");
         this.collapseBtn.textContent = "➕";
         this.isCollapsed = true;
         localStorage.setItem("chatCollapsed", "true");
     }
-    uncollapseChat() {
+    uncollapseChat(save = true) {
         this.modalEl.classList.remove("collapsed");
         this.shellEl.classList.add("is-expanded");
         this.collapseBtn.textContent = "➖";
         this.isCollapsed = false;
-        localStorage.setItem("chatCollapsed", "false");
+        if (save)
+            localStorage.setItem("chatCollapsed", "false");
     }
     toggleCollapse() {
         if (this.isCollapsed)

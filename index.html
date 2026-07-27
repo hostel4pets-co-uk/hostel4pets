@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#363cb8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="./styles/styles.css">
+  <script type="module" src="./generated/routes.js"></script>
   <script type="module" src="./generated/theme.js"></script>
   <script type="module" src="./generated/interface.js"></script>
   <script type="module" src="./generated/bookingCalculator.js"></script>
@@ -21,13 +22,14 @@
 
   <header class="site-header">
     <div class="site-header__inner">
-      <a class="site-brand" href="./index.html" aria-label="Hostel4Pets home">
+      <a class="site-brand" href="/" aria-label="Hostel4Pets home">
         <img src="./graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo">
       </a>
       <nav class="site-nav" aria-label="Primary navigation">
-        <a href="#booking">Book</a>
+        <a href="#book">Book</a>
         <a href="#availability">Availability</a>
         <a href="#pet-taxi" data-taxi-open>Pet taxi</a>
+        <a href="/chat">Chat</a>
       </nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use dark theme" aria-pressed="false">
         <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span>
@@ -43,14 +45,9 @@
         <h1 id="hero-title">Plan their stay with confidence.</h1>
         <p class="hero__intro">Choose your dates, tell us who is coming and see an instant estimate alongside live availability.</p>
         <div class="hero__actions">
-          <a class="button button--primary" href="#booking">Start an estimate</a>
+          <a class="button button--primary" href="#book">Start an estimate</a>
           <a class="button button--secondary" href="#availability">Check availability</a>
         </div>
-        <ul class="trust-list" aria-label="Service highlights">
-          <li><strong>Instant</strong><span>price estimate</span></li>
-          <li><strong>Live</strong><span>availability</span></li>
-          <li><strong>Local</strong><span>pet taxi</span></li>
-        </ul>
       </div>
 
       <div class="hero__brand-card" aria-label="Hostel4Pets, their home away from home">
@@ -65,7 +62,7 @@
       </div>
     </section>
 
-    <section id="booking" class="booking-layout" aria-labelledby="booking-title">
+    <section id="book" class="booking-layout" aria-labelledby="booking-title">
       <article class="panel booking-panel">
         <header class="section-heading">
           <div>
@@ -212,7 +209,7 @@
           <h2 id="availability-title">Find the right dates</h2>
           <p>Select dates in the booking form to highlight the proposed stay.</p>
         </div>
-        <a class="text-link" href="./calendar.html">Open full calendar <span aria-hidden="true">↗</span></a>
+        <a class="text-link" href="/calendar">Open full calendar <span aria-hidden="true">↗</span></a>
       </header>
       <div class="calendar-container" id="calendar-container"></div>
     </section>
@@ -225,12 +222,12 @@
         </div>
       </header>
       <div class="service-grid">
-        <a class="service-card service-card--calendar" href="./calendar.html">
+        <a class="service-card service-card--calendar" href="/calendar">
           <span class="service-card__icon" aria-hidden="true">□</span>
           <div><h3>Full calendar</h3><p>Explore availability in a focused, full-page view.</p></div>
           <span aria-hidden="true">→</span>
         </a>
-        <a class="service-card service-card--chat" href="./chat.html">
+        <a class="service-card service-card--chat" href="/chat">
           <span class="service-card__icon" aria-hidden="true">•••</span>
           <div><h3>Ask Robin</h3><p>Use guest chat when you need help with your booking.</p></div>
           <span aria-hidden="true">→</span>

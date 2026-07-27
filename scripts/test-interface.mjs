@@ -78,6 +78,10 @@ try {
   await page.goto(new URL('/', baseUrl).href, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
+  assert.equal(await page.locator('#book').count(), 1, 'Book navigation must target the #book section');
+  assert.equal(await page.locator('.trust-list').count(), 0, 'Removed marketing labels must not remain on the booking page');
+  assert.equal(await page.locator('.site-nav a[href="/chat"]').count(), 1, 'Primary navigation must include the clean chat route');
+
   // Exercise chat on its direct page. The booking page loads the same chat modal
   // asynchronously from chat.html, so this avoids coupling layout assertions to
   // the transport timing of that fetch while testing the identical component.
@@ -168,7 +172,7 @@ try {
   });
   await startContext.addInitScript(() => {
     localStorage.setItem('h4p.theme', 'dark');
-    localStorage.setItem('chatCollapsed', 'false');
+    localStorage.setItem('chatCollapsed', 'true');
     localStorage.removeItem('chatSession');
   });
   const startPage = await startContext.newPage();
@@ -203,7 +207,17 @@ try {
     await route.fulfill({ status: 404, body: '' });
   });
   startPage.setDefaultTimeout(5_000);
-  await startPage.goto(new URL('/chat.html', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  await startPage.goto(new URL('/chat', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  await startPage.waitForFunction(() => Boolean(window.chatApp));
+  assert.equal(new URL(startPage.url()).pathname, '/chat', 'GitHub Pages chat directory must present the clean /chat URL');
+  const fixedModal = startPage.locator('.chat-modal');
+  const fixedShell = startPage.locator('#chat-panel-shell');
+  assert(!(await fixedModal.getAttribute('class') ?? '').includes('collapsed'), 'Standalone chat must ignore a stored collapsed preference');
+  assert((await fixedShell.getAttribute('class') ?? '').includes('is-expanded'), 'Standalone chat must always use the expanded shell');
+  assert.equal(await startPage.locator('#collapse-btn').isHidden(), true, 'Standalone chat must not expose a collapse control');
+  await startPage.locator('.chat-header').click({ position: { x: 120, y: 20 } });
+  assert(!(await fixedModal.getAttribute('class') ?? '').includes('collapsed'), 'Standalone chat header clicks must not collapse the page');
+  assert.equal(await startPage.evaluate(() => localStorage.getItem('chatCollapsed')), 'true', 'Standalone chat must not overwrite the embedded chat preference');
   await startPage.locator('#nickname').fill('Javier');
   await startPage.locator('#submit-button').click();
   await startPage.waitForFunction(() => {
@@ -247,7 +261,8 @@ try {
       'england-and-wales': { events: [] },
     },
   }));
-  await calendarPage.goto(new URL('/calendar.html', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  await calendarPage.goto(new URL('/calendar', baseUrl).href, { waitUntil: 'domcontentloaded' });
+  assert.equal(new URL(calendarPage.url()).pathname, '/calendar', 'GitHub Pages calendar directory must present the clean /calendar URL');
   await calendarPage.waitForSelector('#Calendar');
   const calendarBox = await calendarPage.locator('#calendar-container').boundingBox();
   const tableBox = await calendarPage.locator('#Calendar').boundingBox();
