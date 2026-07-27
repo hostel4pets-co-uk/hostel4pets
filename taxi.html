@@ -7,8 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Reuse site styles for consistent look and feel -->
     <link rel="stylesheet" href="./styles.css" />
-    <!-- Structure only for now; behaviour will live in taxi.js -->
-    <script type="module" src="./taxi.js"></script>
+    <script type="module" src="./generated/taxi.js"></script>
 </head>
 
 <body>
@@ -36,7 +35,6 @@
                 <!-- Locations -->
                 <div class="form-group">
                     <label for="pickupLocation">Pickup location</label>
-                    <!-- options will be populated by REST later -->
                     <select id="pickupLocation" name="pickupLocation"></select>
                 </div>
 
@@ -50,13 +48,11 @@
                     <select id="dropoffLocation" name="dropoffLocation" disabled></select>
                 </div>
 
-                <!-- Submit -->
                 <div class="form-group">
                     <button type="submit" id="taxiSubmit">Submit</button>
                 </div>
             </form>
 
-            <!-- Optional close icon; loader can also inject its own -->
             <span class="close" aria-label="Close">❌</span>
         </div>
     </div>
