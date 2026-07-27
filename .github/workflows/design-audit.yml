@@ -1,0 +1,67 @@
+name: Design audit and preview capture
+
+on:
+  push:
+    branches: [agent/design-overhaul-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install project and browser dependencies
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.54.1
+          npx playwright install --with-deps chromium
+
+      - name: Build preview site
+        run: npm run build
+
+      - name: Start preview server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >/tmp/hostel4pets-preview.log 2>&1 &
+          echo $! > /tmp/hostel4pets-preview.pid
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/hostel4pets-preview.log
+          exit 1
+
+      - name: Capture current production site
+        run: node scripts/capture-design.mjs https://hostel4pets.co.uk audit baseline
+
+      - name: Capture branch preview
+        run: node scripts/capture-design.mjs http://127.0.0.1:4173 audit preview
+
+      - name: Export complete Git repository
+        run: git bundle create audit/hostel4pets-design.bundle --all
+
+      - name: Upload browser audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostel4pets-design-audit
+          path: audit
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [[ -f /tmp/hostel4pets-preview.pid ]]; then
+            kill "$(cat /tmp/hostel4pets-preview.pid)" || true
+          fi
