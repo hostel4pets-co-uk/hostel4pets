@@ -1,0 +1,94 @@
+name: Validate final GitHub Pages pass
+
+on:
+  push:
+    branches: [agent/final-pages-validation]
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out validation branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct clean final commit
+        run: |
+          set -Eeuo pipefail
+          cp .final-pages.patch.gz.b64 /tmp/final-pages.patch.gz.b64
+          base64 -d /tmp/final-pages.patch.gz.b64 | gzip -d > /tmp/final-pages.patch
+          test "$(sha256sum /tmp/final-pages.patch | cut -d' ' -f1)" = "5c1ef9aa491bd4021d0226df06cc164e9177b082900e6a48939b40f681d5c728"
+          git checkout --detach 3df3c7adcca6acbe865b397343751ca5bcdb2486
+          git apply --check /tmp/final-pages.patch
+          git apply /tmp/final-pages.patch
+          git diff --check
+          test ! -e cloudflare
+          test ! -e .final-pages.patch.gz.b64
+          test ! -e .github/workflows/validate-final-pages.yml
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install project dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build strict TypeScript site
+        run: npm run build
+
+      - name: Verify generated clean routes
+        run: |
+          set -Eeuo pipefail
+          test -f dist/generated/routes.js
+          test -f dist/chat/index.html
+          test -f dist/calendar/index.html
+          grep -q 'data-chat-fixed-open' dist/chat/index.html
+          grep -q 'href="/chat"' dist/index.html
+          ! grep -q 'Instant</strong><span>price estimate' dist/index.html
+          ! grep -q 'Live</strong><span>availability' dist/index.html
+          ! grep -q 'Local</strong><span>pet taxi' dist/index.html
+
+      - name: Install browser test dependency
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.54.1
+          npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >/tmp/hostel4pets-preview.log 2>&1 &
+          echo $! > /tmp/hostel4pets-preview.pid
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/hostel4pets-preview.log
+          exit 1
+
+      - name: Run mobile and route regressions
+        run: node scripts/test-interface.mjs http://127.0.0.1:4173
+
+      - name: Publish clean reviewed commit
+        run: |
+          set -Eeuo pipefail
+          git restore package-lock.json
+          rm -rf generated chat calendar
+          cp -R dist/generated generated
+          cp -R dist/chat chat
+          cp -R dist/calendar calendar
+          git config user.name "Kitty Crow"
+          git config user.email "kitty-crow@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalise standalone chat and clean Pages routes"
+          git push origin HEAD:refs/heads/agent/design-overhaul-preview --force
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [[ -f /tmp/hostel4pets-preview.pid ]]; then
+            kill "$(cat /tmp/hostel4pets-preview.pid)" || true
+          fi
