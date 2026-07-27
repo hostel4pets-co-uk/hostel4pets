@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./booking": "./src/pricing/booking.ts",
     "./chat": "./src/contracts/chatContract.ts",
     "./chat/runtime": {
       "types": "./src/contracts/chatRuntime.d.ts",
