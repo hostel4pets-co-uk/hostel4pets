@@ -46,6 +46,13 @@ try {
       await mkdir(directory, { recursive: true });
 
       const page = await context.newPage();
+      await page.addInitScript(() => {
+        try {
+          localStorage.removeItem('h4p.theme');
+        } catch {
+          // The production baseline may not expose storage before navigation.
+        }
+      });
       const consoleMessages = [];
       const pageErrors = [];
       const failedRequests = [];
