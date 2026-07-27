@@ -1,4 +1,3 @@
-export { ChatApp } from "../chat.js";
 export type { ChatMessageRecord, ChatSession } from "../contracts.js";
 
 export const chatDom = {
