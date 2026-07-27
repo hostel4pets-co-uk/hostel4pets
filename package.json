@@ -1,0 +1,18 @@
+{
+  "name": "hostel4pets-web",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json",
+    "validate:source": "node --experimental-strip-types scripts/validate-source.ts",
+    "validate": "npm run typecheck && npm run validate:source",
+    "build": "npm run validate && node --experimental-strip-types scripts/build.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2"
+  }
+}
