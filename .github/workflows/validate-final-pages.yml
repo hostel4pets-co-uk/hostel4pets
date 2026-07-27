@@ -3,6 +3,8 @@ name: Validate final GitHub Pages pass
 on:
   push:
     branches: [agent/final-pages-validation]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
