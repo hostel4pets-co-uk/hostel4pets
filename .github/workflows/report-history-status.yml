@@ -1,0 +1,36 @@
+name: Report history hash diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  statuses: read
+  pull-requests: write
+
+jobs:
+  report:
+    if: github.head_ref == 'history-fixing'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Wait for history hash status
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in {1..30}; do
+            status=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/status")
+            description=$(jq -r '.statuses[] | select(.context == "history/rewrite-hashes") | .description' <<<"$status" | head -n1)
+            if [[ -n "$description" && "$description" != null ]]; then
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+                -f body="History rewrite diagnostic: \`${description}\`" >/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'History hash status was not published' >&2
+          exit 1
