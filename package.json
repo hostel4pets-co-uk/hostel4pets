@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./booking": "./src/pricing/booking.ts",
     "./chat": "./src/contracts/chatContract.ts",
     "./chat/runtime": {
       "types": "./src/contracts/chatRuntime.d.ts",
@@ -22,7 +23,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json",
     "validate:source": "node --experimental-strip-types scripts/validate-source.ts",
     "validate:chat-contract": "node --experimental-strip-types scripts/validate-chat-contract.ts",
-    "validate": "npm run typecheck && npm run validate:source && npm run validate:chat-contract",
+    "validate:booking-contract": "node --experimental-strip-types scripts/validate-booking-contract.ts",
+    "validate": "npm run typecheck && npm run validate:source && npm run validate:chat-contract && npm run validate:booking-contract",
     "build": "npm run validate && node --experimental-strip-types scripts/build.ts"
   },
   "devDependencies": {
