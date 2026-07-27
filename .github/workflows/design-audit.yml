@@ -47,6 +47,9 @@ jobs:
       - name: Run mobile interface regression checks
         run: node scripts/test-interface.mjs http://127.0.0.1:4173
 
+      - name: Run mobile navigation regression checks
+        run: node scripts/test-mobile-navigation.mjs http://127.0.0.1:4173
+
       - name: Capture current production site
         run: node scripts/capture-design.mjs https://hostel4pets.co.uk audit baseline
 
