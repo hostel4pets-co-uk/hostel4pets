@@ -1,0 +1,55 @@
+name: Stage exact final release tree
+
+on:
+  push:
+    branches: [history-fixing]
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    if: contains(github.event.head_commit.message, '[stage-final-tree]')
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: 6d09f3676596c74b494832631f4a0922cea95f48
+      FINAL_TREE: 0230d7be63626176d62e8d4849b8fe7f6e34e81e
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: history-fixing
+          show-progress: false
+
+      - name: Decode release patch
+        shell: bash
+        run: cat .history-rewrite/release.part-* | base64 --decode | gzip --decompress > /tmp/release.patch
+
+      - name: Build clean TypeScript 7 release tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf /tmp/final-tree-stage
+          git worktree add --quiet --detach /tmp/final-tree-stage "$BASE_SHA"
+          git -C /tmp/final-tree-stage apply /tmp/release.patch
+          cd /tmp/final-tree-stage
+          npm install --package-lock=false --ignore-scripts --no-audit --no-fund --silent
+          test "$(node_modules/.bin/tsc --version)" = 'Version 7.0.2'
+          npm run build --silent
+          rm -rf generated
+          cp -a dist/generated generated
+          git add -A
+          test "$(git write-tree)" = "$FINAL_TREE"
+          git config user.name 'Kitty Crow'
+          git config user.email '141717449+kitty-crow@users.noreply.github.com'
+          git commit -m 'Stage exact v1.0.0 release tree'
+
+      - name: Publish disposable final-tree branch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd /tmp/final-tree-stage
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin HEAD:refs/heads/final-tree-staging
