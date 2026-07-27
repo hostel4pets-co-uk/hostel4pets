@@ -12,6 +12,7 @@ Public booking frontend for [hostel4pets.co.uk](https://hostel4pets.co.uk).
 - Pet taxi coverage and price requests.
 - Browser-side calendar caching with server metadata checks.
 - Responsive layouts for desktop and mobile screens.
+- Persistent light and dark themes with operating-system preference detection.
 
 ## Stack
 
@@ -52,7 +53,7 @@ The production site is written to `dist/`. Compiled browser modules are placed i
 - `src/` — TypeScript application source.
 - `generated/` — compiled browser modules tracked for branch-based GitHub Pages.
 - `styles/` — layered stylesheet entry point and feature modules.
-- `scripts/` — source validation and production build scripts.
+- `scripts/` — source validation, production build and design-audit scripts.
 - `graphics/` and `sounds/` — static media.
 - `.github/workflows/pages.yml` — validation, compilation and deployment checks.
 
