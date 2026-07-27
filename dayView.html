@@ -2,19 +2,33 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Day View</title>
-    <link rel="stylesheet" href="./styles/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#363cb8">
+  <title>Daily Bookings | Hostel4Pets</title>
+  <link rel="stylesheet" href="./styles/styles.css">
+  <script type="module" src="./generated/theme.js"></script>
 </head>
 
-<body>
-    <div id="day-modal" class="modal">
-        <div class="modal-content">
-            <h2 id="day-title">Bookings</h2>
-            <ul id="pet-list"></ul>
-        </div>
+<body class="site-page inner-page day-view-page">
+  <header class="site-header standalone-only">
+    <div class="site-header__inner">
+      <a class="site-brand" href="./index.html" aria-label="Hostel4Pets home"><img src="./graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo"></a>
+      <nav class="site-nav" aria-label="Primary navigation"><a href="./index.html#booking">Book</a><a href="./calendar.html">Availability</a><a href="./taxi.html">Pet taxi</a></nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use dark theme" aria-pressed="false"><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span><span data-theme-label>Light</span></button>
     </div>
-    <script type="module" src="./generated/dayView.js"></script>
+  </header>
+
+  <main class="day-view-page__main standalone-only"><section class="page-intro"><p class="eyebrow">Daily view</p><h1>Booking details</h1><p>Review the pets staying with Hostel4Pets on the selected date.</p></section></main>
+
+  <div id="day-modal" class="modal">
+    <div class="modal-content">
+      <p class="eyebrow">Guest list</p>
+      <h2 id="day-title">Bookings</h2>
+      <ul id="pet-list"></ul>
+    </div>
+  </div>
+  <script type="module" src="./generated/dayView.js"></script>
 </body>
 
 </html>

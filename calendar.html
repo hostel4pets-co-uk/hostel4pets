@@ -2,17 +2,38 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hostel4Pets Availability Calendar</title>
-    <link rel="stylesheet" href="./styles/styles.css">
-    <script type="module" src="./generated/calendarPage.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#363cb8">
+  <title>Availability | Hostel4Pets</title>
+  <link rel="stylesheet" href="./styles/styles.css">
+  <script type="module" src="./generated/theme.js"></script>
+  <script type="module" src="./generated/calendarPage.js"></script>
 </head>
 
-<body>
-    <div class="container">
-        <div class="calendar-container" id="calendar-container"></div>
+<body class="site-page inner-page">
+  <a class="skip-link" href="#main-content">Skip to calendar</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-brand" href="./index.html" aria-label="Hostel4Pets home"><img src="./graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo"></a>
+      <nav class="site-nav" aria-label="Primary navigation"><a href="./index.html#booking">Book</a><a aria-current="page" href="./calendar.html">Availability</a><a href="./taxi.html">Pet taxi</a></nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use dark theme" aria-pressed="false"><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span><span data-theme-label>Light</span></button>
     </div>
+  </header>
+
+  <main id="main-content" class="site-main inner-main">
+    <section class="page-intro">
+      <p class="eyebrow">Plan ahead</p>
+      <h1>Availability calendar</h1>
+      <p>Browse upcoming dates, see how busy each day is and open a date for booking details.</p>
+      <a class="button button--secondary" href="./index.html#booking">Return to booking</a>
+    </section>
+    <section class="panel availability-panel availability-panel--standalone" aria-label="Hostel4Pets availability">
+      <div class="calendar-container" id="calendar-container"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><img src="./graphics/h4p.png" alt="" aria-hidden="true"><p>Hostel4Pets · Their home away from home</p></footer>
 </body>
 
 </html>

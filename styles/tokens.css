@@ -1,22 +1,31 @@
-/* Shared design tokens. Feature modules should consume these values instead
- * of defining competing colours, radii or spacing scales. */
+/* Hostel4Pets design tokens. The bright brand green and blue remain the
+ * visual anchors; semantic tokens adapt them to light and dark surfaces. */
 :root {
   color-scheme: light;
 
   --h4pgreen: #04dc3b;
-  --h4pgreen-hover: #02c634;
+  --h4pgreen-strong: #00b832;
+  --h4pgreen-soft: #dffbe7;
   --h4pblue: #363cb8;
+  --h4pblue-strong: #252a8f;
+  --h4pblue-soft: #e8e9ff;
   --white: #ffffff;
-  --black: #000000;
+  --black: #10111a;
 
-  --surface: var(--white);
-  --surface-muted: #f9f9f9;
-  --surface-subtle: #f2f3f5;
-  --text: #222222;
-  --text-muted: #555555;
-  --border: #dddddd;
-  --border-soft: #eeeeee;
-  --focus-ring: color-mix(in srgb, var(--h4pblue) 68%, var(--white));
+  --page: #f4f6ff;
+  --page-accent: #ebefff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-muted: #f7f8fc;
+  --surface-subtle: #eef1f8;
+  --text: #171928;
+  --text-muted: #62677c;
+  --text-soft: #7d8294;
+  --border: #dfe3ee;
+  --border-strong: #c8cedd;
+  --focus-ring: color-mix(in srgb, var(--h4pblue) 52%, transparent);
+  --header-bg: rgb(255 255 255 / 88%);
+  --glass-border: rgb(255 255 255 / 72%);
 
   --past: #d3d3d3;
   --today: #add8e6;
@@ -26,15 +35,17 @@
   --notavailable: #a9a9a9;
   --selected: #aadbac;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
   --radius-pill: 999px;
 
-  --shadow-card: 0 4px 8px rgb(0 0 0 / 10%);
-  --shadow-modal: 0 8px 20px rgb(0 0 0 / 25%);
-  --shadow-inset: inset 0 2px 6px rgb(0 0 0 / 5%);
+  --shadow-card: 0 1.25rem 3.5rem rgb(31 39 92 / 10%);
+  --shadow-card-hover: 0 1.5rem 4rem rgb(31 39 92 / 16%);
+  --shadow-modal: 0 2rem 5rem rgb(9 12 45 / 28%);
+  --shadow-inset: inset 0 1px 2px rgb(18 22 50 / 6%);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -42,8 +53,62 @@
   --space-4: 1rem;
   --space-5: 1.25rem;
   --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
+  --space-9: 3rem;
+  --space-10: 4rem;
 
   --transition-fast: 150ms ease;
-  --transition-standard: 300ms ease;
-  --content-width: 37.5rem;
+  --transition-standard: 260ms ease;
+  --content-width: 75rem;
+  --header-height: 4.75rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page: #0d1024;
+  --page-accent: #151936;
+  --surface: #171b35;
+  --surface-raised: #1d2242;
+  --surface-muted: #12162d;
+  --surface-subtle: #242a4c;
+  --text: #f7f8ff;
+  --text-muted: #b7bdd3;
+  --text-soft: #9299b4;
+  --border: #343b61;
+  --border-strong: #48517a;
+  --focus-ring: color-mix(in srgb, var(--h4pgreen) 55%, transparent);
+  --header-bg: rgb(13 16 36 / 88%);
+  --glass-border: rgb(255 255 255 / 10%);
+  --h4pgreen-soft: #123d24;
+  --h4pblue-soft: #252b61;
+  --shadow-card: 0 1.5rem 4rem rgb(0 0 0 / 28%);
+  --shadow-card-hover: 0 1.75rem 4.5rem rgb(0 0 0 / 36%);
+  --shadow-inset: inset 0 1px 2px rgb(0 0 0 / 28%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --page: #0d1024;
+    --page-accent: #151936;
+    --surface: #171b35;
+    --surface-raised: #1d2242;
+    --surface-muted: #12162d;
+    --surface-subtle: #242a4c;
+    --text: #f7f8ff;
+    --text-muted: #b7bdd3;
+    --text-soft: #9299b4;
+    --border: #343b61;
+    --border-strong: #48517a;
+    --focus-ring: color-mix(in srgb, var(--h4pgreen) 55%, transparent);
+    --header-bg: rgb(13 16 36 / 88%);
+    --glass-border: rgb(255 255 255 / 10%);
+    --h4pgreen-soft: #123d24;
+    --h4pblue-soft: #252b61;
+    --shadow-card: 0 1.5rem 4rem rgb(0 0 0 / 28%);
+    --shadow-card-hover: 0 1.75rem 4.5rem rgb(0 0 0 / 36%);
+    --shadow-inset: inset 0 1px 2px rgb(0 0 0 / 28%);
+  }
 }
