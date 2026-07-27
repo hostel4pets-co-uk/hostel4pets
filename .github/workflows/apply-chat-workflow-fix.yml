@@ -1,0 +1,92 @@
+name: Apply validated chat workflow repair
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: d9c4e612606c46654ffc89e9ef9404122d646de9
+      VALIDATED_BRANCH: agent/chat-workflow-fix-validated
+      PAYLOAD_SHA256: 827253bbc55717842f555317c8758af50869b6ca1fd3169046b3af96be949bfc
+    steps:
+      - name: Check out transport branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct reviewed chat repair
+        run: |
+          set -Eeuo pipefail
+          echo "${PAYLOAD_SHA256}  .chat-fix/chat-fix.patch.gz.b64" | sha256sum -c -
+          rm -rf /tmp/chat-fix
+          git worktree add --detach /tmp/chat-fix "${BASE_SHA}"
+          base64 --decode .chat-fix/chat-fix.patch.gz.b64 | gzip -dc > /tmp/chat-fix.patch
+          git -C /tmp/chat-fix apply --index /tmp/chat-fix.patch
+          mapfile -t changed < <(git -C /tmp/chat-fix diff --cached --name-only)
+          printf '%s\n' "${changed[@]}"
+          expected=(
+            scripts/test-interface.mjs
+            src/chat.ts
+            src/interface.ts
+            styles/chat.css
+          )
+          diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${changed[@]}")
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        working-directory: /tmp/chat-fix
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.54.1
+          npx playwright install --with-deps chromium
+
+      - name: Build strict TypeScript website
+        working-directory: /tmp/chat-fix
+        run: npm run build
+
+      - name: Run delayed-backend chat regression
+        working-directory: /tmp/chat-fix
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory dist >/tmp/chat-fix-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && break
+            sleep 1
+          done
+          timeout 120s node scripts/test-interface.mjs http://127.0.0.1:4173
+
+      - name: Publish one clean validated commit
+        working-directory: /tmp/chat-fix
+        run: |
+          set -Eeuo pipefail
+          rm -rf generated
+          cp -R dist/generated generated
+          git add src/chat.ts src/interface.ts styles/chat.css scripts/test-interface.mjs generated/chat.js generated/chat.js.map generated/interface.js generated/interface.js.map
+          mapfile -t changed < <(git diff --cached --name-only)
+          expected=(
+            generated/chat.js
+            generated/chat.js.map
+            generated/interface.js
+            generated/interface.js.map
+            scripts/test-interface.mjs
+            src/chat.ts
+            src/interface.ts
+            styles/chat.css
+          )
+          diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${changed[@]}")
+          git config user.name "Kitty Crow"
+          git config user.email "kitty-crow@users.noreply.github.com"
+          git commit -m "Repair chat expansion and session startup"
+          git push origin HEAD:refs/heads/${VALIDATED_BRANCH}
