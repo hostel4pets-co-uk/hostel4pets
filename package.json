@@ -1,15 +1,24 @@
 {
-  "name": "hostel4pets-web",
+  "name": "@hostel4pets/web",
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./chat": "./src/contracts/chatContract.ts",
+    "./chat/template": "./chat.html",
+    "./chat/styles": "./styles/styles.css",
+    "./chat/chat.css": "./styles/chat.css",
+    "./chat/robin.png": "./graphics/robin.png",
+    "./chat/notification.mp3": "./sounds/dogBark.mp3"
+  },
   "engines": {
     "node": ">=24"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.scripts.json",
     "validate:source": "node --experimental-strip-types scripts/validate-source.ts",
-    "validate": "npm run typecheck && npm run validate:source",
+    "validate:chat-contract": "node --experimental-strip-types scripts/validate-chat-contract.ts",
+    "validate": "npm run typecheck && npm run validate:source && npm run validate:chat-contract",
     "build": "npm run validate && node --experimental-strip-types scripts/build.ts"
   },
   "devDependencies": {
