@@ -1,4 +1,8 @@
-import type { BookingConfiguration, PriceResult, YesNo } from "../contracts.js";
+import type {
+  BookingConfiguration,
+  PriceResult,
+  YesNo
+} from "./types.js";
 
 export class BookingCalculator {
   private readonly hourlyRate: number;
@@ -116,3 +120,9 @@ export const bookingConfig: BookingConfiguration = {
   extraChargeNonNeutered: 0.2,
   extraChargeCub: 0.2
 };
+
+export type {
+  BookingConfiguration,
+  PriceResult,
+  YesNo
+} from "./types.js";
