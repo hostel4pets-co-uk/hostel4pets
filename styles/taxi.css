@@ -1,68 +1,413 @@
-/* Pet taxi modal and journey-specific form layout. */
+/* Pet taxi journey builder and page-specific service highlights. */
+.taxi-main {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(24rem, 1.15fr);
+  align-items: start;
+  gap: clamp(2rem, 6vw, 5rem);
+  padding-block-start: var(--space-9);
+}
+
+.taxi-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  & span {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface-raised);
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+  }
+}
+
 #taxi-modal {
   &.modal {
-    display: flex;
+    position: static;
+    display: block;
     inline-size: 100%;
-    max-inline-size: 25rem;
-    block-size: max(100dvh, 100%);
-    margin: 0;
+    block-size: auto;
   }
 
   & .modal-content {
-    inline-size: min(100vw, 25rem);
-    block-size: auto;
-    max-block-size: 100dvh;
-    margin-inline: auto;
-    padding: 1.5625rem 1.875rem;
-    overflow-y: auto;
-    border-radius: var(--radius-xl);
+    inline-size: 100%;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: clamp(1.25rem, 4vw, 2.25rem);
+    overflow: visible;
   }
+
+  & .section-heading {
+    margin-block-end: var(--space-6);
+  }
+}
+
+.close-link {
+  display: grid;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+
+  &:hover {
+    border-color: var(--h4pblue);
+    color: var(--h4pblue);
+  }
+}
+
+#taxi-form {
+  display: grid;
+  gap: var(--space-5);
 }
 
 .journey-options-heading {
-  margin-block-end: 0.625rem;
+  margin-block-end: var(--space-3);
 }
 
 .journey-options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.875rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
 
-  & > label {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    margin: 0;
+.choice-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    translate var(--transition-fast);
+
+  & input {
+    flex: 0 0 auto;
+  }
+
+  & span {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  & strong {
+    font-size: 0.9rem;
+  }
+
+  & small {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+  }
+
+  &:has(input:checked) {
+    border-color: color-mix(in srgb, var(--h4pgreen) 62%, var(--border));
+    background: var(--h4pgreen-soft);
+  }
+
+  &:hover {
+    translate: 0 -0.1rem;
   }
 }
 
-.form-group.same-location-row {
-  flex-direction: row;
-  justify-content: center;
-  gap: var(--space-1);
-  margin-block-end: 0.625rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-
-  & > label {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    font-weight: 400;
-    white-space: nowrap;
-  }
+.same-location-row {
+  display: grid;
+  min-inline-size: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  overflow: visible;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
 
   & input[type="checkbox"] {
-    inline-size: auto;
-    max-inline-size: none;
-    translate: 0 0.0625rem;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  & span {
+    display: grid;
+    min-inline-size: 0;
+    gap: 0.12rem;
+  }
+
+  & strong {
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+
+  & small {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
+  }
+
+  &:has(input:checked) {
+    border-color: color-mix(in srgb, var(--h4pgreen) 58%, var(--border));
+    background: var(--h4pgreen-soft);
+  }
+
+  &:focus-within {
+    border-color: var(--h4pblue);
+    box-shadow: 0 0 0 0.22rem var(--focus-ring);
   }
 }
+
 
 .taxi-dropoff-group {
   &.is-hidden {
     display: none;
+  }
+}
+
+#taxiSubmit {
+  inline-size: 100%;
+  justify-content: space-between;
+  padding-inline: var(--space-5);
+}
+
+@media (width <= 56rem) {
+  .taxi-main {
+    grid-template-columns: 1fr;
+  }
+
+  .taxi-main .page-intro {
+    margin-block-end: 0;
+  }
+}
+
+@media (width <= 32rem) {
+  .journey-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Inline booking-flow taxi section. Native details/summary behaviour keeps the
+ * optional journey form discoverable without turning it into a separate tool. */
+.booking-taxi {
+  padding: 0;
+  overflow: clip;
+  background: var(--surface-muted);
+
+  &[open] {
+    border-color: color-mix(in srgb, var(--h4pgreen) 46%, var(--border));
+    background: var(--surface-raised);
+
+    & .booking-extra__chevron {
+      rotate: 180deg;
+    }
+
+    & .booking-extra__status {
+      background: var(--h4pgreen-soft);
+      color: var(--h4pgreen-strong);
+    }
+  }
+}
+
+.booking-extra__summary {
+  display: grid;
+  min-block-size: 5.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--h4pblue-soft) 55%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 0.2rem solid var(--focus-ring);
+    outline-offset: -0.2rem;
+  }
+}
+
+.booking-extra__number {
+  display: grid;
+  inline-size: 1.8rem;
+  block-size: 1.8rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--h4pblue);
+  color: var(--white);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.booking-extra__copy {
+  display: grid;
+  gap: 0.18rem;
+
+  & strong {
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  & small {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+}
+
+.booking-extra__status {
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.booking-extra__chevron {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  transition: rotate var(--transition-fast);
+}
+
+.booking-extra__body {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-block-start: 1px solid var(--border);
+  background: var(--surface-raised);
+
+  & > .form-section__hint {
+    margin: 0;
+  }
+}
+
+.taxi-subsection {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  & + & {
+    padding-block-start: var(--space-5);
+    border-block-start: 1px solid var(--border);
+  }
+}
+
+.taxi-subsection__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.taxi-locations {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-3);
+}
+
+
+.taxi-add-button {
+  inline-size: 100%;
+  justify-content: center;
+}
+
+.taxi-result {
+  min-block-size: 1.2rem;
+  margin: 0;
+  color: var(--h4pgreen-strong);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (width <= 32rem) {
+  .booking-extra__summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-inline: var(--space-4);
+
+    & .booking-extra__status {
+      grid-column: 2;
+      justify-self: start;
+    }
+
+    & .booking-extra__chevron {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+    }
+  }
+
+  .booking-extra__body {
+    padding: var(--space-4);
+  }
+}
+
+.taxi-actions {
+  display: grid;
+  min-inline-size: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+
+  &:has(#taxiRemove[hidden]) {
+    grid-template-columns: 1fr;
+  }
+
+  & > .button {
+    inline-size: 100%;
+    justify-content: center;
+  }
+}
+
+#taxiRemove[hidden] {
+  display: none !important;
+}
+
+.taxi-remove-button {
+  border-color: color-mix(in srgb, var(--danger, #c33) 38%, var(--border));
+  color: var(--text);
+}
+
+@media (width <= 32rem) {
+  .taxi-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-extra__copy {
+  min-inline-size: 0;
+
+  & :is(strong, small) {
+    overflow-wrap: anywhere;
   }
 }

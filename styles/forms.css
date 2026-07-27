@@ -1,40 +1,119 @@
-/* Shared form controls used by the booking calculator and taxi form. */
-:where(.form-group, button, input:not([type="checkbox"]), select, textarea) {
-  inline-size: 100%;
-  max-inline-size: 80%;
+/* Booking and shared form controls. Labels, inputs and grouped pet details use
+ * the same visual rhythm without changing the existing form element IDs. */
+.booking-form {
+  display: grid;
+  gap: var(--space-5);
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-block-end: var(--space-5);
+.form-section {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
 
-  & > label {
-    display: block;
-    margin-block-end: 0.3125rem;
-    text-align: center;
+  & legend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-inline: 0 var(--space-2);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 900;
+
+    & > span {
+      display: grid;
+      inline-size: 1.8rem;
+      block-size: 1.8rem;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--h4pblue);
+      color: var(--white);
+      font-size: 0.78rem;
+    }
   }
 }
 
-:where(input[type="text"], input[type="date"], input[type="time"], select, textarea) {
-  padding: var(--space-2);
-  border: 1px solid #cccccc;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+.form-section__hint {
+  margin-block: 0 var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: var(--space-4);
+
+  &.form-grid--dates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.form-group {
+  display: grid;
+  inline-size: 100%;
+  gap: 0.45rem;
+  margin: 0;
+
+  & > label {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  & > small {
+    color: var(--text-soft);
+    font-size: 0.72rem;
+  }
+
+  &.form-group--compact {
+    max-inline-size: 15rem;
+    margin-block-end: var(--space-5);
+  }
+}
+
+:where(input[type="text"], input[type="date"], input[type="time"], select, textarea, [contenteditable="true"]) {
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
   color: var(--text);
+  box-shadow: var(--shadow-inset);
   font: inherit;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+
+  &::placeholder {
+    color: var(--text-soft);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--h4pblue) 38%, var(--border-strong));
+  }
 
   &:focus-visible {
     border-color: var(--h4pblue);
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 2px;
+    outline: 0;
+    box-shadow: 0 0 0 0.22rem var(--focus-ring);
   }
 
   &:disabled {
     cursor: not-allowed;
     opacity: 0.62;
   }
+
+  &[readonly] {
+    background: var(--surface-muted);
+  }
+}
+
+select {
+  cursor: pointer;
 }
 
 textarea {
@@ -42,44 +121,295 @@ textarea {
 }
 
 input[type="checkbox"] {
-  accent-color: var(--h4pgreen);
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  accent-color: var(--h4pgreen-strong);
 }
 
 button {
-  padding: 0.625rem 1.25rem;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--h4pgreen);
-  color: var(--white);
   font: inherit;
-  cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    scale var(--transition-fast);
+}
 
-  &:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 3px;
+.pet-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+
+  & br {
+    display: none;
   }
 
-  &:active {
-    scale: 0.98;
+  & label {
+    align-self: end;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
   }
 
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.62;
+  & select {
+    margin-block-end: var(--space-2);
   }
 
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      background: var(--h4pblue);
+  & label:nth-of-type(odd),
+  & select:nth-of-type(odd) {
+    grid-column: 1;
+  }
+
+  & label:nth-of-type(even),
+  & select:nth-of-type(even) {
+    grid-column: 2;
+  }
+
+  & label:nth-of-type(1),
+  & label:nth-of-type(2) {
+    grid-row: 1;
+  }
+
+  & select:nth-of-type(1),
+  & select:nth-of-type(2) {
+    grid-row: 2;
+  }
+
+  & label:nth-of-type(3),
+  & label:nth-of-type(4) {
+    grid-row: 3;
+  }
+
+  & select:nth-of-type(3),
+  & select:nth-of-type(4) {
+    grid-row: 4;
+  }
+
+  & label:nth-of-type(5),
+  & label:nth-of-type(6) {
+    grid-row: 5;
+  }
+
+  & select:nth-of-type(5),
+  & select:nth-of-type(6) {
+    grid-row: 6;
+  }
+
+  & label:nth-of-type(7),
+  & label:nth-of-type(8) {
+    grid-row: 7;
+  }
+
+  & select:nth-of-type(7),
+  & select:nth-of-type(8) {
+    grid-row: 8;
+  }
+}
+
+.calculate-button {
+  inline-size: 100%;
+  min-block-size: 3.4rem;
+  justify-content: space-between;
+  padding-inline: var(--space-5);
+  font-size: 1rem;
+}
+
+.estimate-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block-end: var(--space-6);
+
+  & h2 {
+    margin: 0;
+    font-size: 1.65rem;
+  }
+}
+
+.estimate-values {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.estimate-value {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+
+  & input {
+    min-block-size: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--h4pblue);
+    font-size: 1.45rem;
+    font-weight: 900;
+
+    &:focus-visible {
+      box-shadow: none;
+    }
+  }
+
+  &.estimate-value--total {
+    border-color: color-mix(in srgb, var(--h4pgreen) 42%, var(--border));
+    background: var(--h4pgreen-soft);
+
+    & input {
+      color: #087526;
+      font-size: 2rem;
     }
   }
 }
 
-.container.mobile {
-  :is(button, input, select, textarea, label) {
-    font-size: 1.25em;
+:root[data-theme="dark"] .estimate-value {
+  & input {
+    color: #aab0ff;
+  }
+
+  &.estimate-value--total input {
+    color: #8ff4a9;
+  }
+}
+
+.estimate-breakdown {
+  & textarea {
+    min-block-size: 13rem;
+    line-height: 1.55;
+  }
+}
+
+.estimate-note {
+  margin-block: var(--space-4) 0;
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+@media (width <= 45rem) {
+  .form-grid.form-grid--dates,
+  .pet-options {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-options {
+    & label,
+    & select {
+      grid-column: 1 !important;
+      grid-row: auto !important;
+    }
+
+    & select {
+      margin-block-end: var(--space-3);
+    }
+  }
+
+  .form-section {
+    padding: var(--space-4);
+  }
+}
+
+/* Narrow-screen containment and content-driven estimate sizing. */
+.form-section,
+.form-grid,
+.form-group,
+.pet-options {
+  max-inline-size: 100%;
+}
+
+:where(input[type="text"], input[type="date"], input[type="time"], select, textarea, [contenteditable="true"]) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.estimate-breakdown textarea {
+  min-block-size: 5rem;
+  block-size: auto;
+  overflow: hidden;
+  resize: none;
+}
+
+.calculate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+
+  & .button__icon {
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+
+    & rect,
+    & path:first-of-type {
+      fill: rgb(255 255 255 / 10%);
+    }
+  }
+}
+
+@media (width <= 45rem) {
+  .booking-form,
+  .form-section,
+  .form-grid,
+  .form-group {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  :where(input[type="date"], input[type="time"], select, textarea) {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}
+
+/* Safari gives date and time controls an intrinsic width that can exceed a
+ * narrow fieldset. Keep every stage of the booking flow constrained to the
+ * available inline size rather than clipping at the page edge. */
+.booking-panel,
+.booking-form,
+.form-section,
+.form-grid,
+.form-group,
+.pet-options,
+.booking-extra,
+.booking-extra__body,
+.taxi-subsection,
+#taxi-form {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.form-group {
+  overflow: hidden;
+
+  & > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}
+
+@media (width <= 45rem) {
+  :where(input[type="date"], input[type="time"]) {
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+  }
+
+  :where(input[type="date"], input[type="time"])::-webkit-date-and-time-value {
+    min-inline-size: 0;
+    text-align: start;
+  }
+
+  select {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

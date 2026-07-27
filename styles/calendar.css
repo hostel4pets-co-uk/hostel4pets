@@ -1,61 +1,130 @@
-/* Availability calendar, legend and generated booking markers. */
+/* Availability calendar, legend and generated booking markers. The calendar
+ * script retains ownership of dates and colours; CSS supplies hierarchy and
+ * responsive presentation only. */
 .calendar-container {
   inline-size: 100%;
-  margin: var(--space-5) auto;
-  padding: 0.625rem;
-  overflow-x: hidden;
+  margin: 0;
+  padding: var(--space-4);
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+
+  & > div:first-child {
+    display: grid !important;
+    grid-template-columns: 3rem minmax(9rem, 14rem) 3rem;
+    justify-content: center !important;
+    gap: var(--space-3);
+    margin-block-end: var(--space-4) !important;
+  }
 
   & table {
-    inline-size: 100%;
-    border-collapse: collapse;
+    inline-size: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0.2rem !important;
     table-layout: fixed;
   }
 
   & :is(th, td) {
     min-inline-size: 0;
-    block-size: 3.125rem;
+    block-size: clamp(3.9rem, 7vw, 6.2rem);
+    padding: var(--space-2) !important;
     overflow: hidden;
-    text-align: center;
+    border: 0 !important;
+    border-radius: var(--radius-sm);
+    text-align: start !important;
     text-overflow: ellipsis;
-    vertical-align: middle;
+    vertical-align: top !important;
     overflow-wrap: anywhere;
   }
 
-  & .today {
-    font-weight: 700;
+  & th {
+    block-size: auto;
+    padding-block: var(--space-3) !important;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-align: center !important;
+    text-transform: uppercase;
   }
 
-  & .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.3125rem;
-    margin-block-end: 0.625rem;
+  & td {
+    position: relative;
+    border: 1px solid var(--border) !important;
+    background-color: var(--surface-raised);
+    color: #171928;
+    font-weight: 700;
+    transition:
+      translate var(--transition-fast),
+      box-shadow var(--transition-fast),
+      border-color var(--transition-fast);
+
+    &:empty {
+      border-color: transparent !important;
+      background: transparent;
+    }
+
+    &[data-date] {
+      cursor: pointer;
+    }
+
+    &[data-date]:hover {
+      z-index: 2;
+      border-color: var(--h4pblue) !important;
+      box-shadow: 0 0.65rem 1.4rem rgb(35 41 116 / 16%);
+      translate: 0 -0.1rem;
+    }
+  }
+
+  & .today {
+    font-weight: 900;
+    box-shadow: inset 0 0 0 2px var(--h4pblue);
   }
 
   & button {
-    padding: 0.3125rem 0.625rem;
-    background: #4caf50;
+    display: grid;
+    inline-size: 3rem;
+    min-block-size: 2.8rem;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--h4pblue);
+    color: var(--white);
+    font-size: 1.2rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      translate var(--transition-fast);
 
     @media (hover: hover) {
       &:hover {
-        background: #45a049;
+        background: var(--h4pblue-strong);
+        translate: 0 -0.1rem;
       }
     }
   }
 
   & input[type="month"] {
-    min-inline-size: 7.5rem;
-    flex: 1;
-    font-size: 0.85em;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 2.8rem;
+    margin: 0 !important;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 850;
     text-align: center;
   }
 
   & td.selected {
-    background: var(--selected);
+    background: var(--selected) !important;
+    box-shadow: inset 0 0 0 2px #3a9b50;
   }
 }
 
@@ -65,7 +134,7 @@
 }
 
 .calendar-title {
-  margin-block-end: 0.9375rem;
+  margin-block-end: var(--space-4);
   text-align: center;
 }
 
@@ -73,16 +142,19 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.375rem 0.75rem;
-  margin-block-start: 0.9375rem;
-  font-size: 0.85em;
+  gap: var(--space-2) var(--space-4);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.76rem;
 }
 
 .calendar-legend-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.625rem 0.9375rem;
-  margin-block-start: 0.625rem;
+  gap: var(--space-3) var(--space-5);
+  margin-block-start: var(--space-3);
 
   & > div {
     display: flex;
@@ -90,7 +162,7 @@
     white-space: nowrap;
   }
 
-  @media (18.8125rem < width <= 28.125rem) {
+  @media (18.8125rem < width <= 35rem) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -101,10 +173,11 @@
 
 .legend-box {
   display: inline-block;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  margin-inline-end: 0.3125rem;
-  border-radius: 0.1875rem;
+  inline-size: 0.8rem;
+  block-size: 0.8rem;
+  margin-inline-end: var(--space-2);
+  border: 1px solid rgb(0 0 0 / 8%);
+  border-radius: 0.2rem;
 
   &.past { background: var(--past); }
   &.today { background: var(--today); }
@@ -122,25 +195,117 @@
   @media (hover: hover) {
     &:hover {
       z-index: 10;
-      scale: 1.4;
+      scale: 1.35;
     }
   }
 }
 
 .texts {
-  margin-block: 0.125rem 0;
-  font-size: 0.68rem;
+  margin-block: 0.15rem 0;
+  color: #33384d;
+  font-size: 0.62rem;
+  font-weight: 600;
   line-height: 1.15;
 }
 
 #pet-tooltip {
   position: fixed;
-  z-index: 1000;
+  z-index: 2100;
   display: none;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  background: rgb(0 0 0 / 80%);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: var(--radius-md);
+  background: rgb(10 12 28 / 92%);
   color: var(--white);
+  box-shadow: var(--shadow-modal);
   font-size: 0.75rem;
   pointer-events: none;
+}
+
+.availability-panel--standalone {
+  & .calendar-container {
+    padding: clamp(1rem, 3vw, 2rem);
+  }
+}
+
+:root[data-theme="dark"] .calendar-container {
+  & td:not([style*="background-color"]):not(.selected) {
+    background: var(--surface-raised);
+    color: var(--text);
+  }
+
+  & td[style*="background-color"],
+  & td.selected {
+    color: #171928;
+  }
+}
+
+@media (width <= 45rem) {
+  .calendar-container {
+    padding: var(--space-3);
+    overflow-x: auto;
+
+    & > div:first-child {
+      grid-template-columns: 2.75rem minmax(8rem, 1fr) 2.75rem;
+      gap: var(--space-2);
+    }
+
+    & table {
+      min-inline-size: 34rem;
+    }
+
+    & :is(th, td) {
+      block-size: 4.6rem;
+    }
+  }
+
+  .availability-panel {
+    overflow: hidden;
+  }
+}
+
+@media (width <= 30rem) {
+  .calendar-container {
+    & table {
+      min-inline-size: 30rem;
+    }
+
+    & :is(th, td) {
+      block-size: 4.1rem;
+      padding: 0.35rem !important;
+    }
+  }
+}
+
+/* The seven-day grid always contracts to its container on narrow screens. */
+@media (width <= 45rem) {
+  .calendar-container {
+    overflow-x: hidden;
+
+    & table {
+      inline-size: 100% !important;
+      min-inline-size: 0 !important;
+      border-spacing: 0.12rem !important;
+    }
+
+    & :is(th, td) {
+      min-inline-size: 0;
+      block-size: clamp(3.2rem, 14vw, 4.15rem);
+      padding: 0.25rem !important;
+      font-size: clamp(0.62rem, 2.6vw, 0.82rem) !important;
+    }
+
+    & th {
+      padding-block: 0.55rem !important;
+    }
+
+    & .dot {
+      inline-size: clamp(0.28rem, 1.8vw, 0.42rem) !important;
+      block-size: clamp(0.28rem, 1.8vw, 0.42rem) !important;
+    }
+
+    & .texts {
+      display: none;
+    }
+  }
 }

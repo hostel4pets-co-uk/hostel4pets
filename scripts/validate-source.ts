@@ -6,7 +6,7 @@ interface PackageManifest {
 }
 
 const root = process.cwd();
-const forbiddenDirectories = new Set([".git", "dist", "generated", "node_modules"]);
+const forbiddenDirectories = new Set([".git", "dist", "generated", "node_modules", "chat", "calendar"]);
 const sourceDirectories = [join(root, "src"), join(root, "scripts")];
 const styleDirectory = join(root, "styles");
 const styleEntry = join(styleDirectory, "styles.css");

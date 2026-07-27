@@ -45,18 +45,24 @@ jobs:
           test -f dist/generated/calendar.js
           test -f dist/generated/calendarPage.js
           test -f dist/generated/chat.js
+          test -f dist/generated/routes.js
           test -f dist/generated/dayView.js
+          test -f dist/generated/interface.js
           test -f dist/generated/main.js
           test -f dist/generated/taxi.js
+          test -f dist/chat/index.html
+          test -f dist/calendar/index.html
 
       - name: Publish generated browser assets to the Pages source branch
         if: github.event_name == 'push'
         run: |
-          rm -rf generated
+          rm -rf generated chat calendar
           cp -R dist/generated generated
+          cp -R dist/chat chat
+          cp -R dist/calendar calendar
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A generated
+          git add -A generated chat calendar
           if git diff --cached --quiet; then
             echo "Generated assets are current."
           else
@@ -74,6 +80,8 @@ jobs:
             styles/styles.css
             styles/calendar.css
             styles/chat.css
+            chat/index.html
+            calendar/index.html
           )
           for asset in "${assets[@]}"; do
             available=false

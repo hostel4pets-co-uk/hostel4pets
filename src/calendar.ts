@@ -691,6 +691,15 @@ export class Calendar {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+export function initialiseCalendar(): void {
+  const container = document.getElementById("calendar-container");
+  if (!container || container.dataset.calendarInitialised === "true") return;
+  container.dataset.calendarInitialised = "true";
   new Calendar("calendar-container");
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initialiseCalendar, { once: true });
+} else {
+  initialiseCalendar();
+}

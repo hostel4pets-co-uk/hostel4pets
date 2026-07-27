@@ -5,32 +5,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#363cb8">
-  <title>Daily Bookings | Hostel4Pets</title>
-  <link rel="stylesheet" href="./styles/styles.css">
-  <script type="module" src="./generated/theme.js"></script>
-  <script type="module" src="./generated/interface.js"></script>
+  <title>Availability | Hostel4Pets</title>
+  <link rel="stylesheet" href="/styles/styles.css">
+  <script type="module" src="/generated/routes.js"></script>
+  <script type="module" src="/generated/theme.js"></script>
+  <script type="module" src="/generated/interface.js"></script>
+  <script type="module" src="/generated/calendarPage.js"></script>
 </head>
 
-<body class="site-page inner-page day-view-page">
-  <header class="site-header standalone-only">
+<body class="site-page inner-page">
+  <a class="skip-link" href="#main-content">Skip to calendar</a>
+  <header class="site-header">
     <div class="site-header__inner">
-      <a class="site-brand" href="/" aria-label="Hostel4Pets home"><img src="./graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo"></a>
+      <a class="site-brand" href="/" aria-label="Hostel4Pets home"><img src="/graphics/h4p.png" alt="Hostel4Pets" class="site-brand__logo"></a>
       <nav class="site-nav" aria-label="Primary navigation"><a href="/#book">Book</a><a aria-current="page" href="/calendar">Availability</a><a href="/#pet-taxi">Pet taxi</a><a href="/chat">Chat</a></nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use dark theme" aria-pressed="false"><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span><span data-theme-label>Light</span></button>
     </div>
   </header>
 
-  <main class="day-view-page__main standalone-only"><section class="page-intro"><p class="eyebrow">Daily view</p><h1>Booking details</h1><p>Review the pets staying with Hostel4Pets on the selected date.</p></section></main>
+  <main id="main-content" class="site-main inner-main">
+    <section class="page-intro">
+      <p class="eyebrow">Plan ahead</p>
+      <h1>Availability calendar</h1>
+      <p>Browse upcoming dates, see how busy each day is and open a date for booking details.</p>
+      <a class="button button--secondary" href="/#book">Return to booking</a>
+    </section>
+    <section class="panel availability-panel availability-panel--standalone" aria-label="Hostel4Pets availability">
+      <div class="calendar-container" id="calendar-container"></div>
+    </section>
+  </main>
 
-  <div id="day-modal" class="modal">
-    <div class="modal-content">
-      <p class="eyebrow">Guest list</p>
-      <h2 id="day-title">Bookings</h2>
-      <ul id="pet-list"></ul>
-    </div>
-  </div>
   <footer class="site-footer">
-    <img src="./graphics/h4p.png" alt="" aria-hidden="true">
+    <img src="/graphics/h4p.png" alt="" aria-hidden="true">
     <div class="site-footer__content">
       <p><strong>Hostel4Pets</strong> · Their home away from home</p>
       <p>Copyright © Hostel4Pets 2019–<span data-current-year>2026</span>. Hostel4Pets is a trademark of Krilavej LTD, registered at Companies House under <a href="https://find-and-update.company-information.service.gov.uk/company/SC729900" target="_blank" rel="noopener noreferrer">SC729900</a>.</p>
@@ -38,7 +44,6 @@
     </div>
     <p class="site-footer__version">Website v1.0.0</p>
   </footer>
-  <script type="module" src="./generated/dayView.js"></script>
 </body>
 
 </html>
