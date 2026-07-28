@@ -1,0 +1,4 @@
+# JavaScript files in this repository are generated browser output or build artefacts.
+*.js linguist-generated=true
+*.mjs linguist-generated=true
+*.js.map linguist-generated=true
