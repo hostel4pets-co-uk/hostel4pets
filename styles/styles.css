@@ -15,3 +15,75 @@
 @import url("./chat.css") layer(features);
 @import url("./taxi.css") layer(features);
 @import url("./mobile-nav.css") layer(features);
+
+@layer features {
+  .calendar-container > div:first-child {
+    display: flex !important;
+    inline-size: 100%;
+    align-items: center;
+    justify-content: center !important;
+    gap: var(--space-3);
+  }
+
+  .calendar-container > div:first-child > button {
+    flex: 0 0 3rem;
+  }
+
+  .calendar-container > div:first-child > input[type="month"] {
+    inline-size: auto;
+    min-inline-size: 0;
+    max-inline-size: 14rem;
+    flex: 1 1 9rem;
+  }
+
+  #collapse-btn {
+    position: relative;
+    color: transparent;
+    font-size: 0;
+  }
+
+  #collapse-btn::before {
+    display: block;
+    inline-size: 1rem;
+    block-size: 0.18rem;
+    border-radius: var(--radius-pill);
+    background: #0c1038;
+    content: "";
+  }
+
+  :root[data-theme="dark"] #collapse-btn::before {
+    background: #e4e6ff;
+  }
+
+  @media (width <= 45rem) {
+    .calendar-container > div:first-child {
+      gap: var(--space-2);
+    }
+
+    .calendar-container > div:first-child > button {
+      flex-basis: 2.75rem;
+    }
+  }
+
+  @media (width <= 24rem) {
+    .calendar-container > div:first-child {
+      gap: 0.35rem;
+    }
+
+    .calendar-container > div:first-child > button {
+      inline-size: 2.5rem;
+      flex-basis: 2.5rem;
+    }
+
+    .calendar-container > div:first-child > input[type="month"] {
+      padding-inline: 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (forced-colors: active) {
+    #collapse-btn::before {
+      background: ButtonText;
+    }
+  }
+}
