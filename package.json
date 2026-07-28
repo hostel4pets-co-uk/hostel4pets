@@ -24,7 +24,8 @@
     "validate:source": "node --experimental-strip-types scripts/validate-source.ts",
     "validate:chat-contract": "node --experimental-strip-types scripts/validate-chat-contract.ts",
     "validate:booking-contract": "node --experimental-strip-types scripts/validate-booking-contract.ts",
-    "validate": "npm run typecheck && npm run validate:source && npm run validate:chat-contract && npm run validate:booking-contract",
+    "validate:booking-api": "node --experimental-strip-types scripts/validate-booking-api.ts",
+    "validate": "npm run typecheck && npm run validate:source && npm run validate:chat-contract && npm run validate:booking-contract && npm run validate:booking-api",
     "build": "npm run validate && node --experimental-strip-types scripts/build.ts"
   },
   "devDependencies": {

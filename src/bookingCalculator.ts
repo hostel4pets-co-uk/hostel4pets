@@ -1,4 +1,9 @@
-import type { YesNo } from "./contracts.js";
+import {
+  resolveBookingPrice,
+  type BookingPriceRequest,
+  type BookingPriceResponse,
+  type YesNo
+} from "./bookingApi.js";
 import { dateFromLocalInputs, eventTarget, requireElement } from "./dom.js";
 import { BookingCalculator, bookingConfig } from "./pricing/booking.js";
 
@@ -11,35 +16,109 @@ function readPetStatus(prefix: string, numberOfPets: number): YesNo[] {
   });
 }
 
-function calculateTotal(): void {
-  const checkIn = dateFromLocalInputs(
-    requireElement<HTMLInputElement>("checkInDate").value,
-    requireElement<HTMLInputElement>("checkInTime").value
-  );
-  const checkOut = dateFromLocalInputs(
-    requireElement<HTMLInputElement>("checkOutDate").value,
-    requireElement<HTMLInputElement>("checkOutTime").value
-  );
+function localStamp(dateId: string, timeId: string): string {
+  const date = requireElement<HTMLInputElement>(dateId).value;
+  const time = requireElement<HTMLInputElement>(timeId).value || "00:00";
+  return date ? `${date}T${time}` : "";
+}
 
-  if (!Number.isNaN(checkIn.getTime()) && !Number.isNaN(checkOut.getTime())) {
-    document.dispatchEvent(new CustomEvent<BookingDatesChangedDetail>("booking:datesChanged", {
-      detail: { checkIn, checkOut }
-    }));
-  }
+function readRequest(): BookingPriceRequest {
+  const checkIn = localStamp("checkInDate", "checkInTime");
+  const checkOut = localStamp("checkOutDate", "checkOutTime");
+  if (!checkIn || !checkOut) throw new Error("Choose check-in and check-out dates.");
 
   const numberOfPets = Number.parseInt(requireElement<HTMLSelectElement>("numOfPets").value, 10);
-  const calculator = new BookingCalculator(bookingConfig);
-  const result = calculator.calculatePrice(
+  return {
     checkIn,
     checkOut,
-    numberOfPets,
-    readPetStatus("neutered", numberOfPets),
-    readPetStatus("cub", numberOfPets)
+    numOfPets: numberOfPets,
+    neuteredStatus: readPetStatus("neutered", numberOfPets),
+    cubStatus: readPetStatus("cub", numberOfPets)
+  };
+}
+
+function localPrice(request: BookingPriceRequest): BookingPriceResponse {
+  const checkIn = new Date(request.checkIn);
+  const checkOut = new Date(request.checkOut);
+  if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+    throw new Error("Choose valid check-in and check-out dates.");
+  }
+  if (checkOut <= checkIn) throw new Error("Check-out must be after check-in.");
+
+  return new BookingCalculator(bookingConfig).calculatePrice(
+    checkIn,
+    checkOut,
+    request.numOfPets,
+    request.neuteredStatus,
+    request.cubStatus
+  );
+}
+
+function emitDates(request: BookingPriceRequest): void {
+  const checkIn = dateFromLocalInputs(
+    request.checkIn.slice(0, 10),
+    request.checkIn.slice(11)
+  );
+  const checkOut = dateFromLocalInputs(
+    request.checkOut.slice(0, 10),
+    request.checkOut.slice(11)
   );
 
-  requireElement<HTMLInputElement>("totalPrice").value = `£${result.totalCharge.toFixed(2)}`;
-  requireElement<HTMLInputElement>("deposit").value = `£${result.depositAmount.toFixed(2)}`;
-  requireElement<HTMLTextAreaElement>("priceBreakdown").value = result.breakdown;
+  document.dispatchEvent(new CustomEvent<BookingDatesChangedDetail>("booking:datesChanged", {
+    detail: { checkIn, checkOut }
+  }));
+}
+
+async function bestPrice(request: BookingPriceRequest): Promise<BookingPriceResponse> {
+  const choice = await resolveBookingPrice(request, localPrice(request));
+
+  if (choice.differences.length > 0) {
+    console.warn(
+      "[booking] Backend and frontend fallback prices diverged. Update the frontend calculator values to match the backend.",
+      {
+        differences: choice.differences,
+        backend: choice.result,
+        frontend: localPrice(request),
+        request
+      }
+    );
+  }
+  if (choice.source === "frontend") {
+    console.warn("[booking] Backend unavailable; using the local fallback calculator.", choice.cause);
+  }
+
+  return choice.result;
+}
+
+async function calculateTotal(button: HTMLButtonElement): Promise<void> {
+  const total = requireElement<HTMLInputElement>("totalPrice");
+  const deposit = requireElement<HTMLInputElement>("deposit");
+  const breakdown = requireElement<HTMLTextAreaElement>("priceBreakdown");
+  const label = button.querySelector<HTMLSpanElement>("span");
+  const oldLabel = label?.textContent ?? "Calculate estimate";
+
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  if (label) label.textContent = "Calculating…";
+
+  try {
+    const request = readRequest();
+    emitDates(request);
+    const result = await bestPrice(request);
+    total.value = `£${result.totalCharge.toFixed(2)}`;
+    deposit.value = `£${result.depositAmount.toFixed(2)}`;
+    breakdown.value = result.breakdown;
+  } catch (err) {
+    total.value = "";
+    deposit.value = "";
+    const detail = err instanceof Error && err.message ? ` ${err.message}` : "";
+    breakdown.value = `The estimate could not be calculated.${detail}`;
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    if (label) label.textContent = oldLabel;
+    document.dispatchEvent(new Event("booking:priceChanged"));
+  }
 }
 
 function updatePetOptions(): void {
@@ -94,7 +173,10 @@ function initialiseBookingCalculator(): void {
     localStorage.setItem("numOfPets", eventTarget<HTMLSelectElement>(event).value);
     updatePetOptions();
   });
-  requireElement<HTMLButtonElement>("calculateButton").addEventListener("click", calculateTotal);
+  const button = requireElement<HTMLButtonElement>("calculateButton");
+  button.addEventListener("click", () => {
+    void calculateTotal(button);
+  });
 
   document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach(file => {
     const separator = file.href.includes("?") ? "&" : "?";
