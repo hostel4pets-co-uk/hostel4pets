@@ -37,22 +37,39 @@
   }
 
   #collapse-btn {
+    --collapse-mark: #0c1038;
+
     position: relative;
     color: transparent;
     font-size: 0;
   }
 
-  #collapse-btn::before {
+  #collapse-btn::before,
+  #collapse-btn::after {
+    position: absolute;
     display: block;
-    inline-size: 1rem;
-    block-size: 0.18rem;
     border-radius: var(--radius-pill);
-    background: #0c1038;
+    background: var(--collapse-mark);
     content: "";
   }
 
-  :root[data-theme="dark"] #collapse-btn::before {
-    background: #e4e6ff;
+  #collapse-btn::before {
+    inline-size: 1rem;
+    block-size: 0.18rem;
+  }
+
+  #collapse-btn::after {
+    inline-size: 0.18rem;
+    block-size: 1rem;
+    opacity: 0;
+  }
+
+  .chat-modal.collapsed #collapse-btn::after {
+    opacity: 1;
+  }
+
+  :root[data-theme="dark"] #collapse-btn {
+    --collapse-mark: #e4e6ff;
   }
 
   @media (width <= 45rem) {
@@ -82,8 +99,8 @@
   }
 
   @media (forced-colors: active) {
-    #collapse-btn::before {
-      background: ButtonText;
+    #collapse-btn {
+      --collapse-mark: ButtonText;
     }
   }
 }
