@@ -7,6 +7,24 @@
   <meta name="theme-color" content="#363cb8">
   <title>Guest Chat | Hostel4Pets</title>
   <link rel="stylesheet" href="./styles/styles.css">
+  <style>
+    .chat-page__main {
+      padding-block: clamp(1rem, 2.5vw, 1.75rem) clamp(0.75rem, 1.8vw, 1.25rem);
+    }
+
+    .chat-page__intro h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    @media (width <= 32rem) {
+      .chat-page__intro h1 {
+        font-size: clamp(1.65rem, 8vw, 2.25rem);
+      }
+    }
+  </style>
   <script type="module" src="./generated/routes.js"></script>
   <script type="module" src="./generated/theme.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mobile-detect@1.4.5/mobile-detect.min.js"></script>
@@ -24,7 +42,7 @@
   </header>
 
   <main class="chat-page__main standalone-only">
-    <section class="page-intro"><p class="eyebrow">Guest support</p><h1>Chat with Hostel4Pets</h1><p>Ask Robin a question or leave a message for the team.</p></section>
+    <section class="chat-page__intro"><h1>Hostel4Pets chat</h1></section>
   </main>
 
   <div id="chat-panel-shell" class="standalone-chat-shell is-expanded" data-chat-fixed-open>
