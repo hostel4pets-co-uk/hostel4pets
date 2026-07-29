@@ -15,3 +15,92 @@
 @import url("./chat.css") layer(features);
 @import url("./taxi.css") layer(features);
 @import url("./mobile-nav.css") layer(features);
+
+@layer features {
+  .calendar-container > div:first-child {
+    display: flex !important;
+    inline-size: 100%;
+    align-items: center;
+    justify-content: center !important;
+    gap: var(--space-3);
+  }
+
+  .calendar-container > div:first-child > button {
+    flex: 0 0 3rem;
+  }
+
+  .calendar-container > div:first-child > input[type="month"] {
+    inline-size: auto;
+    min-inline-size: 0;
+    max-inline-size: 14rem;
+    flex: 1 1 9rem;
+  }
+
+  #collapse-btn {
+    --collapse-mark: #0c1038;
+
+    position: relative;
+    color: transparent;
+    font-size: 0;
+  }
+
+  #collapse-btn::before,
+  #collapse-btn::after {
+    position: absolute;
+    display: block;
+    border-radius: var(--radius-pill);
+    background: var(--collapse-mark);
+    content: "";
+  }
+
+  #collapse-btn::before {
+    inline-size: 1rem;
+    block-size: 0.18rem;
+  }
+
+  #collapse-btn::after {
+    inline-size: 0.18rem;
+    block-size: 1rem;
+    opacity: 0;
+  }
+
+  .chat-modal.collapsed #collapse-btn::after {
+    opacity: 1;
+  }
+
+  :root[data-theme="dark"] #collapse-btn {
+    --collapse-mark: #e4e6ff;
+  }
+
+  @media (width <= 45rem) {
+    .calendar-container > div:first-child {
+      gap: var(--space-2);
+    }
+
+    .calendar-container > div:first-child > button {
+      flex-basis: 2.75rem;
+    }
+  }
+
+  @media (width <= 24rem) {
+    .calendar-container > div:first-child {
+      gap: 0.35rem;
+    }
+
+    .calendar-container > div:first-child > button {
+      inline-size: 2.5rem;
+      flex-basis: 2.5rem;
+    }
+
+    .calendar-container > div:first-child > input[type="month"] {
+      padding-inline: 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (forced-colors: active) {
+    #collapse-btn {
+      --collapse-mark: ButtonText;
+    }
+  }
+}

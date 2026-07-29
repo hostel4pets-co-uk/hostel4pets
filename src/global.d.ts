@@ -48,4 +48,5 @@ interface BookingDatesChangedDetail {
 
 interface DocumentEventMap {
   "booking:datesChanged": CustomEvent<BookingDatesChangedDetail>;
+  "booking:priceChanged": Event;
 }
