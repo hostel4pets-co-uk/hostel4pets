@@ -195,13 +195,12 @@ function initialiseEstimatePresentation() {
         fitBreakdown(breakdown);
     };
     const captureBookingResult = () => {
-        const baseTotal = parseCurrency(totalInput.value);
-        if (baseTotal !== null)
-            state.baseTotal = baseTotal;
+        state.baseTotal = parseCurrency(totalInput.value);
         state.baseBreakdown = breakdown.value.replace(taxiSectionPattern, "\n");
         render();
     };
     calculateButton.addEventListener("click", () => requestAnimationFrame(captureBookingResult));
+    document.addEventListener("booking:priceChanged", captureBookingResult);
     breakdown.addEventListener("input", () => fitBreakdown(breakdown));
     window.addEventListener("resize", () => fitBreakdown(breakdown));
     fitBreakdown(breakdown);
