@@ -37,7 +37,7 @@
   }
 
   #collapse-btn {
-    --collapse-mark: #0c1038;
+    --collapse-mark: #fff;
 
     position: relative;
     color: transparent;
@@ -66,10 +66,6 @@
 
   .chat-modal.collapsed #collapse-btn::after {
     opacity: 1;
-  }
-
-  :root[data-theme="dark"] #collapse-btn {
-    --collapse-mark: #e4e6ff;
   }
 
   @media (width <= 45rem) {
