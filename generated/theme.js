@@ -24,7 +24,7 @@ function updateControls(theme) {
         button.setAttribute("aria-pressed", String(theme === "dark"));
         const label = button.querySelector("[data-theme-label]");
         if (label)
-            label.textContent = theme === "dark" ? "Dark" : "Light";
+            label.textContent = theme === "dark" ? "🌙" : "☀️";
     });
 }
 function applyTheme(theme) {
