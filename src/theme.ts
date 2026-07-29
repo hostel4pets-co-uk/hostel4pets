@@ -28,7 +28,7 @@ function updateControls(theme: Theme): void {
     button.setAttribute("title", `Use ${next} theme`);
     button.setAttribute("aria-pressed", String(theme === "dark"));
     const label = button.querySelector<HTMLElement>("[data-theme-label]");
-    if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
+    if (label) label.textContent = theme === "dark" ? "🌙" : "☀️";
   });
 }
 
