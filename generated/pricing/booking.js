@@ -74,7 +74,7 @@ export class BookingCalculator {
             base += Math.min(this.hourlyRate * hoursThisPeriod, this.maxDailyRate);
             cursor = nextBoundary;
         }
-        return base;
+        return Math.max(base, this.hourlyRate * 2);
     }
 }
 export const bookingConfig = {
