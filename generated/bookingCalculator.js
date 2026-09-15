@@ -1,4 +1,5 @@
 import { resolveBookingPrice } from "./bookingApi.js";
+import { BOOKING_OPEN_TIME, BOOKING_TIME_STEP_MINUTES, minimumCheckoutTime, normaliseCheckoutDate } from "./bookingDates.js";
 import { dateFromLocalInputs, eventTarget, requireElement } from "./dom.js";
 import { BookingCalculator, bookingConfig } from "./pricing/booking.js";
 export { BookingCalculator, bookingConfig } from "./pricing/booking.js";
@@ -129,6 +130,33 @@ function updatePetOptions() {
         });
     }
 }
+function syncCheckoutConstraints() {
+    const checkInDate = requireElement("checkInDate");
+    const checkInTime = requireElement("checkInTime");
+    const checkOutDate = requireElement("checkOutDate");
+    const checkOutTime = requireElement("checkOutTime");
+    if (!checkInDate.value) {
+        checkOutTime.min = BOOKING_OPEN_TIME;
+        checkOutTime.disabled = false;
+        checkOutTime.removeAttribute("title");
+        return;
+    }
+    checkOutDate.min = checkInDate.value;
+    checkOutDate.value = normaliseCheckoutDate(checkInDate.value, checkOutDate.value);
+    const minimumTime = minimumCheckoutTime(checkInDate.value, checkOutDate.value, checkInTime.value);
+    if (minimumTime === null) {
+        checkOutTime.value = "";
+        checkOutTime.disabled = true;
+        checkOutTime.title = "Choose a later check-out date.";
+        return;
+    }
+    checkOutTime.disabled = false;
+    checkOutTime.removeAttribute("title");
+    checkOutTime.min = minimumTime;
+    if (checkOutTime.value && checkOutTime.value < minimumTime) {
+        checkOutTime.value = minimumTime;
+    }
+}
 function initialiseBookingCalculator() {
     const numberOfPets = requireElement("numOfPets");
     const savedNumber = localStorage.getItem("numOfPets");
@@ -148,8 +176,19 @@ function initialiseBookingCalculator() {
         file.href += `${separator}v=${Date.now()}`;
     });
     const today = new Date().toISOString().split("T")[0] ?? "";
-    requireElement("checkInDate").min = today;
-    requireElement("checkOutDate").min = today;
+    const checkInDate = requireElement("checkInDate");
+    const checkInTime = requireElement("checkInTime");
+    const checkOutDate = requireElement("checkOutDate");
+    const checkOutTime = requireElement("checkOutTime");
+    const timeStepSeconds = String(BOOKING_TIME_STEP_MINUTES * 60);
+    checkInDate.min = today;
+    checkOutDate.min = today;
+    checkInTime.step = timeStepSeconds;
+    checkOutTime.step = timeStepSeconds;
+    checkInDate.addEventListener("change", syncCheckoutConstraints);
+    checkInTime.addEventListener("change", syncCheckoutConstraints);
+    checkOutDate.addEventListener("change", syncCheckoutConstraints);
+    syncCheckoutConstraints();
 }
 document.addEventListener("DOMContentLoaded", initialiseBookingCalculator);
 //# sourceMappingURL=bookingCalculator.js.map
