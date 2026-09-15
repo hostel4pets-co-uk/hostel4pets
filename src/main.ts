@@ -6,6 +6,23 @@ function applyMobileLayout(): void {
   document.querySelectorAll<HTMLElement>(".container").forEach(element => element.classList.add("mobile"));
 }
 
+function revealEstimateIfNeeded(): void {
+  const estimate = document.getElementById("booking-estimate");
+  if (!estimate) return;
+
+  const bounds = estimate.getBoundingClientRect();
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+  const inView = bounds.bottom > 0
+    && bounds.top < viewportHeight
+    && bounds.right > 0
+    && bounds.left < viewportWidth;
+
+  if (!inView) {
+    estimate.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+  }
+}
+
 async function openChatPanel(): Promise<void> {
   if (document.getElementById("chat-panel-shell")) return;
 
@@ -43,6 +60,10 @@ async function initialise(): Promise<void> {
   applyMobileLayout();
   await openChatPanel();
 }
+
+document.addEventListener("booking:priceChanged", () => {
+  window.requestAnimationFrame(revealEstimateIfNeeded);
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   initialise().catch(() => console.error("Page initialisation failed"));
