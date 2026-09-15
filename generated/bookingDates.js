@@ -33,3 +33,4 @@ export function minimumCheckoutTime(checkInDate, checkOutDate, checkInTime) {
     const minimum = checkInMinutes + BOOKING_TIME_STEP_MINUTES;
     return minimum <= closingMinutes ? timeFromMinutes(minimum) : null;
 }
+//# sourceMappingURL=bookingDates.js.map
