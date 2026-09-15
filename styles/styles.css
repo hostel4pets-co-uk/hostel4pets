@@ -17,6 +17,38 @@
 @import url("./mobile-nav.css") layer(features);
 
 @layer features {
+  .estimate-panel {
+    display: flex;
+    min-block-size: 0;
+    max-block-size: 100vh;
+    max-block-size: 100dvh;
+    flex-direction: column;
+    overflow: hidden;
+    scroll-margin-block-start: calc(var(--header-height) + var(--space-4));
+  }
+
+  .estimate-panel__header,
+  .estimate-values,
+  .estimate-note {
+    flex: 0 0 auto;
+  }
+
+  .estimate-breakdown {
+    display: grid;
+    min-block-size: 0;
+    flex: 1 1 13rem;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .estimate-breakdown textarea {
+    min-block-size: 5rem;
+    block-size: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    resize: none;
+  }
+
   .calendar-container > div:first-child {
     display: flex !important;
     inline-size: 100%;
