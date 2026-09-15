@@ -1,6 +1,6 @@
 export const BOOKING_OPEN_TIME = "07:00";
 export const BOOKING_CLOSE_TIME = "22:00";
-export const BOOKING_TIME_STEP_MINUTES = 30;
+export const BOOKING_TIME_STEP_MINUTES = 15;
 function minutesFromTime(value) {
     const match = /^(\d{2}):(\d{2})$/.exec(value);
     if (!match)
