@@ -4,6 +4,12 @@ import {
   type BookingPriceResponse,
   type YesNo
 } from "./bookingApi.js";
+import {
+  BOOKING_OPEN_TIME,
+  BOOKING_TIME_STEP_MINUTES,
+  minimumCheckoutTime,
+  normaliseCheckoutDate
+} from "./bookingDates.js";
 import { dateFromLocalInputs, eventTarget, requireElement } from "./dom.js";
 import { BookingCalculator, bookingConfig } from "./pricing/booking.js";
 
@@ -163,6 +169,38 @@ function updatePetOptions(): void {
   }
 }
 
+function syncCheckoutConstraints(): void {
+  const checkInDate = requireElement<HTMLInputElement>("checkInDate");
+  const checkInTime = requireElement<HTMLInputElement>("checkInTime");
+  const checkOutDate = requireElement<HTMLInputElement>("checkOutDate");
+  const checkOutTime = requireElement<HTMLInputElement>("checkOutTime");
+
+  if (!checkInDate.value) {
+    checkOutTime.min = BOOKING_OPEN_TIME;
+    checkOutTime.disabled = false;
+    checkOutTime.removeAttribute("title");
+    return;
+  }
+
+  checkOutDate.min = checkInDate.value;
+  checkOutDate.value = normaliseCheckoutDate(checkInDate.value, checkOutDate.value);
+
+  const minimumTime = minimumCheckoutTime(checkInDate.value, checkOutDate.value, checkInTime.value);
+  if (minimumTime === null) {
+    checkOutTime.value = "";
+    checkOutTime.disabled = true;
+    checkOutTime.title = "Choose a later check-out date.";
+    return;
+  }
+
+  checkOutTime.disabled = false;
+  checkOutTime.removeAttribute("title");
+  checkOutTime.min = minimumTime;
+  if (checkOutTime.value && checkOutTime.value < minimumTime) {
+    checkOutTime.value = minimumTime;
+  }
+}
+
 function initialiseBookingCalculator(): void {
   const numberOfPets = requireElement<HTMLSelectElement>("numOfPets");
   const savedNumber = localStorage.getItem("numOfPets");
@@ -184,8 +222,21 @@ function initialiseBookingCalculator(): void {
   });
 
   const today = new Date().toISOString().split("T")[0] ?? "";
-  requireElement<HTMLInputElement>("checkInDate").min = today;
-  requireElement<HTMLInputElement>("checkOutDate").min = today;
+  const checkInDate = requireElement<HTMLInputElement>("checkInDate");
+  const checkInTime = requireElement<HTMLInputElement>("checkInTime");
+  const checkOutDate = requireElement<HTMLInputElement>("checkOutDate");
+  const checkOutTime = requireElement<HTMLInputElement>("checkOutTime");
+  const timeStepSeconds = String(BOOKING_TIME_STEP_MINUTES * 60);
+
+  checkInDate.min = today;
+  checkOutDate.min = today;
+  checkInTime.step = timeStepSeconds;
+  checkOutTime.step = timeStepSeconds;
+
+  checkInDate.addEventListener("change", syncCheckoutConstraints);
+  checkInTime.addEventListener("change", syncCheckoutConstraints);
+  checkOutDate.addEventListener("change", syncCheckoutConstraints);
+  syncCheckoutConstraints();
 }
 
 document.addEventListener("DOMContentLoaded", initialiseBookingCalculator);
