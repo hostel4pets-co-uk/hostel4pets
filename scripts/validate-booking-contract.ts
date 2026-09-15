@@ -27,6 +27,18 @@ if (!result.breakdown.includes("TOTAL")) {
   throw new Error("Booking pricing contract returned an invalid breakdown");
 }
 
+const shortStay = calculator.calculatePrice(
+  new Date(2026, 8, 15, 8, 0, 0),
+  new Date(2026, 8, 15, 8, 15, 0),
+  1,
+  ["yes"],
+  ["no"]
+);
+const twoHourMinimum = bookingConfig.hourlyRate * 2;
+if (Math.abs(shortStay.totalCharge - twoHourMinimum) > 1e-9) {
+  throw new Error(`Bookings shorter than two hours must cost at least £${twoHourMinimum.toFixed(2)}`);
+}
+
 if (BOOKING_TIME_STEP_MINUTES !== 15) {
   throw new Error("Booking time controls must use 15-minute steps");
 }
