@@ -9,10 +9,12 @@ const apiBase = "https://h4p.kittycrow.dev";
 const calendarUrl = `${apiBase}/calendar.json`;
 const calendarDatabaseUrl = `${apiBase}/database/calendar`;
 const calendarShaKey = "h4p.calendar.sha256.v1";
+const calendarMonthsKey = "h4p.calendar.months.v2";
 const databaseName = "h4p-browser-cache";
 const databaseVersion = 1;
 const databaseStore = "calendar";
-const calendarRecordId = "calendar";
+const legacyCalendarRecordId = "calendar";
+const monthRecordPrefix = "calendar-month:";
 Object.entries(backgroundColours).forEach(([key, value]) => {
     document.documentElement.style.setProperty(`--${key.toLowerCase()}`, value);
 });
@@ -29,10 +31,11 @@ export class Calendar {
     texts = {};
     bankHolidays = {};
     tableHeaders = [];
-    loadId = 0;
-    abortController = null;
     selectedCheckIn = null;
     selectedCheckOut = null;
+    renderId = 0;
+    preloadStarted = false;
+    monthEvents = new Map();
     constructor(containerId) {
         this.container = requireElement(containerId);
         this.guestColourMap = window.guestColourMap ?? {};
@@ -57,6 +60,7 @@ export class Calendar {
             this.highlightSelected(start, end);
         });
         void this.render();
+        void this.preloadCalendar();
     }
     createPetTooltip() {
         const tooltip = document.createElement("div");
@@ -71,8 +75,9 @@ export class Calendar {
             const request = indexedDB.open(databaseName, databaseVersion);
             request.onupgradeneeded = () => {
                 const database = request.result;
-                if (!database.objectStoreNames.contains(databaseStore))
+                if (!database.objectStoreNames.contains(databaseStore)) {
                     database.createObjectStore(databaseStore, { keyPath: "id" });
+                }
             };
             request.onsuccess = () => {
                 this.database = request.result;
@@ -82,11 +87,11 @@ export class Calendar {
             request.onblocked = () => reject(new Error("IndexedDB upgrade was blocked"));
         });
     }
-    async getCalendarCache() {
+    async getCacheRecord(id) {
         try {
             const database = await this.openCacheDatabase();
             return await new Promise((resolve, reject) => {
-                const request = database.transaction(databaseStore, "readonly").objectStore(databaseStore).get(calendarRecordId);
+                const request = database.transaction(databaseStore, "readonly").objectStore(databaseStore).get(id);
                 request.onsuccess = () => {
                     const record = request.result;
                     resolve(Array.isArray(record?.events) ? record.events : null);
@@ -99,12 +104,12 @@ export class Calendar {
             return null;
         }
     }
-    async setCalendarCache(events) {
+    async setCacheRecord(id, events) {
         try {
             const database = await this.openCacheDatabase();
             await new Promise((resolve, reject) => {
                 const transaction = database.transaction(databaseStore, "readwrite");
-                const record = { id: calendarRecordId, events, savedAt: Date.now() };
+                const record = { id, events, savedAt: Date.now() };
                 transaction.objectStore(databaseStore).put(record);
                 transaction.oncomplete = () => resolve();
                 transaction.onerror = () => reject(transaction.error ?? new Error("Calendar cache write failed"));
@@ -134,6 +139,28 @@ export class Calendar {
             console.warn("Could not save calendar SHA");
         }
     }
+    getMonthManifest() {
+        try {
+            const raw = localStorage.getItem(calendarMonthsKey);
+            if (!raw)
+                return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed))
+                return [];
+            return parsed.filter((value) => typeof value === "string" && /^\d{4}-\d{2}$/.test(value));
+        }
+        catch {
+            return [];
+        }
+    }
+    setMonthManifest(months) {
+        try {
+            localStorage.setItem(calendarMonthsKey, JSON.stringify(months));
+        }
+        catch {
+            console.warn("Could not save calendar month manifest");
+        }
+    }
     async fetchCalendar(signal) {
         const response = await fetch(calendarUrl, { signal });
         if (!response.ok)
@@ -148,49 +175,176 @@ export class Calendar {
         if (!response.ok)
             throw new Error("Failed to fetch calendar database metadata");
         const metadata = await response.json();
-        if (!metadata || typeof metadata.sha256 !== "string")
+        if (!metadata || typeof metadata.sha256 !== "string") {
             throw new Error("Calendar database metadata did not include sha256");
+        }
         return metadata.sha256;
     }
-    async getEvents(signal) {
-        const cached = await this.getCalendarCache();
-        const cachedSha = this.getCalendarSha();
-        if (!cached || !cachedSha) {
-            const events = await this.fetchCalendar(signal);
-            try {
-                const sha = await this.fetchCalendarSha(signal);
-                await this.setCalendarCache(events);
-                this.setCalendarSha(sha);
-            }
-            catch {
-                await this.setCalendarCache(events);
-                this.setCalendarSha(null);
-                console.warn("Calendar loaded, but its SHA cache could not be updated");
-            }
-            return events;
+    currentMonthStart() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    monthKey(date = this.date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+    dateForMonthKey(key) {
+        const [year = 0, month = 1] = key.split("-").map(Number);
+        return new Date(year, month - 1, 1);
+    }
+    monthKeysBetween(start, end) {
+        const keys = [];
+        const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        const final = new Date(end.getFullYear(), end.getMonth(), 1);
+        while (cursor <= final) {
+            keys.push(this.monthKey(cursor));
+            cursor.setMonth(cursor.getMonth() + 1);
         }
-        let liveSha = "";
+        return keys;
+    }
+    futureMonthKeys(events) {
+        const start = this.currentMonthStart();
+        let end = new Date(start);
+        for (const event of events) {
+            const candidate = new Date(event.end);
+            if (!Number.isNaN(candidate.getTime()) && candidate > end)
+                end = candidate;
+        }
+        return this.monthKeysBetween(start, end);
+    }
+    eventTypes(event) {
+        if (Array.isArray(event.type))
+            return event.type;
+        return event.type ? [event.type] : [];
+    }
+    eventOverlapsMonth(event, monthStart, monthEnd) {
+        const start = new Date(event.start);
+        const end = new Date(event.end);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
+            return false;
+        return end >= monthStart && start < monthEnd;
+    }
+    eventsForMonth(events, key) {
+        const monthStart = this.dateForMonthKey(key);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+        const selected = new Set();
+        const byPet = new Map();
+        for (const event of events) {
+            const petId = event.petId;
+            const types = this.eventTypes(event);
+            if (types.includes("Not available")) {
+                if (petId && petId !== "Unknown" && this.eventOverlapsMonth(event, monthStart, monthEnd)) {
+                    selected.add(event);
+                }
+                continue;
+            }
+            if (!petId || petId === "Unknown")
+                continue;
+            const petEvents = byPet.get(petId) ?? [];
+            petEvents.push(event);
+            byPet.set(petId, petEvents);
+        }
+        for (const petEvents of byPet.values()) {
+            petEvents.sort((left, right) => new Date(left.start).getTime() - new Date(right.start).getTime());
+            const state = { open: null, events: petEvents };
+            for (const event of state.events) {
+                const types = this.eventTypes(event);
+                if (types.includes("Check-in"))
+                    state.open = event;
+                if (types.includes("Check-out") && state.open) {
+                    const checkIn = new Date(state.open.start);
+                    const checkOut = new Date(event.end);
+                    if (!Number.isNaN(checkIn.getTime())
+                        && !Number.isNaN(checkOut.getTime())
+                        && checkOut >= monthStart
+                        && checkIn < monthEnd) {
+                        selected.add(state.open);
+                        selected.add(event);
+                    }
+                    state.open = null;
+                }
+                if (this.eventOverlapsMonth(event, monthStart, monthEnd))
+                    selected.add(event);
+            }
+        }
+        return Array.from(selected);
+    }
+    async cacheEventsProgressively(events, replaceManifest) {
+        const keys = this.futureMonthKeys(events);
+        const loaded = replaceManifest ? [] : this.getMonthManifest().filter(key => keys.includes(key));
+        const futureEventSet = new Set();
+        if (replaceManifest)
+            this.setMonthManifest([]);
+        for (const key of keys) {
+            const bucket = this.eventsForMonth(events, key);
+            bucket.forEach(event => futureEventSet.add(event));
+            this.monthEvents.set(key, bucket);
+            await this.setCacheRecord(`${monthRecordPrefix}${key}`, bucket);
+            if (!loaded.includes(key))
+                loaded.push(key);
+            this.setMonthManifest(loaded);
+            if (this.monthKey() === key)
+                await this.render();
+            await new Promise(resolve => window.setTimeout(resolve, 0));
+        }
+        await this.setCacheRecord(legacyCalendarRecordId, Array.from(futureEventSet));
+    }
+    async loadCachedMonths() {
+        const currentKey = this.monthKey(this.currentMonthStart());
+        const manifest = this.getMonthManifest()
+            .filter(key => key >= currentKey)
+            .sort();
+        const ordered = [currentKey, ...manifest.filter(key => key !== currentKey)];
+        let loadedAny = false;
+        for (const key of ordered) {
+            const events = await this.getCacheRecord(`${monthRecordPrefix}${key}`);
+            if (!events)
+                continue;
+            this.monthEvents.set(key, events);
+            loadedAny = true;
+            if (this.monthKey() === key)
+                await this.render();
+            await new Promise(resolve => window.setTimeout(resolve, 0));
+        }
+        return loadedAny;
+    }
+    async preloadCalendar() {
+        if (this.preloadStarted)
+            return;
+        this.preloadStarted = true;
+        let loadedCache = await this.loadCachedMonths();
+        if (!loadedCache) {
+            const legacy = await this.getCacheRecord(legacyCalendarRecordId);
+            if (legacy?.length) {
+                await this.cacheEventsProgressively(legacy, true);
+                loadedCache = true;
+            }
+        }
+        const controller = new AbortController();
+        let liveSha = null;
         try {
-            liveSha = await this.fetchCalendarSha(signal);
+            liveSha = await this.fetchCalendarSha(controller.signal);
         }
         catch {
-            console.warn("Could not check calendar SHA. Using IndexedDB calendar");
-            return cached;
+            if (!loadedCache)
+                console.warn("Could not check calendar SHA");
         }
-        if (liveSha === cachedSha)
-            return cached;
+        if (loadedCache && liveSha && liveSha === this.getCalendarSha())
+            return;
         try {
-            const events = await this.fetchCalendar(signal);
-            await this.setCalendarCache(events);
+            const events = await this.fetchCalendar(controller.signal);
+            await this.cacheEventsProgressively(events, true);
             this.setCalendarSha(liveSha);
-            return events;
         }
         catch {
-            console.warn("Could not refresh calendar. Using IndexedDB calendar");
-            return cached;
+            if (!loadedCache)
+                console.error("Error loading bookings");
+            else
+                console.warn("Could not refresh calendar. Using cached future months");
         }
     }
     async render() {
+        const renderId = ++this.renderId;
+        const renderMonth = this.monthKey();
         this.container.innerHTML = "";
         this.texts = {};
         this.dots = [];
@@ -199,9 +353,14 @@ export class Calendar {
         this.updateTable();
         this.addLegend();
         await this.fetchBankHolidays();
+        if (renderId !== this.renderId || renderMonth !== this.monthKey())
+            return;
         await this.bankHolidaysToTexts();
+        if (renderId !== this.renderId || renderMonth !== this.monthKey())
+            return;
         this.addTexts();
-        await this.loadBookings();
+        const events = this.monthEvents.get(renderMonth) ?? [];
+        this.paintBookings(events);
     }
     createHeader() {
         const header = document.createElement("div");
@@ -219,19 +378,21 @@ export class Calendar {
         forwardButton.addEventListener("click", () => this.changeMonth(1));
         const monthPicker = document.createElement("input");
         monthPicker.type = "month";
-        monthPicker.value = `${this.date.getFullYear()}-${String(this.date.getMonth() + 1).padStart(2, "0")}`;
+        monthPicker.value = this.monthKey();
         monthPicker.style.margin = "0 10px";
         monthPicker.addEventListener("change", () => {
             const [year = this.date.getFullYear(), month = this.date.getMonth() + 1] = monthPicker.value.split("-").map(Number);
-            this.date.setFullYear(year);
-            this.date.setMonth(month - 1);
-            const url = new URL(window.location.href);
-            url.searchParams.set("m", `${year}${String(month).padStart(2, "0")}`);
-            window.history.replaceState({}, "", url);
+            this.date = new Date(year, month - 1, 1);
+            this.updateMonthUrl();
             void this.render();
         });
         header.append(backButton, monthPicker, forwardButton);
         this.container.appendChild(header);
+    }
+    updateMonthUrl() {
+        const url = new URL(window.location.href);
+        url.searchParams.set("m", `${this.date.getFullYear()}${String(this.date.getMonth() + 1).padStart(2, "0")}`);
+        window.history.replaceState({}, "", url);
     }
     createTable() {
         this.tableHeaders = [];
@@ -291,12 +452,10 @@ export class Calendar {
         body.querySelectorAll("td").forEach(cell => {
             cell.textContent = "";
             cell.className = "";
+            cell.style.backgroundColor = "";
             cell.style.fontWeight = "";
             cell.style.position = "";
-            if (cell.dataset.locked !== "bank") {
-                cell.style.backgroundColor = "";
-                delete cell.dataset.locked;
-            }
+            delete cell.dataset.locked;
             delete cell.dataset.date;
         });
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
@@ -311,15 +470,12 @@ export class Calendar {
                 continue;
             const cellDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
             cell.textContent = String(day);
-            cell.dataset.date = cellDate.toISOString().split("T")[0] ?? "";
+            cell.dataset.date = this.getDateKey(cellDate);
             Object.assign(cell.style, { textAlign: "left", verticalAlign: "top", fontSize: "0.85em" });
             cell.onclick = () => void this.openDayModal(this.compactDate(cellDate));
             const isToday = cellDate.toDateString() === today.toDateString();
             const isPast = cellDate < today && !isToday;
-            const count = this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString()).length;
-            if (cell.dataset.locked !== "bank")
-                this.updateCellBackground(cell, isToday, isPast, count);
-            this.dots.filter(dot => dot.date.toDateString() === cellDate.toDateString()).forEach(dot => this.addDot(cellDate, dot.colour));
+            this.updateCellBackground(cell, isToday, isPast, 0);
         }
         this.highlightSelected(this.selectedCheckIn, this.selectedCheckOut);
     }
@@ -407,8 +563,7 @@ export class Calendar {
             return;
         const isToday = date.toDateString() === new Date().toDateString();
         const isPast = date < new Date() && !isToday;
-        const count = this.dots.filter(dot => dot.date.toDateString() === date.toDateString()).length;
-        this.updateCellBackground(cell, isToday, isPast, count, true);
+        this.updateCellBackground(cell, isToday, isPast, 0, true);
         cell.dataset.locked = "bank";
     }
     addDot(date, preferredColour, petId) {
@@ -421,15 +576,17 @@ export class Calendar {
         }
         if (!colour || !colours.includes(colour))
             return;
-        if (!this.dots.some(dot => dot.date.getTime() === dotDate.getTime() && dot.colour === colour))
+        if (!this.dots.some(dot => dot.date.getTime() === dotDate.getTime() && dot.colour === colour)) {
             this.dots.push({ date: dotDate, colour });
+        }
         if (dotDate.getMonth() !== this.date.getMonth() || dotDate.getFullYear() !== this.date.getFullYear())
             return;
         const firstDay = new Date(this.date.getFullYear(), this.date.getMonth(), 1).getDay();
         const cellIndex = firstDay + dotDate.getDate() - 1;
         const row = Math.floor(cellIndex / 7);
         const column = cellIndex % 7;
-        const cell = requireElement("Calendar").querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+        const cell = requireElement("Calendar")
+            .querySelector(`td[data-week="${row}"][data-day="${column}"]`);
         if (!cell)
             return;
         const dotSize = 8;
@@ -464,8 +621,9 @@ export class Calendar {
             delete cell.dataset.locked;
             this.updateCellBackground(cell, isToday, isPast, totalDots);
         }
-        else if (!locked)
+        else if (!locked) {
             this.updateCellBackground(cell, isToday, isPast, totalDots);
+        }
         if (petId) {
             dot.addEventListener("mouseenter", () => {
                 const pet = this.allPets.find(item => item.petId === petId);
@@ -478,7 +636,9 @@ export class Calendar {
                 this.petTooltip.style.left = `${event.pageX + 10}px`;
                 this.petTooltip.style.top = `${event.pageY + 10}px`;
             });
-            dot.addEventListener("mouseleave", () => { this.petTooltip.style.display = "none"; });
+            dot.addEventListener("mouseleave", () => {
+                this.petTooltip.style.display = "none";
+            });
         }
     }
     addLegend() {
@@ -516,89 +676,61 @@ export class Calendar {
             cell.appendChild(text);
         });
     }
-    eventTypes(event) {
-        if (Array.isArray(event.type))
-            return event.type;
-        return event.type ? [event.type] : [];
-    }
-    async loadBookings() {
-        this.abortController?.abort();
-        this.abortController = new AbortController();
-        const signal = this.abortController.signal;
-        const loadId = ++this.loadId;
-        try {
-            const events = await this.getEvents(signal);
-            this.allPets = events.filter(event => event.petId && event.petId !== "Unknown");
-            window.h4pCalendarEvents = events;
-            if (loadId !== this.loadId)
+    paintBookings(events) {
+        this.allPets = events.filter(event => event.petId && event.petId !== "Unknown");
+        window.h4pCalendarEvents = events;
+        for (const event of events) {
+            if (!event.petId || event.petId === "Unknown" || !this.eventTypes(event).includes("Not available"))
+                continue;
+            const start = normaliseDate(new Date(event.start));
+            const end = normaliseDate(new Date(event.end));
+            for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+                this.markNotAvailable(new Date(cursor));
+            }
+        }
+        const stays = {};
+        events
+            .filter(event => event.petId && event.petId !== "Unknown")
+            .sort((left, right) => new Date(left.start).getTime() - new Date(right.start).getTime())
+            .forEach(event => {
+            const petId = event.petId;
+            if (!petId)
                 return;
-            for (const event of events) {
-                if (!event.petId || event.petId === "Unknown" || !this.eventTypes(event).includes("Not available"))
-                    continue;
-                const start = normaliseDate(new Date(event.start));
-                const end = normaliseDate(new Date(event.end));
-                for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
-                    if (loadId !== this.loadId)
-                        return;
-                    this.markNotAvailable(cursor);
+            const types = this.eventTypes(event);
+            if (types.includes("Not available"))
+                return;
+            const stay = stays[petId] ?? { open: null, ranges: [] };
+            stays[petId] = stay;
+            if (types.includes("Check-in"))
+                stay.open = normaliseDate(new Date(event.start));
+            if (types.includes("Check-out") && stay.open) {
+                stay.ranges.push({ checkIn: stay.open, checkOut: normaliseDate(new Date(event.end)) });
+                stay.open = null;
+            }
+        });
+        const colours = Object.values(dotColours);
+        const activePetIds = new Set(Object.keys(stays));
+        for (const [petId, stay] of Object.entries(stays)) {
+            let colour = this.guestColourMap[petId];
+            if (!colour) {
+                const used = Object.entries(this.guestColourMap)
+                    .filter(([id]) => activePetIds.has(id))
+                    .map(([, assigned]) => assigned);
+                const available = colours.filter(candidate => !used.includes(candidate));
+                const unused = available.find(candidate => !this.colourHistory.includes(candidate));
+                colour = unused ?? available[0] ?? colours.at(-1) ?? "grey";
+                this.guestColourMap[petId] = colour;
+            }
+            this.colourHistory = this.colourHistory.filter(item => item !== colour);
+            this.colourHistory.push(colour);
+            for (const range of stay.ranges) {
+                for (let cursor = new Date(range.checkIn); cursor <= range.checkOut; cursor.setDate(cursor.getDate() + 1)) {
+                    this.addDot(new Date(cursor), colour, petId);
                 }
             }
-            const stays = {};
-            events
-                .filter(event => event.petId && event.petId !== "Unknown")
-                .sort((left, right) => new Date(left.start).getTime() - new Date(right.start).getTime())
-                .forEach(event => {
-                const petId = event.petId;
-                if (!petId)
-                    return;
-                const types = this.eventTypes(event);
-                if (types.includes("Not available"))
-                    return;
-                const stay = stays[petId] ?? { open: null, ranges: [] };
-                stays[petId] = stay;
-                if (types.includes("Check-in")) {
-                    stay.open = normaliseDate(new Date(event.start));
-                    return;
-                }
-                if (types.includes("Check-out") && stay.open) {
-                    stay.ranges.push({ checkIn: stay.open, checkOut: normaliseDate(new Date(event.end)) });
-                    stay.open = null;
-                }
-            });
-            const colours = Object.values(dotColours);
-            const activePetIds = new Set(Object.keys(stays));
-            for (const [petId, stay] of Object.entries(stays)) {
-                let colour = this.guestColourMap[petId];
-                if (!colour) {
-                    const used = Object.entries(this.guestColourMap)
-                        .filter(([id]) => activePetIds.has(id))
-                        .map(([, assigned]) => assigned);
-                    const available = colours.filter(candidate => !used.includes(candidate));
-                    const unused = colours.find(candidate => !this.colourHistory.includes(candidate));
-                    colour = available[0] ?? unused ?? colours.at(-1) ?? "grey";
-                    this.guestColourMap[petId] = colour;
-                }
-                this.colourHistory = this.colourHistory.filter(item => item !== colour);
-                this.colourHistory.push(colour);
-                for (const range of stay.ranges) {
-                    for (let cursor = new Date(range.checkIn); cursor <= range.checkOut; cursor.setDate(cursor.getDate() + 1)) {
-                        if (loadId !== this.loadId)
-                            return;
-                        this.addDot(new Date(cursor), colour, petId);
-                    }
-                }
-            }
-            Object.keys(this.guestColourMap).forEach(petId => {
-                if (!activePetIds.has(petId))
-                    delete this.guestColourMap[petId];
-            });
-            window.guestColourMap = this.guestColourMap;
-            window.colourHistory = this.colourHistory;
         }
-        catch {
-            if (!signal.aborted)
-                console.error("Error loading bookings");
-        }
+        window.guestColourMap = this.guestColourMap;
+        window.colourHistory = this.colourHistory;
     }
     markNotAvailable(date) {
         if (date.getMonth() !== this.date.getMonth() || date.getFullYear() !== this.date.getFullYear())
@@ -607,14 +739,16 @@ export class Calendar {
         const cellIndex = firstDay + date.getDate() - 1;
         const row = Math.floor(cellIndex / 7);
         const column = cellIndex % 7;
-        const cell = requireElement("Calendar").querySelector(`td[data-week="${row}"][data-day="${column}"]`);
+        const cell = requireElement("Calendar")
+            .querySelector(`td[data-week="${row}"][data-day="${column}"]`);
         if (!cell)
             return;
         cell.style.backgroundColor = backgroundColours.NOTAVAILABLE;
         cell.dataset.locked = "na";
     }
     changeMonth(offset) {
-        this.date.setMonth(this.date.getMonth() + offset);
+        this.date = new Date(this.date.getFullYear(), this.date.getMonth() + offset, 1);
+        this.updateMonthUrl();
         void this.render();
     }
     compactDate(date) {
@@ -642,13 +776,15 @@ export class Calendar {
         }
         const temporary = document.createElement("div");
         temporary.innerHTML = html;
-        const backbone = temporary.querySelector("#day-modal") ?? temporary.firstElementChild;
+        const backbone = temporary.querySelector("#day-modal")
+            ?? temporary.firstElementChild;
         if (backbone) {
             backbone.style.display = "block";
             modal.appendChild(backbone);
         }
-        else
+        else {
             modal.innerHTML = html;
+        }
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
         const content = modal.querySelector(".modal-content") ?? modal;
@@ -673,8 +809,10 @@ export class Calendar {
                 closeModal();
         };
         closeElement.addEventListener("click", closeModal);
-        overlay.addEventListener("click", event => { if (event.target === overlay)
-            closeModal(); });
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay)
+                closeModal();
+        });
         document.addEventListener("keydown", onEscape);
         const url = new URL(window.location.href);
         url.searchParams.set("d", dateString);
