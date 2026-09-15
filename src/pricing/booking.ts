@@ -106,7 +106,7 @@ export class BookingCalculator {
       cursor = nextBoundary;
     }
 
-    return base;
+    return Math.max(base, this.hourlyRate * 2);
   }
 }
 
